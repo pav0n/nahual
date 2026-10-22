@@ -46,7 +46,9 @@ export function PausedList({ paused, selectedId, onSelect, labelId }: Props) {
       onKeyDown={onKeyDown}
     >
       {paused.map((p, i) => {
-        const seconds = Math.max(0, Math.ceil((p.expiresAt - now) / 1000));
+        // `now` puede ir hasta 1 s atrasado: nunca se muestra más que el timeout de la pausa.
+        const total = Math.ceil((p.expiresAt - p.pausedAt) / 1000);
+        const seconds = Math.min(total, Math.max(0, Math.ceil((p.expiresAt - now) / 1000)));
         return (
           <li
             key={p.pausedId}

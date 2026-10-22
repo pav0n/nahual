@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => ({
     emptyOutDir: true,
     target: "chrome120",
     sourcemap: false,
+    // Chrome soporta modulepreload: sin el polyfill de Vite, que usa fetch().
+    modulePreload: { polyfill: false },
     rollupOptions: {
       input: { panel: "src/panel/panel.html" },
     },

@@ -73,7 +73,7 @@ export async function removeAllPatterns(panel: Page) {
 }
 
 export const pausedOption = (panel: Page, text: string | RegExp) =>
-  panel.getByRole("option").filter({ hasText: text });
+  panel.getByRole("listbox").getByRole("option").filter({ hasText: text });
 
 /** Lanza un fetch desde la app sin esperarlo (quedará pausado). */
 export function startFetch(app: Page, url: string) {

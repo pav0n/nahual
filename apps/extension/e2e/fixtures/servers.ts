@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { readFileSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 
 export interface TestServers {
@@ -29,6 +30,11 @@ export async function startServers(): Promise<TestServers> {
   let appOrigin = "";
 
   const app = createServer((req, res) => {
+    if (req.url === "/load") {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      res.end(readFileSync(new URL("./load-page.html", import.meta.url)));
+      return;
+    }
     if (req.url === "/" || req.url?.startsWith("/?") || req.url === "/next") {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       res.end(APP_PAGE);

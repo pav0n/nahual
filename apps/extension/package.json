@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
+    "dev": "vite build --watch",
     "build": "vite build",
     "build:test": "vite build --mode test",
     "typecheck": "tsc -p tsconfig.json",

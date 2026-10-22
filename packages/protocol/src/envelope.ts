@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// Sin compilación JIT de schemas: Zod la haría con `new Function`, prohibido por la CSP de MV3 y
+// por la constitución (sin código evaluado fuera del sandbox).
+z.config({ jitless: true });
+
 export const PROTOCOL_VERSION = 1;
 
 const Uuid = z.uuidv4();
