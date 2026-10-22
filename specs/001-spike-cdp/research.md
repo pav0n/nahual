@@ -311,6 +311,10 @@ Resultados crudos: `apps/extension/test-results/experiments/*.json`, generados c
 
 ### E5. Prueba de salida: 1 hora de uso
 
+> **Diferida (2026-10-22)**: la feature 001 se cerró por decisión del equipo sin esta prueba.
+> SC-001 queda sin verificar en uso real; la robustez está cubierta por las pruebas automatizadas
+> (`sw-restart.spec.ts`, `detach-detection.spec.ts`, 10 corridas estables).
+
 - **Método**: 1 hora de uso continuo de la app de pruebas con ciclos repetidos de adjuntar,
   pausar, continuar, modificar header, soltar, cerrar DevTools y reiniciar el SW. Al final,
   `chrome.debugger.getTargets()` y el registro de `storage.session`.

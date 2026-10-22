@@ -157,6 +157,10 @@ documentados.
 
 ## Phase 4: Polish & Cross-Cutting Concerns
 
+> **Cierre de la feature (2026-10-22)**: por decisión del equipo, la feature se cierra con T066
+> (E5, prueba de salida de 1 hora, SC-001) y T067 (checkpoint final) **pendientes**. Quedan como
+> deuda a completar antes de publicar la extensión; la feature 002 puede empezar.
+
 - [X] T063 [P] Escribir `apps/extension/tests/dist/no-network.test.ts` (corre con `pnpm verify:dist`): analiza los bundles de `apps/extension/dist` y falla si contienen `fetch(`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, `eval(` o `new Function(` fuera de código de terceros permitido (lista explícita en el test), como garantía de "sin red propia" y "sin código evaluado" (FR-015)
 - [X] T064 [P] Añadir `README.md` en la raíz (qué es Nahual, estado "spike", requisitos, `pnpm install`, `pnpm build`, cargar la extensión, licencia Apache-2.0) con enlace a `specs/001-spike-cdp/quickstart.md`
 - [X] T065 Revisar el diff de la feature contra la tabla de amenazas de `specs/001-spike-cdp/plan.md` y la definición de terminado de `.specify/memory/constitution.md` (excepciones de UI acotadas por la spec); anotar cualquier hallazgo en `specs/001-spike-cdp/plan.md`
