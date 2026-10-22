@@ -51,7 +51,13 @@ export interface FetchHeaderEntry {
 
 export interface RequestPausedEvent {
   requestId: string;
-  request: { url: string; method: string; headers: Record<string, string> };
+  request: {
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    postData?: string;
+    hasPostData?: boolean;
+  };
   resourceType: string;
   responseStatusCode?: number;
   responseHeaders?: FetchHeaderEntry[];

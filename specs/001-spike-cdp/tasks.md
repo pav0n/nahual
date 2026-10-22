@@ -96,16 +96,16 @@ pruebas, más la E2E y la prueba de robustez en verde.
 
 ### Bloque A — Sesión del debugger (pruebas primero)
 
-- [ ] T033 [P] [US1] Escribir `apps/extension/tests/integration/session-registry.test.ts`: `add(tabId)`, `remove(tabId)`, `list()` y `clear()` sobre un `chrome.storage.session` simulado con la clave `nahual.sessions: number[]`, sin duplicados
-- [ ] T034 [P] [US1] Escribir `apps/extension/tests/integration/debugger-manager.test.ts` con `fake-debugger.ts`, cubriendo las transiciones de `data-model.md`: `detached ──attach──▶ attaching ──ok──▶ attached` (con `attachedAt`); error `already_attached` ⇒ `conflict`; error de página restringida ⇒ `detached` con `cause: "restricted_page"`; `detach` del usuario ⇒ `detached` con `cause: "user"`; panel cerrado ⇒ `detached` con `cause: "panel_closed"`; `onDetach` `canceled_by_user` / `target_closed` ⇒ `detached` con esa causa y evento `state` emitido; tras un detach externo **no** hay reintento automático; `reconnect` desde `detached`/`conflict` ⇒ `attaching`; el registro se actualiza al entrar y salir de `attached`; dos pestañas son independientes
-- [ ] T035 [P] [US1] Escribir `apps/extension/tests/integration/startup-cleanup.test.ts`: `cleanupOrphans()` hace detach de todo target con `attached && extensionId === chrome.runtime.id` y de cada pestaña del registro, ignora targets de otras extensiones, tolera errores de detach (pestaña ya cerrada) sin lanzar, y vacía el registro; los puertos no se aceptan hasta que termina
-- [ ] T036 [P] [US1] Implementar `apps/extension/src/background/session-registry.ts` hasta que pase T033
-- [ ] T037 [US1] Implementar `apps/extension/src/background/debugger-manager.ts` (mapa `tabId → DebuggerSession`, `attach`, `detach(cause)`, `reconnect`, `onStateChange`) hasta que pase T034
-- [ ] T038 [US1] Implementar `cleanupOrphans()` y el arranque en `apps/extension/src/background/index.ts` (orden: limpieza ⇒ crear `DebuggerManager` ⇒ registrar `panel-port`; `onPanelClosed` ⇒ `detach("panel_closed")`, que `panel-port.ts` solo emite para el puerto dueño actual de la pestaña) hasta que pase T035
+- [X] T033 [P] [US1] Escribir `apps/extension/tests/integration/session-registry.test.ts`: `add(tabId)`, `remove(tabId)`, `list()` y `clear()` sobre un `chrome.storage.session` simulado con la clave `nahual.sessions: number[]`, sin duplicados
+- [X] T034 [P] [US1] Escribir `apps/extension/tests/integration/debugger-manager.test.ts` con `fake-debugger.ts`, cubriendo las transiciones de `data-model.md`: `detached ──attach──▶ attaching ──ok──▶ attached` (con `attachedAt`); error `already_attached` ⇒ `conflict`; error de página restringida ⇒ `detached` con `cause: "restricted_page"`; `detach` del usuario ⇒ `detached` con `cause: "user"`; panel cerrado ⇒ `detached` con `cause: "panel_closed"`; `onDetach` `canceled_by_user` / `target_closed` ⇒ `detached` con esa causa y evento `state` emitido; tras un detach externo **no** hay reintento automático; `reconnect` desde `detached`/`conflict` ⇒ `attaching`; el registro se actualiza al entrar y salir de `attached`; dos pestañas son independientes
+- [X] T035 [P] [US1] Escribir `apps/extension/tests/integration/startup-cleanup.test.ts`: `cleanupOrphans()` hace detach de todo target con `attached && extensionId === chrome.runtime.id` y de cada pestaña del registro, ignora targets de otras extensiones, tolera errores de detach (pestaña ya cerrada) sin lanzar, y vacía el registro; los puertos no se aceptan hasta que termina
+- [X] T036 [P] [US1] Implementar `apps/extension/src/background/session-registry.ts` hasta que pase T033
+- [X] T037 [US1] Implementar `apps/extension/src/background/debugger-manager.ts` (mapa `tabId → DebuggerSession`, `attach`, `detach(cause)`, `reconnect`, `onStateChange`) hasta que pase T034
+- [X] T038 [US1] Implementar `cleanupOrphans()` y el arranque en `apps/extension/src/background/index.ts` (orden: limpieza ⇒ crear `DebuggerManager` ⇒ registrar `panel-port`; `onPanelClosed` ⇒ `detach("panel_closed")`, que `panel-port.ts` solo emite para el puerto dueño actual de la pestaña) hasta que pase T035
 
 ### Bloque B — Intercepción mínima (pruebas primero)
 
-- [ ] T039 [US1] Escribir `apps/extension/tests/integration/fetch-interceptor.test.ts` con `fake-debugger.ts` y temporizadores falsos de Vitest:
+- [X] T039 [US1] Escribir `apps/extension/tests/integration/fetch-interceptor.test.ts` con `fake-debugger.ts` y temporizadores falsos de Vitest:
   - sin patrones no se llama a `Fetch.enable`, y `patterns` vacío tras haberlos ⇒ `Fetch.disable` (FR-007);
   - `setPatterns` traduce `stage` a `requestStage` `"Request"`/`"Response"`, ignora duplicados exactos (`urlPattern` + `stage`) y rechaza más de 10;
   - `Fetch.requestPaused` ⇒ evento `paused` con `expiresAt = pausedAt + pauseTimeoutMs`;
@@ -117,8 +117,8 @@ pruebas, más la E2E y la prueba de robustez en verde.
   - si `continueRequest` con headers falla, reintenta una vez sin cambios y resuelve `failed` con `errorKey`;
   - un segundo `continue` o un timeout tras resolver no llama a CDP (`unknown_paused_id`);
   - un detach resuelve todas las pausas de la pestaña como `abandoned` y vacía los patrones
-- [ ] T040 [US1] Implementar `apps/extension/src/background/fetch-interceptor.ts` hasta que pase T039
-- [ ] T041 [US1] Conectar en `apps/extension/src/background/index.ts` los comandos `setPatterns`, `setPauseTimeout` y `continue` del puerto con `FetchInterceptor`, y los eventos `paused`/`resolved`/`state` hacia el puerto de la pestaña; verificar con `pnpm --filter extension test`
+- [X] T040 [US1] Implementar `apps/extension/src/background/fetch-interceptor.ts` hasta que pase T039
+- [X] T041 [US1] Conectar en `apps/extension/src/background/index.ts` los comandos `setPatterns`, `setPauseTimeout` y `continue` del puerto con `FetchInterceptor`, y los eventos `paused`/`resolved`/`state` hacia el puerto de la pestaña; verificar con `pnpm --filter extension test`
 
 ### Bloque C — Panel mínimo
 
