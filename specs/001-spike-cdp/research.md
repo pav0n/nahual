@@ -204,9 +204,10 @@ de la app, versión de Chrome y sistema operativo** antes de cada resultado.
 `127.0.0.1:<puerto A>`, API en `127.0.0.1:<puerto B>`), Chromium de Playwright 1.64.0
 (HeadlessChrome/156.0.0.0) en modo headless, Debian 13 (Linux 6.12), Node 24.18.
 
-**Pendiente con la app del equipo**: E3 (casos manuales), la repetición de E4 y E5 deben
-correrse sobre la app propia del equipo (spec, supuestos). Registrar aquí su nombre, versión,
-orígenes, la versión de Chrome estable y el SO.
+**App del equipo** (T055): el equipo corrió E3 (casos manuales), la repetición de E4 y la demo
+del quickstart sobre su app con Chrome estable el 2026-10-22, y reportó que pasaron.
+**Por registrar**: nombre, versión y orígenes de la app, versión de Chrome y SO. E5 sigue
+pendiente.
 
 Resultados crudos: `apps/extension/test-results/experiments/*.json`, generados con
 `EXPERIMENTS=1 pnpm --filter @nahual/extension e2e`.
@@ -270,8 +271,10 @@ Resultados crudos: `apps/extension/test-results/experiments/*.json`, generados c
     adjunta después, ambas quedan adjuntas y Nahual no recibe `onDetach`.
   - Cerrar la pestaña objetivo ⇒ `onDetach` con `target_closed` y el panel muestra
     "desconectado" en < 1 s.
-- **Resultado manual** (a), (b), (c), (e): _pendiente_ (requiere DevTools reales sobre la app del
-  equipo; Playwright no puede abrir paneles de DevTools).
+- **Resultado manual** (a), (b), (c), (e), con DevTools reales sobre la app del equipo: el equipo
+  reportó el 2026-10-22 que se comportaron según lo esperado. **Por registrar**: el detalle de
+  (b), es decir, el orden de actuación entre Local Overrides / bloqueo de requests y Nahual, y
+  qué recibe la página.
 - **Conclusión provisional**: el estado "en conflicto" no lo provoca otro cliente adjunto; queda
   para errores de attach `already_attached`. La interferencia real a investigar es (b): dos
   clientes con Fetch habilitado sobre los mismos requests. **Decisión pendiente para el equipo**:
@@ -297,9 +300,11 @@ Resultados crudos: `apps/extension/test-results/experiments/*.json`, generados c
   | **Overhead (3 − 1)** | **0,6** | **0,6** |
   | En el SW: `requestPaused` ⇒ respuesta de `continueRequest` | 0,3 | 0,4 |
 
-- **Conclusión provisional**: el overhead de interceptar sin pausar es de ~0,6 ms en p95, muy por
-  debajo del presupuesto de 20 ms. **Pendiente**: repetir sobre la app del equipo
-  para cumplir FR-020. `E4_TARGET_URL=<url de la API> EXPERIMENTS=1 pnpm --filter
+- **Sobre la app del equipo** (FR-020): el equipo reportó el 2026-10-22 que la medición pasó el
+  presupuesto (p95 < 20 ms). **Por registrar**: la tabla con p50 y p95 de las tres corridas.
+- **Conclusión**: el overhead de interceptar sin pausar está dentro del presupuesto de 20 ms en
+  p95 (~0,6 ms en el fixture local).
+- **Nota para repetirlo**: `E4_TARGET_URL=<url de la API> EXPERIMENTS=1 pnpm --filter
   @nahual/extension e2e` mide contra esa API, pero la página de carga vive en el origen del
   fixture: la API debe aceptar CORS desde ahí, o se adapta la prueba para abrir una página de la
   propia app.
