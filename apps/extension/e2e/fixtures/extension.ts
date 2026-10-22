@@ -28,6 +28,7 @@ export const test = base.extend<Fixtures>({
       channel: "chromium",
       headless: process.env.HEADED !== "1",
       args: [
+        "--lang=en-US",
         `--disable-extensions-except=${extensions.join(",")}`,
         `--load-extension=${extensions.join(",")}`,
       ],

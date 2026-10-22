@@ -128,16 +128,20 @@ export function createFetchInterceptor(options: FetchInterceptorOptions): FetchI
     return entry;
   };
 
-  const send = (tabId: number, stage: Stage, pausedId: string, headers?: FetchHeaderEntry[]) =>
-    stage === "request"
-      ? cdp.send(tabId, "Fetch.continueRequest", {
-          requestId: pausedId,
-          ...(headers ? { headers } : {}),
-        })
-      : cdp.send(tabId, "Fetch.continueResponse", {
-          requestId: pausedId,
-          ...(headers ? { responseHeaders: headers } : {}),
-        });
+  const send = (tabId: number, entry: Paused, headers?: FetchHeaderEntry[]) => {
+    const { stage, pausedId, statusCode } = entry.view;
+    if (stage === "request") {
+      return cdp.send(tabId, "Fetch.continueRequest", {
+        requestId: pausedId,
+        ...(headers ? { headers } : {}),
+      });
+    }
+    // Chrome exige status y headers juntos: "Cannot override only status or headers".
+    return cdp.send(tabId, "Fetch.continueResponse", {
+      requestId: pausedId,
+      ...(headers ? { responseCode: statusCode, responseHeaders: headers } : {}),
+    });
+  };
 
   /** Continúa sin cambios; ante interceptación inválida el request ya no existe. */
   const continueUnchanged = async (
@@ -147,7 +151,7 @@ export function createFetchInterceptor(options: FetchInterceptorOptions): FetchI
   ): Promise<ResolvedResult> => {
     const pausedId = entry.view.pausedId;
     try {
-      await send(tabId, entry.view.stage, pausedId);
+      await send(tabId, entry);
       return { pausedId, outcome };
     } catch (error) {
       return errorCodeOf(error) === "invalid_interception"
@@ -163,7 +167,7 @@ export function createFetchInterceptor(options: FetchInterceptorOptions): FetchI
       result = await continueUnchanged(tabId, entry, "continued");
     } else {
       try {
-        await send(tabId, entry.view.stage, pausedId, mergeHeaders(entry.headers, edits));
+        await send(tabId, entry, mergeHeaders(entry.headers, edits));
         result = { pausedId, outcome: "modified" };
       } catch (error) {
         if (errorCodeOf(error) === "invalid_interception") {

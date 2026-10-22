@@ -22,9 +22,8 @@ export type DetachReason = "canceled_by_user" | "target_closed" | (string & {});
 
 export interface DebuggerTarget {
   tabId?: number;
+  /** Algún cliente (no necesariamente Nahual) está adjunto. */
   attached: boolean;
-  /** Presente cuando el cliente adjunto es una extensión. */
-  extensionId?: string;
 }
 
 export interface DebuggerPort {

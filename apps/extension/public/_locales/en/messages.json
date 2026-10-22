@@ -163,5 +163,11 @@
   },
   "shortcut_hint": {
     "message": "Shortcut: $1"
+  },
+  "error_header_invalid": {
+    "message": "Invalid header: the name must be an HTTP token of 1 to 256 characters and the value cannot contain line breaks (8,192 characters at most, 50 changes)."
+  },
+  "error_no_tab": {
+    "message": "The inspected tab could not be identified. Close and reopen DevTools."
   }
 }

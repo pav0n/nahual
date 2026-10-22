@@ -2,21 +2,24 @@ import type { DebuggerPort } from "./debugger-port.ts";
 import type { SessionRegistry } from "./session-registry.ts";
 
 /**
- * Al arrancar el service worker (también tras una recarga o caída), suelta toda sesión de
- * debugger de esta extensión que haya quedado de la ejecución anterior (FR-005). Al soltarla,
- * Chrome continúa los requests que esa sesión tenía pausados. Nunca lanza.
+ * Al arrancar el service worker (también tras una caída), suelta toda sesión de debugger de esta
+ * extensión que haya quedado de la ejecución anterior (FR-005). Al soltarla, Chrome continúa los
+ * requests que esa sesión tenía pausados. Nunca lanza.
+ *
+ * `getTargets()` no dice qué cliente está adjunto (research D6), así que se intenta el detach en
+ * toda pestaña adjunta y en las del registro: `detach` solo suelta la sesión propia y falla sin
+ * efecto si la sesión es de otro cliente.
  */
 export async function cleanupOrphans(options: {
   debugger: DebuggerPort;
   registry: SessionRegistry;
-  extensionId: string;
 }): Promise<void> {
-  const { debugger: cdp, registry, extensionId } = options;
+  const { debugger: cdp, registry } = options;
   const tabs = new Set<number>();
 
   try {
     for (const target of await cdp.getTargets()) {
-      if (target.attached && target.extensionId === extensionId && target.tabId !== undefined) {
+      if (target.attached && target.tabId !== undefined) {
         tabs.add(target.tabId);
       }
     }

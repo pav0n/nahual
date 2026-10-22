@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { cleanupOrphans } from "../../src/background/startup-cleanup.ts";
 import { createSessionRegistry } from "../../src/background/session-registry.ts";
-import { FakeDebugger, OWN_EXTENSION_ID } from "../fakes/fake-debugger.ts";
+import { FakeDebugger } from "../fakes/fake-debugger.ts";
 import { FakeStorage } from "../fakes/fake-storage.ts";
 
 function setup() {
   const cdp = new FakeDebugger();
   const registry = createSessionRegistry(new FakeStorage());
-  const run = () => cleanupOrphans({ debugger: cdp, registry, extensionId: OWN_EXTENSION_ID });
+  const run = () => cleanupOrphans({ debugger: cdp, registry });
   return { cdp, registry, run };
 }
 
@@ -20,15 +20,25 @@ describe("cleanupOrphans", () => {
     expect(cdp.attached.size).toBe(0);
   });
 
-  it("ignora targets de otras extensiones o sin pestaña", async () => {
+  it("intenta soltar toda pestaña adjunta: detach solo afecta a la sesión propia", async () => {
+    // getTargets no dice qué cliente está adjunto (research D6): se intenta en todas y el
+    // detach de una pestaña ajena falla con not_attached sin tocar la sesión del otro cliente.
     const { cdp, run } = setup();
+    await cdp.attach(1);
     cdp.extraTargets = [
-      { tabId: 5, attached: true, extensionId: "otra-extension" },
-      { attached: true, extensionId: OWN_EXTENSION_ID },
+      { tabId: 5, attached: true },
+      { attached: true },
       { tabId: 6, attached: false },
     ];
+    const detached: number[] = [];
+    const original = cdp.detach.bind(cdp);
+    cdp.detach = async (tabId) => {
+      detached.push(tabId);
+      return original(tabId);
+    };
     await run();
-    expect(cdp.sent).toEqual([]);
+    expect(detached.sort()).toEqual([1, 5]);
+    expect(cdp.attached.size).toBe(0);
   });
 
   it("suelta las pestañas del registro y lo vacía", async () => {

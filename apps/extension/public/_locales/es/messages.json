@@ -163,5 +163,11 @@
   },
   "shortcut_hint": {
     "message": "Atajo: $1"
+  },
+  "error_header_invalid": {
+    "message": "Header inválido: el nombre debe ser un token HTTP de 1 a 256 caracteres y el valor no puede tener saltos de línea (máximo 8 192 caracteres, 50 cambios)."
+  },
+  "error_no_tab": {
+    "message": "No se pudo identificar la pestaña inspeccionada. Cierra y vuelve a abrir DevTools."
   }
 }

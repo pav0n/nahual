@@ -173,11 +173,13 @@ describe("pausa y continuar", () => {
     expect(resolved).toEqual([{ pausedId: "r1", outcome: "modified" }]);
   });
 
-  it("continue con HeaderEdit[] en Response ⇒ responseHeaders", async () => {
+  it("continue con HeaderEdit[] en Response ⇒ responseHeaders junto con responseCode", async () => {
+    // Chrome exige ambos: "Cannot override only status or headers, both should be provided".
     await pause(responseEvent());
     await interceptor.continue(TAB, "r1", [{ name: "X-Nahual-Response", value: "yes" }]);
     expect(sentWith("Fetch.continueResponse").at(-1)?.params).toEqual({
       requestId: "r1",
+      responseCode: 200,
       responseHeaders: [
         { name: "Content-Type", value: "application/json" },
         { name: "X-Nahual-Response", value: "yes" },

@@ -6,8 +6,6 @@ import {
   type DetachReason,
 } from "../../src/background/debugger-port.ts";
 
-export const OWN_EXTENSION_ID = "nahualtestextensionid";
-
 type Responder = (params: unknown) => unknown;
 
 /** CDP simulado en memoria. Registra cada comando y permite inyectar eventos y errores. */
@@ -73,12 +71,9 @@ export class FakeDebugger implements DebuggerPort {
     return (this.responders.get(method)?.(params) ?? {}) as R;
   }
 
+  /** Como Chrome: `attached` no dice qué cliente está adjunto (research D6). */
   async getTargets(): Promise<DebuggerTarget[]> {
-    const own = [...this.attached].map((tabId) => ({
-      tabId,
-      attached: true,
-      extensionId: OWN_EXTENSION_ID,
-    }));
+    const own = [...this.attached].map((tabId) => ({ tabId, attached: true }));
     return [...own, ...this.extraTargets];
   }
 

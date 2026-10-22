@@ -89,7 +89,13 @@ export async function startServers(): Promise<TestServers> {
     received,
     close: async () => {
       await Promise.all(
-        [app, api].map((s) => new Promise<void>((resolve) => s.close(() => resolve()))),
+        [app, api].map(
+          (s) =>
+            new Promise<void>((resolve) => {
+              s.closeAllConnections();
+              s.close(() => resolve());
+            }),
+        ),
       );
     },
   };

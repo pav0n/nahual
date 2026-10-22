@@ -66,7 +66,7 @@ async function onCommand(tabId: number, command: PanelCommand): Promise<CommandR
   }
 }
 
-const ready = cleanupOrphans({ debugger: cdp, registry, extensionId: chrome.runtime.id });
+const ready = cleanupOrphans({ debugger: cdp, registry });
 
 // Los callbacks de arriba usan `port`; solo se invocan tras cargar el módulo (eventos async).
 const port = createPanelPort({
