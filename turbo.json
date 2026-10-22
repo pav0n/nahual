@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "build:test": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist-test/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "verify:dist": {
+      "dependsOn": ["build", "build:test"]
+    },
+    "e2e": {
+      "dependsOn": ["build:test"],
+      "cache": false
+    }
+  }
+}

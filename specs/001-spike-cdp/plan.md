@@ -106,8 +106,8 @@ transpilación **no** se instalan en 001: solo se decide cuál usar (ver researc
 | `vitest`, `@vitest/coverage-v8` | dev | Pruebas unitarias/integración y cobertura | MIT |
 | `@playwright/test` | dev | E2E con la extensión real (constitución) | Apache-2.0 |
 | `@axe-core/playwright` | dev | Verificación WCAG 2.2 AA en la E2E (definición de terminado) | MPL-2.0 (solo herramienta de pruebas; no se empaqueta en la extensión) |
-| `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`, `prettier` | dev | Calidad y reglas de seguridad | MIT |
-| `@types/chrome` | dev | Tipos de las APIs `chrome.*` | MIT |
+| `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals`, `prettier` | dev | Calidad y reglas de seguridad (`@eslint/js` y `globals` son los presets que exige la flat config) | MIT |
+| `@types/chrome`, `@types/react`, `@types/react-dom`, `@types/node` | dev | Tipos de `chrome.*`, React y Node (scripts, fixtures de E2E) | MIT |
 
 Fuera de estas, cualquier dependencia nueva requiere actualizar esta tabla.
 
