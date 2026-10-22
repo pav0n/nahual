@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+# Configuración local del agente (puede contener credenciales)
+.claude/settings.local.json
