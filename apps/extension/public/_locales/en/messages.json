@@ -1,0 +1,167 @@
+{
+  "extName": {
+    "message": "Nahual"
+  },
+  "extDescription": {
+    "message": "Intercept and modify HTTP traffic from DevTools."
+  },
+  "panelTitle": {
+    "message": "Nahual"
+  },
+  "status_detached": {
+    "message": "Disconnected"
+  },
+  "status_attaching": {
+    "message": "Connecting…"
+  },
+  "status_attached": {
+    "message": "Attached"
+  },
+  "status_conflict": {
+    "message": "In conflict"
+  },
+  "cause_user": {
+    "message": "You detached the debugger. Press Attach to intercept again."
+  },
+  "cause_panel_closed": {
+    "message": "The panel was closed and the debugger was detached."
+  },
+  "cause_canceled_by_user": {
+    "message": "It was canceled from Chrome's warning bar. Press Reconnect to attach again."
+  },
+  "cause_target_closed": {
+    "message": "The tab was closed or navigated to a page that cannot be debugged. Press Reconnect."
+  },
+  "cause_already_attached": {
+    "message": "Another debugger (another extension or tool) is already attached to this tab. Close it and press Reconnect."
+  },
+  "cause_restricted_page": {
+    "message": "Chrome does not allow debugging this page (internal or store pages). Open another page."
+  },
+  "cause_unknown": {
+    "message": "The debugger was detached for an unknown reason. Press Reconnect."
+  },
+  "error_invalid_message": {
+    "message": "Invalid message between the panel and the extension. Reload the panel."
+  },
+  "error_not_attached": {
+    "message": "The debugger is not attached. Press Attach first."
+  },
+  "error_already_attached": {
+    "message": "Another debugger is already attached to this tab. Close it and press Reconnect."
+  },
+  "error_restricted_page": {
+    "message": "Chrome does not allow debugging this page. Open another page."
+  },
+  "error_pattern_invalid": {
+    "message": "Invalid pattern: use 1 to 2,048 characters, no spaces, with * and ? as wildcards (10 patterns at most)."
+  },
+  "error_timeout_out_of_range": {
+    "message": "The timeout must be between 5 and 120 seconds. The previous value is kept."
+  },
+  "error_unknown_paused_id": {
+    "message": "That pause was already resolved (continued, expired or abandoned)."
+  },
+  "error_cdp_error": {
+    "message": "Chrome rejected the change; the request continued unmodified."
+  },
+  "action_attach": {
+    "message": "Attach"
+  },
+  "action_detach": {
+    "message": "Detach"
+  },
+  "action_reconnect": {
+    "message": "Reconnect"
+  },
+  "action_continue": {
+    "message": "Continue"
+  },
+  "action_continue_modified": {
+    "message": "Continue with changes"
+  },
+  "action_add_pattern": {
+    "message": "Add pattern"
+  },
+  "action_remove_pattern": {
+    "message": "Remove pattern $1"
+  },
+  "action_add_header": {
+    "message": "Add header"
+  },
+  "action_remove_header": {
+    "message": "Remove header $1"
+  },
+  "action_apply_timeout": {
+    "message": "Apply"
+  },
+  "label_url_pattern": {
+    "message": "URL pattern"
+  },
+  "label_stage": {
+    "message": "Stage"
+  },
+  "stage_request": {
+    "message": "Request"
+  },
+  "stage_response": {
+    "message": "Response"
+  },
+  "label_timeout_seconds": {
+    "message": "Pause timeout (seconds, 5–120)"
+  },
+  "label_header_name": {
+    "message": "Name"
+  },
+  "label_header_value": {
+    "message": "Value"
+  },
+  "section_patterns": {
+    "message": "Interception patterns"
+  },
+  "section_paused": {
+    "message": "Paused requests"
+  },
+  "section_headers": {
+    "message": "Headers"
+  },
+  "empty_no_patterns": {
+    "message": "No patterns: nothing is paused. Add a URL pattern to start."
+  },
+  "empty_no_paused": {
+    "message": "There are no paused requests."
+  },
+  "empty_not_attached": {
+    "message": "Attach the debugger to intercept this tab's traffic."
+  },
+  "paused_expires_in": {
+    "message": "Continues automatically in $1 s"
+  },
+  "paused_body_unavailable": {
+    "message": "Body not available"
+  },
+  "paused_body_size": {
+    "message": "Body: $1 bytes"
+  },
+  "paused_status": {
+    "message": "Status $1"
+  },
+  "outcome_continued": {
+    "message": "Continued unchanged"
+  },
+  "outcome_modified": {
+    "message": "Continued with changes"
+  },
+  "outcome_timed_out": {
+    "message": "Timed out: continued unchanged"
+  },
+  "outcome_failed": {
+    "message": "Failed: continued unchanged"
+  },
+  "outcome_abandoned": {
+    "message": "Abandoned (the page navigated, closed or the debugger detached)"
+  },
+  "shortcut_hint": {
+    "message": "Shortcut: $1"
+  }
+}

@@ -69,7 +69,7 @@ export async function startServers(): Promise<TestServers> {
       case "/no-cors":
         // Sin headers CORS: para los experimentos E1/E2.
         if (req.method === "OPTIONS") {
-          res.writeHead(url.searchParams.get("preflight") ?? "204").end();
+          res.writeHead(Number(url.searchParams.get("preflight") ?? 204)).end();
           return;
         }
         res.writeHead(200, { "content-type": "application/json" });

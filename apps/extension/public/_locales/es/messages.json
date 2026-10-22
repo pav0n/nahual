@@ -1,0 +1,167 @@
+{
+  "extName": {
+    "message": "Nahual"
+  },
+  "extDescription": {
+    "message": "Intercepta y modifica tráfico HTTP desde DevTools."
+  },
+  "panelTitle": {
+    "message": "Nahual"
+  },
+  "status_detached": {
+    "message": "Desconectado"
+  },
+  "status_attaching": {
+    "message": "Conectando…"
+  },
+  "status_attached": {
+    "message": "Adjunto"
+  },
+  "status_conflict": {
+    "message": "En conflicto"
+  },
+  "cause_user": {
+    "message": "Soltaste el debugger. Pulsa Adjuntar para volver a interceptar."
+  },
+  "cause_panel_closed": {
+    "message": "El panel se cerró y el debugger se soltó."
+  },
+  "cause_canceled_by_user": {
+    "message": "Se canceló desde la barra de aviso de Chrome. Pulsa Reconectar para volver a adjuntar."
+  },
+  "cause_target_closed": {
+    "message": "La pestaña se cerró o navegó a una página que no se puede depurar. Pulsa Reconectar."
+  },
+  "cause_already_attached": {
+    "message": "Otro debugger (otra extensión o herramienta) ya está adjunto a esta pestaña. Ciérralo y pulsa Reconectar."
+  },
+  "cause_restricted_page": {
+    "message": "Chrome no permite depurar esta página (páginas internas o de la tienda). Abre otra página."
+  },
+  "cause_unknown": {
+    "message": "El debugger se soltó por una causa desconocida. Pulsa Reconectar."
+  },
+  "error_invalid_message": {
+    "message": "Mensaje inválido entre el panel y la extensión. Recarga el panel."
+  },
+  "error_not_attached": {
+    "message": "El debugger no está adjunto. Pulsa Adjuntar primero."
+  },
+  "error_already_attached": {
+    "message": "Otro debugger ya está adjunto a esta pestaña. Ciérralo y pulsa Reconectar."
+  },
+  "error_restricted_page": {
+    "message": "Chrome no permite depurar esta página. Abre otra página."
+  },
+  "error_pattern_invalid": {
+    "message": "Patrón inválido: usa de 1 a 2 048 caracteres, sin espacios, con * y ? como comodines (máximo 10 patrones)."
+  },
+  "error_timeout_out_of_range": {
+    "message": "El timeout debe estar entre 5 y 120 segundos. Se conserva el valor anterior."
+  },
+  "error_unknown_paused_id": {
+    "message": "Esa pausa ya se resolvió (continuó, venció o se abandonó)."
+  },
+  "error_cdp_error": {
+    "message": "Chrome rechazó el cambio; el request continuó sin modificar."
+  },
+  "action_attach": {
+    "message": "Adjuntar"
+  },
+  "action_detach": {
+    "message": "Soltar"
+  },
+  "action_reconnect": {
+    "message": "Reconectar"
+  },
+  "action_continue": {
+    "message": "Continuar"
+  },
+  "action_continue_modified": {
+    "message": "Continuar con cambios"
+  },
+  "action_add_pattern": {
+    "message": "Añadir patrón"
+  },
+  "action_remove_pattern": {
+    "message": "Quitar patrón $1"
+  },
+  "action_add_header": {
+    "message": "Añadir header"
+  },
+  "action_remove_header": {
+    "message": "Quitar header $1"
+  },
+  "action_apply_timeout": {
+    "message": "Aplicar"
+  },
+  "label_url_pattern": {
+    "message": "Patrón de URL"
+  },
+  "label_stage": {
+    "message": "Etapa"
+  },
+  "stage_request": {
+    "message": "Request"
+  },
+  "stage_response": {
+    "message": "Response"
+  },
+  "label_timeout_seconds": {
+    "message": "Timeout de pausa (segundos, 5–120)"
+  },
+  "label_header_name": {
+    "message": "Nombre"
+  },
+  "label_header_value": {
+    "message": "Valor"
+  },
+  "section_patterns": {
+    "message": "Patrones de intercepción"
+  },
+  "section_paused": {
+    "message": "Requests pausados"
+  },
+  "section_headers": {
+    "message": "Headers"
+  },
+  "empty_no_patterns": {
+    "message": "Sin patrones: no se pausa nada. Añade un patrón de URL para empezar."
+  },
+  "empty_no_paused": {
+    "message": "No hay requests pausados."
+  },
+  "empty_not_attached": {
+    "message": "Adjunta el debugger para interceptar el tráfico de esta pestaña."
+  },
+  "paused_expires_in": {
+    "message": "Continúa solo en $1 s"
+  },
+  "paused_body_unavailable": {
+    "message": "Body no disponible"
+  },
+  "paused_body_size": {
+    "message": "Body: $1 bytes"
+  },
+  "paused_status": {
+    "message": "Status $1"
+  },
+  "outcome_continued": {
+    "message": "Continuado sin cambios"
+  },
+  "outcome_modified": {
+    "message": "Continuado con cambios"
+  },
+  "outcome_timed_out": {
+    "message": "Venció el timeout: continuó sin cambios"
+  },
+  "outcome_failed": {
+    "message": "Falló: continuó sin cambios"
+  },
+  "outcome_abandoned": {
+    "message": "Abandonado (la página navegó, se cerró o el debugger se soltó)"
+  },
+  "shortcut_hint": {
+    "message": "Atajo: $1"
+  }
+}
