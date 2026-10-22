@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Nahual E2E conflict helper",
+  "version": "0.0.1",
+  "description": "Solo para pruebas: segundo cliente de chrome.debugger.",
+  "permissions": ["debugger"],
+  "background": { "service_worker": "background.js" }
+}

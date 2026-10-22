@@ -106,8 +106,8 @@ transpilación **no** se instalan en 001: solo se decide cuál usar (ver researc
 | `vitest`, `@vitest/coverage-v8` | dev | Pruebas unitarias/integración y cobertura | MIT |
 | `@playwright/test` | dev | E2E con la extensión real (constitución) | Apache-2.0 |
 | `@axe-core/playwright` | dev | Verificación WCAG 2.2 AA en la E2E (definición de terminado) | MPL-2.0 (solo herramienta de pruebas; no se empaqueta en la extensión) |
-| `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`, `prettier` | dev | Calidad y reglas de seguridad | MIT |
-| `@types/chrome` | dev | Tipos de las APIs `chrome.*` | MIT |
+| `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals`, `prettier` | dev | Calidad y reglas de seguridad (`@eslint/js` y `globals` son los presets que exige la flat config) | MIT |
+| `@types/chrome`, `@types/react`, `@types/react-dom`, `@types/node` | dev | Tipos de `chrome.*`, React y Node (scripts, fixtures de E2E) | MIT |
 
 Fuera de estas, cualquier dependencia nueva requiere actualizar esta tabla.
 
@@ -227,6 +227,22 @@ CDP queda en `apps/extension/src/background` detrás de `DebuggerPort` para pode
   sin cambios y se informa el error al panel.
 - **Body**: en etapa Response se consulta `Fetch.getResponseBody` solo para mostrar tamaño y
   disponibilidad; en redirecciones (3xx) no se llama y se marca `bodyAvailable: false`.
+
+## Revisión de implementación (T065)
+
+Revisión del diff de 001 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Permisos | Solo `debugger` y `storage`; sin host permissions. Lo verifica `tests/dist/manifest.test.ts` |
+| Mensajería | `onConnect` únicamente; remitente verificado por id y URL del panel; Zod en ambos extremos; los errores de validación se registran sin valores (pruebas en `panel-port.test.ts` y `index.test.ts`) |
+| Código evaluado y red propia | ESLint lo prohíbe en el código propio; `tests/dist/no-network.test.ts` lo verifica en los bundles. Zod configurado con `jitless: true`; polyfill de `modulepreload` desactivado (usaba `fetch`) |
+| Fallo seguro | Timeout por pausa, reintento sin cambios, `abandoned` ante interceptación inválida, limpieza al arrancar; verificado en integración y E2E (`sw-restart.spec.ts`) |
+| XSS en el panel | Todo el contenido capturado se renderiza como texto en React; sin `dangerouslySetInnerHTML` |
+| **Nueva:** modo dev de crxjs | Añade `web_accessible_resources` `**/*` para `<all_urls>` y escribe en `dist/`. Mitigación: no se usa (research D1) y `verify:dist` falla si aparece |
+| **Nueva:** varios clientes de debugger por pestaña | Otra extensión puede estar adjunta a la vez y ver o modificar el mismo tráfico; Nahual no puede detectarla con `getTargets()` (research D6, E3). Fuera del control de Nahual; se documenta para la feature de onboarding/ayuda |
+| Definición de terminado | Unitarias, integración y E2E en verde; axe sin violaciones serias o críticas en ambos temas a 320 px; textos `es`/`en`; estados vacío, carga y error. Pendientes que dependen de la app del equipo o de DevTools reales: E3 manual, E4 sobre la app real y E5 |
+| Acciones de GitHub | `ci.yml` usa `actions/checkout@v4` y `actions/setup-node@v4` por etiqueta. Recomendación para cuando se publique: fijarlas por SHA |
 
 ## Complexity Tracking
 

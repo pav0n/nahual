@@ -11,3 +11,5 @@ test-results/
 .DS_Store
 # Configuración local del agente (puede contener credenciales)
 .claude/settings.local.json
+dist-test/
+*.zip

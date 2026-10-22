@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-test/
+coverage/
+playwright-report/
+test-results/
+.turbo/
+pnpm-lock.yaml
+*.zip
+# Documentación gestionada por Spec Kit: se edita a mano, no se reformatea
+.specify/
+specs/
+docs/
+CLAUDE.md
+README.md
+.claude/

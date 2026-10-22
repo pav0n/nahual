@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nahual load page</title>
+  </head>
+  <body>
+    <h1>Nahual load page</h1>
+    <script>
+      // E4: n fetch secuenciales; devuelve responseEnd - startTime de Resource Timing (ms).
+      performance.setResourceTimingBufferSize(5000);
+      window.runLoad = async (baseUrl, n) => {
+        performance.clearResourceTimings();
+        const run = Math.random().toString(36).slice(2);
+        for (let i = 0; i < n; i++) {
+          const r = await fetch(`${baseUrl}?run=${run}&i=${i}`);
+          await r.text();
+        }
+        return performance
+          .getEntriesByType("resource")
+          .filter((e) => e.name.includes(`run=${run}`))
+          .map((e) => e.responseEnd - e.startTime);
+      };
+    </script>
+  </body>
+</html>
