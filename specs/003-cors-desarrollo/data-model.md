@@ -54,6 +54,7 @@ En un intercambio al que la relajación cambió algo (FR-026). Viaja en `Exchang
 | `preflightReplaced` | boolean | El preflight del servidor fallaba y se respondió 204 |
 | `serverStatus` | int | Status original del servidor |
 | `alreadyValid` | boolean | El servidor ya respondía bien (caso límite: "puedes apagarla") |
+| `errorKey` | string ≤ 128 \| undefined | Clave i18n si aplicar la relajación falló; la respuesta continuó sin modificar (FR-027) |
 
 ## Relaxation
 

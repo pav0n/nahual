@@ -23,6 +23,10 @@ implementación y el diseño funciona con cualquiera de sus resultados.
 - **Cambio respecto a D5 de 001**: D5 respondía el preflight en la etapa Request, sin llegar al
   servidor. Ahora llega y solo se reemplaza si fallaría. Costo: el servidor recibe el `OPTIONS`
   (aceptable en desarrollo) y el preflight tarda lo que tarde el servidor.
+- **Experimento X5**: ¿Chrome pausa en etapa Response un preflight con 401 y con 302, y acepta
+  `fulfillRequest` sobre él? E1 solo observó un preflight 204. Si el 302 no se pausa, la
+  redirección del preflight se reemplaza desde la etapa Request cuando el preflight de esa URL ya
+  falló una vez con `PreflightDisallowedRedirect` (decisión de respaldo), y se documenta.
 - **Alternatives considered**:
   - *Reglas de sesión de `declarativeNetRequest`* (respaldo de la entrada): innecesario porque E1
     fue positivo. Además exige `declarativeNetRequestWithHostAccess` + permisos de host, no
@@ -104,13 +108,16 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
      relajada sin `Allow-Credentials` vuelve a bloquearse con `InvalidAllowCredentials`, la
      relajación marca `credentials: true` para los siguientes y el detalle pide reintentar.
   `Access-Control-Allow-Credentials: true` se añade si alguna señal es positiva (FR-011). Al
-  crearse, la relajación hereda la señal del diagnóstico desde el que se crea.
+  crearse, la relajación toma `credentials` de la casilla "La app envía credenciales" de la
+  confirmación, premarcada con la señal del diagnóstico; el aprendizaje (3) queda como respaldo si
+  el dev la dejó sin marcar.
 - **Experimento X1**: ¿los headers de `Fetch.requestPaused` en etapa Response incluyen `Cookie`?
   ¿Llega `requestWillBeSentExtraInfo` antes de la etapa Response? Si `Cookie` está en Fetch, la
   señal 1 se toma de ahí. Prueba: `e2e/experiments/x1-cors-credentials.spec.ts` con
   `credentials: "include"` con y sin cookie.
 - **Riesgo residual**: un request con `credentials: "include"` pero sin cookies ni diagnóstico
-  previo necesita un reintento (señal 3). Se documenta en el detalle; no rompe el aislamiento.
+  previo necesita un reintento (señal 3), mitigado por la casilla de la confirmación. Se documenta
+  en el detalle; no rompe el aislamiento.
 - **Alternatives considered**: añadir siempre `Allow-Credentials: true`: más simple, pero
   contradice FR-011 y amplía lo que la relajación permite.
 
@@ -295,5 +302,6 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
 ## Resultados por registrar
 
 - X1 (credenciales en Fetch), X2 (preflight en Network), X3 (`Max-Age: 0`), X4 (headers en
-  Network tras modificar): _pendientes, al inicio de la implementación_.
+  Network tras modificar), X5 (preflight 401/302 en etapa Response): _pendientes, al inicio de la
+  implementación_.
 - Overhead de R17: _pendiente_.

@@ -69,7 +69,7 @@ verifica la marca en la lista y la explicación del detalle, sin activar ninguna
    (`*`), credenciales sin `Access-Control-Allow-Credentials` y redirección en el preflight.
 3. **Given** el detalle CORS de un intercambio bloqueado, **When** el dev lo lee, **Then** ve qué
    pidió la app (origen de la app, método, headers solicitados, si envía credenciales) y qué
-   respondió el servidor (status del preflight y del request, si los hubo, y los headers
+   respondió el servidor (status del request y, si Nahual lo observó, del preflight, y los headers
    `Access-Control-*` recibidos), con las diferencias resaltadas con texto.
 4. **Given** un bloqueo cuya causa no está entre las reconocidas, **When** el dev abre el detalle,
    **Then** se muestra "Causa no reconocida" junto con el código que reporta el navegador, sin
@@ -100,8 +100,8 @@ la pestaña, al soltar el debugger y al reiniciar el service worker.
 
 1. **Given** un intercambio bloqueado por CORS, **When** el dev pulsa "Permitir CORS para
    desarrollo" en su detalle, **Then** Nahual despliega en línea, dentro del mismo detalle, el
-   alcance (esta pestaña, el origen de la app y el origen de la API, tomados del intercambio), la
-   duración y el aviso de que la relajación solo existe en este navegador, y la crea al pulsar
+   alcance (esta pestaña, el origen de la app y el origen de la API, tomados del intercambio), si
+   la app envía credenciales, la duración y el aviso de que la relajación solo existe en este navegador, y la crea al pulsar
    "Permitir"; cancelar no crea nada.
 2. **Given** una relajación activa, **When** la app repite el request, **Then** la respuesta llega
    a la app con `Access-Control-Allow-Origin` igual al origen exacto de la app (nunca `*`),
@@ -228,8 +228,9 @@ portapapeles.
 - **FR-004**: Para cada causa reconocida, el detalle MUST explicar en lenguaje claro qué pasó y qué
   cambio en el servidor lo corrige, nombrando el header y el valor concretos.
 - **FR-005**: El detalle MUST mostrar lo que pidió la app (origen, método, headers solicitados en
-  el preflight, si envía credenciales) y lo que respondió el servidor (status del preflight y del
-  request, headers `Access-Control-*` recibidos).
+  el preflight, si envía credenciales) y lo que respondió el servidor (status del request y
+  headers `Access-Control-*` recibidos; status y headers del preflight cuando Nahual lo observó y,
+  si no, indicarlo y explicar cuándo puede observarlo).
 - **FR-006**: El sistema MUST relacionar cada request con su preflight en la lista y en el detalle.
 - **FR-007**: El sistema MUST indicar en el detalle cuándo un caso no se puede corregir desde el
   navegador (origen `null`, request fuera del alcance de captura, origen de producción) y por qué.
@@ -240,7 +241,9 @@ portapapeles.
   con "Permitir CORS para desarrollo"; antes de crearla, el sistema MUST mostrar en línea, en el
   mismo detalle, su alcance (pestaña, origen de la app, origen de la API), su duración, los
   `Expose-Headers` y el aviso de que solo existe en este navegador. La relajación MUST crearse con
-  un solo clic más ("Permitir"), con la duración por defecto preseleccionada.
+  un solo clic más ("Permitir"), con la duración por defecto preseleccionada. La confirmación MUST
+  incluir la opción "La app envía credenciales", marcada si Nahual lo detectó y editable por el
+  dev.
 - **FR-009**: Una relajación MUST aplicar solo a requests de la pestaña donde se creó, cuyo origen
   de la app sea el declarado y cuyo destino sea el origen de API declarado. Ningún otro request
   MUST verse afectado.
@@ -283,8 +286,8 @@ portapapeles.
   producción).
 - **FR-022**: El sistema MUST permitir hasta 10 orígenes de API relajados por pestaña; superar el
   límite se rechaza con un mensaje que indica el límite.
-- **FR-023**: Cuando un caso no se puede corregir desde el navegador (FR-007), el sistema MUST NOT
-  crear la relajación y MUST indicar que requiere un cambio en el servidor.
+- **FR-023**: Además de indicarlo (FR-007), cuando un caso no se puede corregir desde el
+  navegador el sistema MUST NOT crear la relajación y MUST indicar que requiere un cambio en el servidor.
 - **FR-024**: La relajación MUST aplicarse después de las reglas de 002 sobre la respuesta final y
   MUST respetar los headers `Access-Control-*` que el dev fijó a mano en ese intercambio.
 - **FR-025**: Con "pausar Nahual" activo, la relajación MUST quedar suspendida sin modificar
