@@ -39,6 +39,13 @@ export class FakeDebugger implements DebuggerPort {
     this.responders.set(method, responder);
   }
 
+  /** Parámetros de cada llamada a `method`, en orden. */
+  calls<P = Record<string, unknown>>(method: string, tabId?: number): P[] {
+    return this.sent
+      .filter((s) => s.method === method && (tabId === undefined || s.tabId === tabId))
+      .map((s) => s.params as P);
+  }
+
   sentMethods(tabId?: number) {
     return this.sent.filter((s) => tabId === undefined || s.tabId === tabId).map((s) => s.method);
   }
