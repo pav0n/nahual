@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validatePausedEdit, validateRuleDraft } from "../src/validate.ts";
+import { validatePausedEdit, validateQueueMock, validateRuleDraft } from "../src/validate.ts";
 
 const draft = (overrides: Record<string, unknown> = {}) => ({
   name: "Errores",
@@ -121,5 +121,14 @@ describe("validatePausedEdit (edge case de valores editados inválidos)", () => 
       path: "method",
       messageKey: "rule_error_stage_field",
     });
+  });
+});
+
+describe("validateQueueMock", () => {
+  it("acepta un mock de hasta 5 MB y rechaza status inválidos", () => {
+    const mock = { kind: "mock", status: 200, headers: [], body: "x".repeat(2 * 1024 * 1024), bodyEncoding: "text" };
+    expect(validateQueueMock(mock).ok).toBe(true);
+    const bad = validateQueueMock({ ...mock, status: 99 });
+    expect(bad.ok ? [] : bad.issues).toContainEqual({ path: "status", messageKey: "rule_error_status" });
   });
 });

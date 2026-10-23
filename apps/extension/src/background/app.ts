@@ -1,5 +1,6 @@
-import type { Settings } from "@nahual/domain";
+import { computeFetchPatterns, type Rule, type Settings } from "@nahual/domain";
 import { makeEvent } from "@nahual/protocol";
+import { createActionExecutor } from "./action-executor.ts";
 import { createDebuggerManager } from "./debugger-manager.ts";
 import type { DebuggerPort } from "./debugger-port.ts";
 import { createFetchInterceptor } from "./fetch-interceptor.ts";
@@ -10,6 +11,8 @@ import {
   type PanelCommand,
   type RuntimeLike,
 } from "./panel-port.ts";
+import { createRuleEngine } from "./rule-engine.ts";
+import { createRuleStore } from "./rule-store.ts";
 import { createSessionRegistry, type SessionStorageLike } from "./session-registry.ts";
 import { createSettingsStore } from "./settings-store.ts";
 import { cleanupOrphans } from "./startup-cleanup.ts";
@@ -32,38 +35,65 @@ export function createBackground(deps: BackgroundDeps) {
   const { debugger: cdp } = deps;
   const registry = createSessionRegistry(deps.sessionStorage);
 
+  const attachedTabs = () => port.tabs().filter((tabId) => manager.isAttached(tabId));
+
   const sendState = (tabId: number) => {
     const { status, cause, attachedAt } = manager.get(tabId);
+    const site = manager.siteOf(tabId);
     port.send(
       tabId,
       makeEvent("state", {
         status,
         cause,
         attachedAt,
-        site: manager.siteOf(tabId),
-        activeRuleCount: 0,
-        queueSize: 0,
+        site,
+        activeRuleCount: rules.forSite(site).filter((r) => r.enabled).length,
+        queueSize: engine.queueSize(tabId),
         globalPaused: settings.get().globalPaused,
       }),
     );
   };
 
-  const broadcastSettings = (value: Settings) => {
-    for (const tabId of port.tabs()) {
-      port.send(tabId, makeEvent("settings", value));
-      sendState(tabId);
-    }
+  /** Fetch solo con los patrones de las reglas activas del sitio (principio VI, research R3). */
+  const applyPatterns = (tabId: number) => {
+    if (!manager.isAttached(tabId)) return;
+    const patterns = computeFetchPatterns(rules.all(), {
+      site: manager.siteOf(tabId),
+      globalPaused: settings.get().globalPaused,
+    });
+    void interceptor.applyPatterns(tabId, patterns);
   };
 
-  const notice = (tabId: number | null, messageKey: string) => {
+  const sendRules = (tabId: number, list: Rule[]) =>
+    port.send(tabId, makeEvent("rules", { rules: list, discarded: rules.discarded() }));
+
+  const notice = (messageKey: string) => {
     const event = makeEvent("notice", { messageKey });
-    for (const tab of tabId === null ? port.tabs() : [tabId]) port.send(tab, event);
+    for (const tabId of port.tabs()) port.send(tabId, event);
   };
 
   const settings = createSettingsStore({
     storage: deps.localStorage,
-    onChange: broadcastSettings,
-    onNotice: (key) => notice(null, key),
+    onChange: (value: Settings) => {
+      for (const tabId of port.tabs()) {
+        port.send(tabId, makeEvent("settings", value));
+        applyPatterns(tabId);
+        sendState(tabId);
+      }
+    },
+    onNotice: notice,
+  });
+
+  const rules = createRuleStore({
+    storage: deps.localStorage,
+    onChange: (list) => {
+      for (const tabId of port.tabs()) {
+        sendRules(tabId, list);
+        applyPatterns(tabId);
+        sendState(tabId);
+      }
+    },
+    onNotice: notice,
   });
 
   const capture = createNetworkCapture({
@@ -71,16 +101,21 @@ export function createBackground(deps: BackgroundDeps) {
     onUpdates: (tabId, updates) => port.send(tabId, makeEvent("exchanges", { updates })),
   });
 
+  const engine = createRuleEngine({
+    debugger: cdp,
+    rules: () => rules.all(),
+    settings: () => settings.get(),
+    siteOf: (tabId) => manager.siteOf(tabId),
+    capture,
+    executor: createActionExecutor({ debugger: cdp }),
+    onPaused: (tabId, view) => port.send(tabId, makeEvent("paused", view)),
+    onResolved: (tabId, result) => port.send(tabId, makeEvent("resolved", result)),
+    onQueueChange: (tabId) => sendState(tabId),
+  });
+
   const interceptor = createFetchInterceptor({
     debugger: cdp,
-    // Sin reglas todavía: todo continúa sin cambios (las reglas llegan con la historia 2).
-    onRequestPaused: async (tabId, event) => {
-      const command =
-        event.responseStatusCode === undefined && event.responseErrorReason === undefined
-          ? "Fetch.continueRequest"
-          : "Fetch.continueResponse";
-      await cdp.send(tabId, command, { requestId: event.requestId });
-    },
+    onRequestPaused: (tabId, event) => engine.handle(tabId, event),
   });
 
   const manager = createDebuggerManager({
@@ -88,16 +123,19 @@ export function createBackground(deps: BackgroundDeps) {
     registry,
     onStateChange: sendState,
     onSessionEnded: (tabId) => {
+      engine.sessionEnded(tabId);
       interceptor.sessionEnded(tabId);
       capture.sessionEnded(tabId);
       sendState(tabId);
     },
     onAttached: (tabId) => {
-      void interceptor.applyPatterns(tabId, []);
+      applyPatterns(tabId);
       sendState(tabId);
     },
     onNavigated: (tabId, site, url) => {
+      engine.navigated(tabId);
       port.send(tabId, makeEvent("navigated", { site, url }));
+      applyPatterns(tabId);
       sendState(tabId);
     },
   });
@@ -117,6 +155,28 @@ export function createBackground(deps: BackgroundDeps) {
         return manager.detach(tabId, "user");
       case "updateSettings":
         return settings.update(command.payload);
+      case "saveRule":
+        return rules.save(command.payload.rule, manager.siteOf(tabId));
+      case "deleteRule":
+        return rules.remove(command.payload.ruleId);
+      case "restoreRule":
+        return rules.restore(command.payload.ruleId);
+      case "setRuleEnabled":
+        return rules.setEnabled(command.payload.ruleId, command.payload.enabled);
+      case "reorderRules":
+        return rules.reorder(command.payload.site, command.payload.ruleIds);
+      case "resolvePaused": {
+        const { pausedId, action, edit, mock } = command.payload;
+        return engine.resolve(tabId, {
+          pausedId,
+          action,
+          ...(edit ? { edit } : {}),
+          ...(mock ? { mock } : {}),
+        });
+      }
+      case "continueAll":
+        await engine.continueAll(tabId);
+        return { ok: true };
       case "getBody": {
         const { exchangeId, side } = command.payload;
         const body = await capture.getBody(tabId, exchangeId, side);
@@ -131,14 +191,14 @@ export function createBackground(deps: BackgroundDeps) {
         );
         return { ok: true };
       }
-      default:
-        return { ok: false, code: "invalid_message" };
     }
   }
 
-  const ready = Promise.all([cleanupOrphans({ debugger: cdp, registry }), settings.ready]).then(
-    () => {},
-  );
+  const ready = Promise.all([
+    cleanupOrphans({ debugger: cdp, registry }),
+    settings.ready,
+    rules.ready,
+  ]).then(() => {});
 
   const port = createPanelPort({
     runtime: deps.runtime,
@@ -146,7 +206,7 @@ export function createBackground(deps: BackgroundDeps) {
     ready,
     onHello: (tabId) => {
       port.send(tabId, makeEvent("settings", settings.get()));
-      port.send(tabId, makeEvent("rules", { rules: [], discarded: [] }));
+      sendRules(tabId, rules.all());
       sendState(tabId);
     },
     onCommand,
@@ -156,5 +216,5 @@ export function createBackground(deps: BackgroundDeps) {
     },
   });
 
-  return { ready, manager, settings };
+  return { ready, manager, settings, rules, engine, attachedTabs };
 }

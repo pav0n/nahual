@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { compileJsonPath } from "./jsonpath.ts";
+import { QueueMockActionSchema, type MockAction } from "./schemas/action.ts";
 import type { Stage } from "./schemas/common.ts";
 import { PausedEditSchema, type PausedEdit } from "./schemas/paused.ts";
 import { RuleDraftSchema, type RuleDraft } from "./schemas/rule.ts";
@@ -62,4 +63,10 @@ export function validatePausedEdit(input: unknown, stage: Stage): Validation<Pau
     };
   }
   return { ok: true, value: parsed.data };
+}
+
+/** Valida el mock que el dev crea desde la cola (body ≤ 5 MB, no se guarda). */
+export function validateQueueMock(input: unknown): Validation<MockAction> {
+  const parsed = QueueMockActionSchema.safeParse(input);
+  return parsed.success ? { ok: true, value: parsed.data } : { ok: false, issues: toIssues(parsed.error) };
 }
