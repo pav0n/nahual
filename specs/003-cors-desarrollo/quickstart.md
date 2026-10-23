@@ -46,7 +46,7 @@ La SPA tiene botones para cada ruta, con y sin credenciales, y uno que llama al 
 | 4 | Detalle de `/cors/preflight-401` ⇒ "Permitir CORS para desarrollo" ⇒ "Permitir" (2 clics) ⇒ repetir | La app recibe 200; el detalle del preflight muestra 401 del servidor y "reemplazado por Nahual" | US2-1/3, FR-012, SC-001 |
 | 5 | Indicador | "CORS relajado" con A ⇒ B y cuenta regresiva de 8 h en todas las vistas | US2-5, FR-019 |
 | 6 | Misma SPA en otra pestaña con el panel abierto; y botón del origen C en la pestaña relajada | Ambos siguen bloqueados | US2-8, SC-002 |
-| 7 | `/cors/wildcard-credentials` relajado | Respuesta con origen exacto y `Allow-Credentials: true`; nunca `*` | FR-010/011, SC-005 |
+| 7 | `/cors/wildcard-credentials` relajado | Respuesta con origen exacto y `Allow-Credentials: true`; nunca `*`. Además, `/cors/none` con credenciales y sin cookie ⇒ marcar "La app envía credenciales" ⇒ funciona al primer intento | FR-010/011, SC-005 |
 | 8 | Añadir `http://localhost:4311` a producción con la relajación activa | La relajación termina con aviso; intentar relajar de nuevo muestra la entrada que coincide | US2-7, FR-029/030 |
 | 9 | Relajar, apagar con `Alt+Shift+R` y repetir de inmediato | Vuelve a bloquearse (sin permiso guardado por el navegador) | FR-013/020 |
 | 10 | Relajar y cerrar el panel / cerrar la pestaña / recargar la extensión | 0 relajaciones: al reabrir no hay indicador y el request se bloquea | US2-6, SC-003 |

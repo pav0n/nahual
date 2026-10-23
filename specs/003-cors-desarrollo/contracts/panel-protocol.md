@@ -49,6 +49,6 @@ tenía relajaciones y `relaxations` llega vacío.
 - `relaxCors` desde el puerto de la pestaña A nunca crea una relajación en la pestaña B (el
   `tabId` lo pone el SW a partir del remitente, nunca el payload).
 - Ningún `CorsRelaxedInfo` ni `RelaxationView` contiene `*` en headers de permiso.
-- Un fallo al relajar emite `CorsRelaxedInfo` con `errorKey` y sin `added`.
+- Un fallo al relajar emite `CorsRelaxedInfo` con `errorKey` y `added: []`.
 - `CorsDiagnosis` y `CorsRelaxedInfo` solo llevan headers `Access-Control-*` y nombres de
   headers; nunca valores de `Cookie`, `Authorization` ni otros sensibles.

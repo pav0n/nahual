@@ -222,6 +222,9 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
   `{ urlPattern: "<origen de API>/*", requestStage: "Response" }` por relajación activa (no
   suspendida). Se combina con la reducción de R3 de 002: un `*` en Response los absorbe. Los
   orígenes validados no contienen `*`, `?` ni `\`, así que no hace falta escaparlos.
+- **Si X5 obliga al respaldo** (R1): se suma `{ urlPattern: "<origen de API>/*", requestStage:
+  "Request" }` solo mientras haya una relajación activa de ese origen, y en esa etapa solo se actúa
+  sobre los `OPTIONS` (el resto continúa de inmediato).
 - **Rationale**: principio VI: sin relajación ni reglas, sigue solo la captura pasiva.
 
 ## R12. Orígenes de producción

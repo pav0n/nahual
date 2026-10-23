@@ -67,7 +67,7 @@ Vive solo en memoria del SW por pestaña (FR-017). El panel recibe `RelaxationVi
 | `appOrigin` | `Origin` | |
 | `apiOrigin` | `Origin` | Distinto de `appOrigin`; único por pestaña |
 | `exposeHeaders` | `HeaderName[]` ≤ 30 | Vacío por defecto |
-| `credentials` | boolean | Heredado del diagnóstico o aprendido (R5) |
+| `credentials` | boolean | De la casilla "La app envía credenciales" (premarcada con el diagnóstico) o aprendido (R5) |
 | `createdAt` / `expiresAt` | epoch ms | `expiresAt − createdAt = duración` ≤ 8 h |
 | `state` | `"active" \| "suspended" \| "idle"` | Calculado: `suspended` con `globalPaused`; `idle` sin frames del origen de la app |
 
