@@ -227,6 +227,8 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
 - **Valores editados inválidos** (status fuera de 100–599, URL mal formada, nombre de header
   inválido): se rechazan en el editor con mensaje; si aun así falla la aplicación del cambio, el
   intercambio continúa sin modificar y se muestra el error con causa.
+- **"Continuar todos" con ediciones en curso**: se pide confirmación antes de descartar las
+  ediciones; cancelar deja la cola intacta.
 - **Cola saturada**: si la cola alcanza 100 intercambios pausados en la pestaña, los siguientes
   que cumplan una regla de Pausar continúan sin cambios y se registran como "cola llena".
 - **Regla editada o eliminada con items pausados**: los ya pausados siguen en la cola; el cambio
@@ -296,7 +298,7 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
   inválido, request que no es GraphQL) MUST considerarse no cumplida, sin retrasar el intercambio,
   y la entrada del historial MUST indicarlo.
 - **FR-013**: El sistema MUST validar una regla al guardarla (regex compilable, JSONPath válido,
-  status en 100–599, rangos con mínimo ≤ máximo, acción completa) y rechazarla con un mensaje que
+  status en 100–599, rangos con mínimo ≤ máximo, acción completa, límites de tamaño) y rechazarla con un mensaje que
   indique el campo y la causa.
 - **FR-014**: Las reglas MUST persistir localmente entre sesiones del navegador y validarse al
   leerse; una regla inválida se descarta con aviso sin afectar a las demás.
@@ -310,7 +312,8 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
   aplicarse solo la que está más arriba en la lista. Una regla de etapa Request y otra de etapa
   Response pueden aplicarse ambas al mismo intercambio.
 - **FR-017**: Un interruptor global "pausar Nahual" MUST detener la aplicación de todas las reglas
-  sin detener la captura, y su estado MUST ser visible en el indicador.
+  sin detener la captura; su estado MUST persistir entre sesiones y ser visible en el indicador
+  desde que se abre el panel.
 - **FR-018**: El sistema MUST incluir cuatro plantillas, todas con tipos de recurso Fetch/XHR:
   "Pausar respuestas con error" (etapa Response, status ≥ 400, prefiltro `*`); "Pausar respuestas
   vacías" (etapa Response, JSONPath `$` está vacío, prefiltro `*`); "Simular API caída" (etapa
@@ -337,7 +340,9 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
 - **FR-023**: Los pausados MUST formar una cola por pestaña en orden de llegada, con un máximo de
   100; cada uno se resuelve en cualquier orden de forma independiente. Al llenarse, los nuevos
   continúan sin cambios y se registran.
-- **FR-024**: El dev MUST poder "Continuar todos" sin cambios con un solo gesto.
+- **FR-024**: El dev MUST poder "Continuar todos" sin cambios con un solo gesto. Si algún item
+  tiene una edición sin aplicar, MUST pedirse confirmación indicando cuántas ediciones se
+  perderán; sin ediciones pendientes no se pide.
 - **FR-025**: Al navegar la pestaña, cerrarla, cerrar el panel o soltarse el debugger, el sistema
   MUST resolver toda la cola (continuar sin cambios o descartar si ya no tiene destino) y no
   dejar ninguna pausa pendiente.
@@ -354,7 +359,9 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
   desactivar el adjunto automático. Sin consentimiento, el debugger nunca se adjunta solo, y
   nunca se adjunta con el panel cerrado.
 - **FR-027b**: Si el dev pulsa "Soltar", el debugger MUST quedar suelto en esa pestaña hasta que
-  pulse "Reconectar" o vuelva a abrir el panel; Nahual no lo readjunta por su cuenta.
+  pulse "Reconectar" o cierre y vuelva a abrir el panel; Nahual no lo readjunta por su cuenta,
+  tampoco cuando el panel reconecta su puerto tras un reinicio del proceso en segundo plano. Sin un
+  "Soltar" previo, esa reconexión sí readjunta si el adjunto automático está activo.
 - **FR-028**: El panel MUST mostrar siempre el estado del debugger con texto e icono, la cantidad
   de reglas activas, el tamaño de la cola y si "pausar Nahual" está activo, con la acción
   "Soltar" o "Reconectar" según corresponda.
@@ -376,8 +383,9 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
 - **FR-034**: La extensión MUST NOT pedir permisos nuevos respecto a la feature 001.
 - **FR-035**: Todo mensaje entre el panel y el proceso en segundo plano MUST validarse en el
   receptor; un mensaje inválido se descarta y se registra sin afectar al tráfico.
-- **FR-036**: Los registros internos (errores, timeouts) MUST NOT contener valores de headers
-  sensibles (`Authorization`, `Cookie`, `Set-Cookie`, tokens) ni bodies.
+- **FR-036**: Los registros internos (errores, timeouts) MUST NOT contener URLs, valores de
+  headers sensibles (`Authorization`, `Cookie`, `Set-Cookie`, tokens) ni bodies; solo códigos,
+  causas e identificadores internos.
 
 ### Key Entities
 
@@ -436,6 +444,9 @@ página el resultado de cada una, la prioridad entre reglas que coinciden y los 
   editar bodies; no se puede extender una pausa en curso.
 - Los límites de 100 items en cola y de 60,000 ms de retraso son defaults razonables para evitar
   que una regla demasiado amplia deje la página sin respuesta.
+- Límites de reglas: hasta 500 reglas en total, body de un mock guardado de hasta 1 MB (el de un
+  mock creado desde la cola, que no se guarda, hasta 5 MB) y regex de hasta 512 caracteres.
+  Superarlos se rechaza al guardar con un mensaje que indica el límite (FR-013).
 - Las plantillas son las cuatro de FR-018 (Clarifications); las de Mock y Retrasar dependen de la
   historia 4 y se entregan con ella. Más plantillas quedan para features posteriores.
 - Fuera de alcance: WebSockets, Server-Sent Events como stream, requests del service worker de la

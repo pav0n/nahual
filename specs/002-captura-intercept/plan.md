@@ -161,6 +161,7 @@ apps/extension/src/panel/
 │   ├── rules/               # RuleList, RuleEditor, ConditionEditor, ActionEditor, Templates
 │   ├── queue/               # PauseQueue, PausedEditor, Countdown
 │   └── common/              # Tabs, Toast (deshacer), Switch, EmptyState
+├── components/SettingsPanel.tsx   # timeout, adjunto automático (FR-022, FR-027a)
 ├── use-sw-connection.ts     # de 001, v2 + adjunto automático (R17)
 └── use-shortcuts.ts         # R16
 apps/extension/tests/        # fakes ampliados (FakeDebugger: Network, Page, Fetch con bodies)
