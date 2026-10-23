@@ -201,6 +201,26 @@ fakes.
 - **Única fuente de verdad**: relajaciones en el SW; el panel recibe `relaxations` y calcula la
   cuenta regresiva desde `expiresAt`. El reporte se genera en el panel con el historial.
 
+## Revisión de implementación (T075)
+
+Revisión del diff de 003 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Permisos | Sin cambios: `debugger` y `storage`, sin host permissions ni `alarms`, `declarativeNetRequest*`, `tabs` o `clipboardWrite` (`tests/dist/manifest.test.ts`) |
+| Dependencias | Ninguna nueva; bundles +40,9 KB (+11,2 KB gzip), research "Tamaño de los bundles" |
+| CORS relajado expone al usuario | La relajación vive en memoria del SW por pestaña; se aplica solo si el frame del request tiene el origen de la app y el destino es el origen de la API (E2E con segunda pestaña, tercer origen e iframe de otro origen); `expiresAt` se comprueba en cada respuesta, incluso tras pausas y retrasos; termina con detach, cierre, reinicio del SW, producción o el dev (`cors-lifecycle.spec.ts`) |
+| Nunca `*` con credenciales | `computeRelaxedHeaders` no produce comodines en ninguna combinación probada (tabla de casos con `*` en el servidor, en `Expose-Headers` y en el preflight); E2E con `/cors/wildcard-credentials` |
+| Permiso guardado por el navegador | `Access-Control-Max-Age: 0` en el preflight local; apagar y repetir de inmediato vuelve a bloquear (X3) |
+| Producción | Validada en el SW con su propia lista; una lista corrupta bloquea toda relajación y se conserva en disco hasta que el dev la guarde (otras escrituras no la "reparan") |
+| Mensajería v3 | Remitente verificado y Zod en ambos extremos; `relaxCors` revalidado en el SW; el `tabId` sale del puerto. Desvío del contrato: el issue `production_origin` no lleva `params.entry` (el `Issue` del protocolo no tiene parámetros); el panel nombra la entrada con su copia de la lista |
+| Fuga de credenciales | Diagnóstico, `CorsRelaxedInfo` y reporte solo con nombres de headers, `Access-Control-*`, orígenes y rutas sin query; pruebas con tokens sembrados en `Authorization`, cookie, query y body (`report.test.ts`, `cors-report.spec.ts`) |
+| Contenido como texto | Diagnóstico y reporte en `<p>`, listas y `<textarea readonly>`; los ejemplos insertan datos con `JSON.stringify` |
+| Fallo seguro | Si aplicar la relajación falla, la respuesta continúa sin modificar con `errorKey` en el detalle (reintento único del `ActionExecutor` de 002); con "pausar Nahual" queda suspendida |
+| Hallazgos de la implementación | (1) El `FetchInterceptor` de 002 respondía también las pausas del laboratorio de experimentos: `__nahualLabTabs`, solo en el build de pruebas. (2) Una respuesta bloqueada por CORS no emite `responseReceived`: status y headers del diagnóstico salen de `responseReceivedExtraInfo`. (3) Un preflight 401 sin headers CORS se reporta como `PreflightMissingAllowOriginHeader`: con el preflight observado, la causa es `preflight_status`. (4) Un preflight con redirección no se corrige en etapa Response (X5): respaldo en etapa Request para las URLs aprendidas. (5) Network no ordena los eventos de un request y de su preflight: el diagnóstico relaciona preflights adelantados y espera ≤ 500 ms la respuesta del preflight (research, "Estabilidad de la E2E") |
+| Rendimiento | Overhead p95 0,8–1,1 ms con relajación (SC-007, research R17) |
+| Definición de terminado | Por historia: unitarias, integración y E2E en verde; axe sin violaciones serias en ambos temas a 320 px (sección CORS, confirmación, indicador con 1 y 10 orígenes y en sus tres estados, ajustes y reporte); textos `es`/`en`; estados vacío y de error. La alternativa de copia con `execCommand` no se ejercita en la E2E (Playwright concede el portapapeles). Pendiente que necesita personas: la demo de punta a punta en Chrome estable (T076) |
+
 ## Complexity Tracking
 
 Sin violaciones de la constitución que justificar.

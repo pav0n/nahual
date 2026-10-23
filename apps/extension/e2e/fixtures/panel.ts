@@ -264,9 +264,15 @@ export async function openRelaxedDetail(panel: Page, path: string) {
  * `hello` desplaza al panel, que se reconecta solo y vuelve a ser el dueño sin soltar el
  * debugger. Sirve para tener 10 orígenes relajados sin 10 servidores.
  */
-export function relaxExtraOrigins(panel: Page, tabId: number, appOrigin: string, count: number) {
+export function relaxExtraOrigins(
+  panel: Page,
+  tabId: number,
+  appOrigin: string,
+  count: number,
+  apiOrigins?: string[],
+) {
   return panel.evaluate(
-    async ({ tab, app, n }) => {
+    async ({ tab, app, n, apis }) => {
       const port = chrome.runtime.connect({ name: "nahual-panel" });
       const replies = new Map<string, (ok: boolean) => void>();
       port.onMessage.addListener((m: { type: string; correlationId?: string }) => {
@@ -285,7 +291,7 @@ export function relaxExtraOrigins(panel: Page, tabId: number, appOrigin: string,
         results.push(
           await send("relaxCors", {
             appOrigin: app,
-            apiOrigin: `https://extra${i}.test`,
+            apiOrigin: apis?.[i] ?? `https://extra${i}.test`,
             durationMinutes: 480,
             exposeHeaders: [],
             credentials: false,
@@ -294,6 +300,6 @@ export function relaxExtraOrigins(panel: Page, tabId: number, appOrigin: string,
       }
       return results;
     },
-    { tab: tabId, app: appOrigin, n: count },
+    { tab: tabId, app: appOrigin, n: count, apis: apiOrigins },
   );
 }

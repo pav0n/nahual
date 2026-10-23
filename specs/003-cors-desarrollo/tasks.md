@@ -199,12 +199,12 @@ ejemplos por framework.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T070 [P] Ampliar `apps/extension/e2e/storage-privacy.spec.ts`: tras una sesión con relajaciones, `chrome.storage.local` solo tiene `nahual.rules.v1` y `nahual.settings.v1` (con `productionOrigins`) y `chrome.storage.session` solo el registro de sesiones de 001; ninguna relajación ni dato de tráfico (FR-017, contracts/storage.md)
-- [ ] T071 [P] Escribir `apps/extension/e2e/experiments/e4-overhead-cors.spec.ts` (research R17): p95 del tiempo de requests relajados frente a sin Nahual en la app de prueba; registrar el resultado en `specs/003-cors-desarrollo/research.md` (SC-007: < 20 ms)
-- [ ] T072 [P] Registrar en `specs/003-cors-desarrollo/research.md` el resultado de X3 (de T057) y el tamaño de los bundles del panel y del SW antes y después de 003
-- [ ] T073 Ejecutar la E2E completa 10 veces seguidas (`pnpm e2e`) registrando el nombre de cualquier prueba fallida, y anotar el resultado en `specs/003-cors-desarrollo/research.md`; si reaparece el fallo intermitente de 002, identificarlo y corregirlo o registrarlo
-- [ ] T074 [P] Actualizar `README.md` con CORS de desarrollo (diagnóstico, relajación acotada, indicador, `Alt+Shift+R`, orígenes de producción, reporte) y el tercer origen de `fixture:serve`
-- [ ] T075 Añadir la sección "Revisión de implementación" en `specs/003-cors-desarrollo/plan.md`: diff contra el modelo de amenazas (filas de 003), permisos (sin cambios), dependencias (ninguna), mensajería v3, redacción en diagnóstico y reporte, fallo seguro y definición de terminado por historia
+- [X] T070 [P] Ampliar `apps/extension/e2e/storage-privacy.spec.ts`: tras una sesión con relajaciones, `chrome.storage.local` solo tiene `nahual.rules.v1` y `nahual.settings.v1` (con `productionOrigins`) y `chrome.storage.session` solo el registro de sesiones de 001; ninguna relajación ni dato de tráfico (FR-017, contracts/storage.md)
+- [X] T071 [P] Escribir `apps/extension/e2e/experiments/e4-overhead-cors.spec.ts` (research R17): p95 del tiempo de requests relajados frente a sin Nahual en la app de prueba; registrar el resultado en `specs/003-cors-desarrollo/research.md` (SC-007: < 20 ms)
+- [X] T072 [P] Registrar en `specs/003-cors-desarrollo/research.md` el resultado de X3 (de T057) y el tamaño de los bundles del panel y del SW antes y después de 003
+- [X] T073 Ejecutar la E2E completa 10 veces seguidas (`pnpm e2e`) registrando el nombre de cualquier prueba fallida, y anotar el resultado en `specs/003-cors-desarrollo/research.md`; si reaparece el fallo intermitente de 002, identificarlo y corregirlo o registrarlo
+- [X] T074 [P] Actualizar `README.md` con CORS de desarrollo (diagnóstico, relajación acotada, indicador, `Alt+Shift+R`, orígenes de producción, reporte) y el tercer origen de `fixture:serve`
+- [X] T075 Añadir la sección "Revisión de implementación" en `specs/003-cors-desarrollo/plan.md`: diff contra el modelo de amenazas (filas de 003), permisos (sin cambios), dependencias (ninguna), mensajería v3, redacción en diagnóstico y reporte, fallo seguro y definición de terminado por historia
 - [ ] T076 **Checkpoint final**: demo de punta a punta con los pasos 1–12 de `specs/003-cors-desarrollo/quickstart.md` en Chrome estable; `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm verify:dist && pnpm e2e` en verde; `research.md` sin "pendiente"; recordar la deuda de 001 (E5/T066, T067 y la definición de "en conflicto")
 
 ---

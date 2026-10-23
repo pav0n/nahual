@@ -48,6 +48,11 @@ export interface NetworkCapture {
 }
 
 const MAX_HEADERS = 500;
+/** Espera máxima de la respuesta del preflight para el diagnóstico CORS (003). */
+const PREFLIGHT_WAIT_MS = 500;
+const PREFLIGHT_POLL_MS = 25;
+/** Preflights a la espera de su request, por pestaña. */
+const MAX_ORPHAN_PREFLIGHTS = 200;
 const MAX_HEADER_VALUE = 65_536;
 /** Entradas recordadas por pestaña para pedir bodies y marcar efectos (como el historial). */
 const MAX_ENTRIES = LIMITS.historyMax;
@@ -83,6 +88,8 @@ interface Tab {
   /** Id actual de cada `requestId` de Network. */
   current: Map<string, string>;
   redirects: Map<string, number>;
+  /** Preflights que llegaron antes que su request: `requestId` del request ⇒ id del preflight. */
+  orphanPreflights: Map<string, string>;
   pending: ExchangeUpdate[];
   timer: ReturnType<typeof setTimeout> | null;
 }
@@ -154,6 +161,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         entries: new Map(),
         current: new Map(),
         redirects: new Map(),
+        orphanPreflights: new Map(),
         pending: [],
         timer: null,
       };
@@ -260,6 +268,12 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     tab.entries.delete(`extra:${event.requestId}`);
     tab.current.set(event.requestId, id);
     remember(tab, entry);
+    const orphan = tab.orphanPreflights.get(event.requestId);
+    if (orphan !== undefined) {
+      tab.orphanPreflights.delete(event.requestId);
+      entry.preflightId = orphan;
+      push(tabId, { id: orphan, kind: "headers", fields: { preflightFor: id } });
+    }
     const method = request.method || "GET";
     const isPreflight =
       method.toUpperCase() === "OPTIONS" &&
@@ -275,6 +289,13 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       if (owner) {
         owner.preflightId = id;
         preflightFor = owner.id;
+      } else {
+        // Puede llegar antes que su request: se relacionan cuando llegue (research R6).
+        tab.orphanPreflights.set(event.initiator.requestId, id);
+        if (tab.orphanPreflights.size > MAX_ORPHAN_PREFLIGHTS) {
+          const oldest = tab.orphanPreflights.keys().next().value;
+          if (oldest !== undefined) tab.orphanPreflights.delete(oldest);
+        }
       }
       entry.requestedHeaders =
         headerValue(request.headers, "access-control-request-headers") ?? undefined;
@@ -342,6 +363,33 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     });
     push(tabId, { id: entry.id, kind: "cors", fields: {}, cors: { diagnosis } });
     options.onCorsFailure?.(tabId, entry.id, diagnosis, entry.url ?? "");
+  };
+
+  /**
+   * El bloqueo puede llegar antes que la respuesta de su preflight: se espera hasta
+   * `PREFLIGHT_WAIT_MS` para diagnosticar con su status (research R6) y luego se diagnostica igual.
+   */
+  const diagnoseWhenReady = (
+    tabId: number,
+    entry: Entry,
+    status: { corsError: string; failedParameter?: string },
+    waited = 0,
+  ) => {
+    const preflight = entry.preflightId
+      ? tabs.get(tabId)?.entries.get(entry.preflightId)
+      : undefined;
+    // Un error de preflight sin preflight visto todavía también espera: Network no ordena los
+    // eventos del request y de su preflight.
+    const pending = preflight
+      ? preflight.status === null
+      : /^Preflight|PreflightResponse$/.test(status.corsError);
+    if (pending && waited < PREFLIGHT_WAIT_MS) {
+      setTimeout(() => {
+        if (tabs.has(tabId)) diagnoseWhenReady(tabId, entry, status, waited + PREFLIGHT_POLL_MS);
+      }, PREFLIGHT_POLL_MS);
+      return;
+    }
+    diagnose(tabId, entry, status);
   };
 
   cdp.onEvent((tabId, method, params) => {
@@ -456,7 +504,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
           },
         });
         // Solo `corsErrorStatus` dice que es CORS; `blockedReason` es otra cosa (research R3).
-        if (event.corsErrorStatus) diagnose(tabId, entry, event.corsErrorStatus);
+        if (event.corsErrorStatus) diagnoseWhenReady(tabId, entry, event.corsErrorStatus);
         return;
       }
       default:

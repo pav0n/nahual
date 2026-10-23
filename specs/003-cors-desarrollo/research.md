@@ -322,7 +322,9 @@ Experimentos corridos el 2026-10-23 en el Chromium de Playwright 1.64 (HeadlessC
   `initiator.requestId`; no hace falta el intercambio sintético. Además, un preflight 401 **sin**
   headers CORS da `PreflightMissingAllowOriginHeader` (no `PreflightInvalidStatus`) ⇒ R3: si se
   observó el preflight con status no 2xx, la causa es `preflight_status`.
-- **X3 (`Max-Age: 0`)**: _pendiente, se verifica en `cors-relax.spec.ts` (T057)_.
+- **X3 (`Max-Age: 0`)**: **sí basta**. En `cors-relax.spec.ts` (T057), tras relajar
+  `/cors/preflight-401` y repetir con éxito, `Alt+Shift+R` y repetir **de inmediato** vuelve a
+  fallar: el navegador no reutilizó el permiso del preflight local (FR-013).
 - **X4 (headers en Network)**: tras `continueResponse` con headers cambiados,
   `Network.responseReceived` reporta los headers **modificados** y `responseReceivedExtraInfo` los
   **originales** del servidor. La captura de 002 ya usa los de ExtraInfo; el detalle muestra
@@ -332,4 +334,45 @@ Experimentos corridos el 2026-10-23 en el Chromium de Playwright 1.64 (HeadlessC
   preflight **302** también se pausa en Response, pero ni `fulfillRequest` ni `continueResponse`
   lo corrigen (`ERR_INVALID_REDIRECT`, `PreflightDisallowedRedirect`). `fulfillRequest` en etapa
   **Request** sí lo resuelve (como D5). ⇒ R1: se usa el respaldo para redirecciones.
-- Overhead de R17: _pendiente_.
+- **Overhead de R17 (SC-007)** (`e2e/experiments/e4-overhead-cors.spec.ts`, 500 fetch
+  secuenciales por corrida tras 10 de calentamiento, fixture local, HeadlessChrome 156):
+
+  | Corrida | p50 | p95 |
+  |---|---|---|
+  | 1 sin debugger (`/cors/ok`, CORS correcto) | 0,9 ms | 1,2 ms |
+  | 2 relajada, el servidor sin CORS (`/cors/none`, `continueResponse` con headers) | 1,5 ms | 2,0 ms |
+  | 3 relajada, el servidor ya responde bien (`/cors/ok`, sin cambios) | 1,5 ms | 2,3 ms |
+
+  Overhead p95: **0,8 ms** (corrida 2) y **1,1 ms** (corrida 3), muy por debajo de 20 ms.
+
+## Tamaño de los bundles
+
+Build de producción (`pnpm build`), JS sin comprimir y total con `gzip -9`, 2026-10-23; 002
+medido de nuevo desde `main` (`fe94756`) con el mismo método:
+
+| Bundle | 002 | 003 | Diferencia |
+|---|---|---|---|
+| Service worker (`index.ts-*.js`) | 27,6 KB | 36,9 KB | +9,3 KB |
+| Compartido: Zod, protocolo y dominio (`src-*.js`) | 173,2 KB | 189,0 KB | +15,7 KB |
+| Panel (`panel-*.js`) | 300,8 KB | 316,7 KB | +15,9 KB |
+| **Total** | **501,6 KB** (146,8 KB gzip) | **542,6 KB** (158,1 KB gzip) | **+40,9 KB** (+11,2 KB gzip) |
+
+Sin dependencias nuevas: el crecimiento es el dominio CORS, el `CorsRelaxer` y las vistas.
+
+## Estabilidad de la E2E (T073, SC-003)
+
+Suite completa (`pnpm e2e`, 84 pruebas, Chromium de Playwright 1.64), 2026-10-23:
+
+- **Primera tanda, 10 corridas**: 8 en verde; 2 con un fallo en `cors-diagnosis.spec.ts`
+  (US1-6, preflight relacionado). Causa: Network no ordena los eventos de un request y de su
+  preflight. A veces el `loadingFailed` del request llega antes que la respuesta del preflight,
+  o antes que el propio `requestWillBeSent` del preflight, y a veces el preflight llega antes que
+  su request. El diagnóstico salía sin el status del preflight.
+- **Corrección** (`network-capture.ts`, con pruebas de integración para cada orden): los
+  preflights que llegan antes que su request se relacionan cuando llega (≤ 200 en espera por
+  pestaña), y un bloqueo de preflight espera hasta 500 ms a que el preflight y su respuesta
+  aparezcan antes de diagnosticar (luego diagnostica igual). `cors-diagnosis.spec.ts` con
+  `--repeat-each=30`: 150/150.
+- **Segunda tanda, 10 corridas**: **10/10 en verde** (84/84 en cada una, 3,5 min por corrida).
+  No reapareció el fallo intermitente sin identificar de 002.
+

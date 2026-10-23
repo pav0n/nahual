@@ -6,8 +6,9 @@
 Extensión de Chrome para desarrolladores frontend: intercept condicional, CORS de desarrollo
 seguro, repeater + diff, hooks en TypeScript y exportación al código. Todo local, sin cuenta.
 
-**Estado:** primera versión usable (feature `002-captura-intercept`): ver el tráfico de la pestaña,
-crear reglas y pausar, simular o retrasar solo lo que cumple una condición. Ver
+**Estado:** features `002-captura-intercept` y `003-cors-desarrollo`: ver el tráfico de la pestaña,
+crear reglas y pausar, simular o retrasar solo lo que cumple una condición, y entender y relajar
+CORS de desarrollo de forma acotada. Ver
 `.specify/memory/constitution.md`, `docs/speckit-inputs/` y `specs/`.
 
 ## Qué hace
@@ -20,6 +21,13 @@ crear reglas y pausar, simular o retrasar solo lo que cumple una condición. Ver
   lista gana; se reordenan con `Alt+↑`/`Alt+↓`.
 - **Acciones**: Pausar (cola editable con cuenta regresiva), Mock, Fallar, Retrasar y Solo
   registrar. Plantillas: pausar respuestas con error o vacías, simular API caída o red lenta.
+- **CORS de desarrollo**: los requests bloqueados por CORS se marcan en la lista y el detalle
+  explica la causa, qué pidió la app y qué respondió el servidor. "Permitir CORS para desarrollo"
+  relaja CORS solo en esa pestaña, para el origen de la app y el de la API (origen exacto, nunca
+  `*`), con un indicador permanente, cuenta regresiva (8 h como máximo) y fin al soltar el
+  debugger o reiniciar Nahual. Los orígenes de producción se marcan en Ajustes y nunca se
+  relajan. "Generar reporte para backend" produce un texto copiable con lo que el servidor debe
+  configurar y ejemplos para Express, NestJS, AWS API Gateway y Google Cloud Run.
 - **Seguro por defecto**: nada sale del navegador; el historial vive en memoria; todo request
   pausado continúa sin cambios si vence su timeout, si Nahual falla o si se suelta el debugger.
 
@@ -32,6 +40,7 @@ crear reglas y pausar, simular o retrasar solo lo que cumple una condición. Ver
 | `Alt+Shift+C` | Continuar el item seleccionado de la cola |
 | `Alt+Shift+K` | Continuar todos |
 | `/` o `Alt+Shift+F` | Ir al buscador del tráfico |
+| `Alt+Shift+R` | Apagar todas las relajaciones de CORS de la pestaña |
 
 ## Requisitos
 
@@ -55,14 +64,16 @@ EXPERIMENTS=1 pnpm --filter @nahual/extension e2e   # experimentos de research.m
 1. `chrome://extensions` → Modo desarrollador → **Cargar descomprimida** → `apps/extension/dist`.
 2. Abre la página que quieras inspeccionar, abre DevTools y elige el panel **Nahual**.
 
-Para probar con una app de ejemplo (SPA en `http://127.0.0.1:4310`, API en `:4311`):
+Para probar con una app de ejemplo (SPA en `http://127.0.0.1:4310`, API en `:4311` y un tercer
+origen en `:4312`, con rutas `/cors/*` que provocan cada causa de bloqueo):
 
 ```bash
 pnpm --filter @nahual/extension fixture:serve
 ```
 
-Guía de validación completa:
-[`specs/002-captura-intercept/quickstart.md`](specs/002-captura-intercept/quickstart.md).
+Guías de validación:
+[`specs/002-captura-intercept/quickstart.md`](specs/002-captura-intercept/quickstart.md) y
+[`specs/003-cors-desarrollo/quickstart.md`](specs/003-cors-desarrollo/quickstart.md).
 
 ## Desarrollo
 
