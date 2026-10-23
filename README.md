@@ -6,8 +6,32 @@
 Extensión de Chrome para desarrolladores frontend: intercept condicional, CORS de desarrollo
 seguro, repeater + diff, hooks en TypeScript y exportación al código. Todo local, sin cuenta.
 
-**Estado:** spike técnico (feature `001-spike-cdp`). Ver `.specify/memory/constitution.md`,
-`docs/speckit-inputs/` y `specs/001-spike-cdp/`.
+**Estado:** primera versión usable (feature `002-captura-intercept`): ver el tráfico de la pestaña,
+crear reglas y pausar, simular o retrasar solo lo que cumple una condición. Ver
+`.specify/memory/constitution.md`, `docs/speckit-inputs/` y `specs/`.
+
+## Qué hace
+
+- **Tráfico**: lista de los requests de la pestaña con método, URL, status, tipo, tamaño y tiempo;
+  filtros por texto, regex, status y tipo; detalle con headers (los sensibles, enmascarados) y
+  bodies; historial de 2,000 entradas que se puede limpiar con deshacer.
+- **Reglas por sitio**: prefiltro de URL (glob o regex), métodos, tipos de recurso, etapa (Request
+  o Response) y condiciones (status, header, query param, JSONPath, GraphQL). La primera de la
+  lista gana; se reordenan con `Alt+↑`/`Alt+↓`.
+- **Acciones**: Pausar (cola editable con cuenta regresiva), Mock, Fallar, Retrasar y Solo
+  registrar. Plantillas: pausar respuestas con error o vacías, simular API caída o red lenta.
+- **Seguro por defecto**: nada sale del navegador; el historial vive en memoria; todo request
+  pausado continúa sin cambios si vence su timeout, si Nahual falla o si se suelta el debugger.
+
+## Atajos
+
+| Atajo | Acción |
+|---|---|
+| `Alt+Shift+A` | Adjuntar / soltar el debugger |
+| `Alt+Shift+P` | Pausar / reanudar Nahual |
+| `Alt+Shift+C` | Continuar el item seleccionado de la cola |
+| `Alt+Shift+K` | Continuar todos |
+| `/` o `Alt+Shift+F` | Ir al buscador del tráfico |
 
 ## Requisitos
 
@@ -31,7 +55,14 @@ EXPERIMENTS=1 pnpm --filter @nahual/extension e2e   # experimentos de research.m
 1. `chrome://extensions` → Modo desarrollador → **Cargar descomprimida** → `apps/extension/dist`.
 2. Abre la página que quieras inspeccionar, abre DevTools y elige el panel **Nahual**.
 
-Guía de validación completa: [`specs/001-spike-cdp/quickstart.md`](specs/001-spike-cdp/quickstart.md).
+Para probar con una app de ejemplo (SPA en `http://127.0.0.1:4310`, API en `:4311`):
+
+```bash
+pnpm --filter @nahual/extension fixture:serve
+```
+
+Guía de validación completa:
+[`specs/002-captura-intercept/quickstart.md`](specs/002-captura-intercept/quickstart.md).
 
 ## Desarrollo
 

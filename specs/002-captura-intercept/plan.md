@@ -199,6 +199,25 @@ reemplazan reglas y ajustes); `HeaderEditor.tsx` y `PausedList.tsx` evolucionan 
 - **Edición con headers sensibles**: el editor parte de los valores reales; la máscara es solo
   visual (FR-004b), y la prueba E2E comprueba que el servidor recibe el valor original.
 
+## Revisión de implementación (T108)
+
+Revisión del diff de 002 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Permisos | Sin cambios: `debugger` y `storage`, sin host permissions (`tests/dist/manifest.test.ts`). `storage.local`, `Network`, `Page` y `Fetch` no piden permisos nuevos |
+| Dependencias | Las cuatro de la tabla, exactas y ≥ 14 días; `check-licenses` y `pnpm audit` en verde. `verify:dist` comprueba que están en los bundles revisados sin `eval`, `new Function` ni red propia. Se añadió a la lista permitida el texto `WebSocket`/`EventSource` de la enumeración `Network.ResourceType` |
+| Mensajería v2 | `onConnect` únicamente, remitente verificado, Zod en ambos extremos, mensajes del panel > 6 MB descartados sin parsear; `saveRule` y `resolvePaused` validan en el SW y devuelven `issues` por campo sin valores |
+| Registros | `logger.ts` redacta headers sensibles, URLs y textos largos aunque se le pasen (`tests/unit/logger.test.ts`) |
+| Enmascarado | Headers sensibles enmascarados en detalle y cola; en el editor la máscara es solo visual y el valor real viaja (E2E: la `Cookie` llega al servidor con su valor) |
+| Contenido como texto | Bodies en `<pre>`/`<textarea>`; E2E con `/api/html` (marcado y `onerror` en body y header) sin ejecución ni violaciones de CSP |
+| Storage | Solo `nahual.rules.v1` y `nahual.settings.v1`; sin datos de tráfico tras una sesión completa (`storage-privacy.spec.ts`). Reglas corruptas descartadas sin borrarlas del disco |
+| Fallo seguro | Timeout por item, reintento sin cambios, `injectedFault` en captura, motor y aplicación de cambios; navegación, cierre, Soltar y reinicio del SW sin páginas colgadas (`no-hang.spec.ts`, `sw-restart.spec.ts`) |
+| **Nueva:** mocks locales y CORS | Hallazgo de la implementación (research R21): un mock a otro origen necesita `Access-Control-Allow-Origin`. Se añade con el origen exacto de la página, nunca `*`, solo si el mock no lo define; los preflight no se mockean. Añadido al modelo de amenazas |
+| **Nueva:** fallos inyectables en el build de pruebas | `test-hooks.ts` solo existe con `--mode test`; `verify:dist` comprueba que `__nahualFaults` no está en producción |
+| Rendimiento | Overhead p95 2,5–2,6 ms con reglas que no se cumplen (R20); filtro de 2,000 entradas medido en la E2E (SC-004); bundles +48,8 KB gzip |
+| Definición de terminado | Por historia: unitarias, integración y E2E en verde; axe sin violaciones serias en ambos temas a 320 px, incluido el onboarding; textos `es`/`en`; estados vacío, carga y error. Pendientes que necesitan personas: la prueba moderada de SC-001 (T109) y la demo en Chrome estable (T110) |
+
 ## Complexity Tracking
 
 Sin violaciones de la constitución que justificar.

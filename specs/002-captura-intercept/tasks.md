@@ -233,12 +233,12 @@ interruptores (quickstart 11–13).
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T103 [P] Ampliar `apps/extension/tests/dist/no-network.test.ts` para los bundles con `json-p3`, `zustand`, `immer` y `@tanstack/react-virtual`: sin `eval`, `new Function` ni `fetch`/`XMLHttpRequest` propios; cualquier excepción se añade a la allowlist con su justificación
-- [ ] T104 [P] Escribir `apps/extension/e2e/storage-privacy.spec.ts`: tras una sesión E2E completa (tráfico, pausas, mocks), `chrome.storage.local` solo contiene `nahual.rules.v1` y `nahual.settings.v1`, sin URLs capturadas, headers ni bodies (contracts/storage.md, FR-033)
-- [ ] T105 [P] Registrar en `specs/002-captura-intercept/research.md` el tamaño del bundle del panel y del SW antes y después de 002 (R13/R14)
+- [X] T103 [P] Ampliar `apps/extension/tests/dist/no-network.test.ts` para los bundles con `json-p3`, `zustand`, `immer` y `@tanstack/react-virtual`: sin `eval`, `new Function` ni `fetch`/`XMLHttpRequest` propios; cualquier excepción se añade a la allowlist con su justificación
+- [X] T104 [P] Escribir `apps/extension/e2e/storage-privacy.spec.ts`: tras una sesión E2E completa (tráfico, pausas, mocks), `chrome.storage.local` solo contiene `nahual.rules.v1` y `nahual.settings.v1`, sin URLs capturadas, headers ni bodies (contracts/storage.md, FR-033)
+- [X] T105 [P] Registrar en `specs/002-captura-intercept/research.md` el tamaño del bundle del panel y del SW antes y después de 002 (R13/R14)
 - [ ] T106 Ejecutar la E2E completa 10 veces seguidas sin fallos (`pnpm e2e`) y registrar el resultado en `specs/002-captura-intercept/research.md`; 0 páginas colgadas (SC-003)
-- [ ] T107 [P] Actualizar `README.md` con las funciones de 002 (tráfico, reglas, cola, acciones, atajos) y el comando `fixture:serve`
-- [ ] T108 Añadir la sección "Revisión de implementación" en `specs/002-captura-intercept/plan.md`: diff contra el modelo de amenazas, permisos (sin cambios), dependencias, mensajería v2, enmascarado y registros, fallo seguro y definición de terminado por historia
+- [X] T107 [P] Actualizar `README.md` con las funciones de 002 (tráfico, reglas, cola, acciones, atajos) y el comando `fixture:serve`
+- [X] T108 Añadir la sección "Revisión de implementación" en `specs/002-captura-intercept/plan.md`: diff contra el modelo de amenazas, permisos (sin cambios), dependencias, mensajería v2, enmascarado y registros, fallo seguro y definición de terminado por historia
 - [ ] T109 Ejecutar la prueba moderada de primer uso con 5 devs según `specs/002-captura-intercept/quickstart.md` y registrar tiempos y fricciones en `specs/002-captura-intercept/research.md` (SC-001: al menos 4 de 5 en < 2 min)
 - [ ] T110 **Checkpoint final**: demo de punta a punta con los pasos 1–18 de `specs/002-captura-intercept/quickstart.md` en Chrome estable; `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm verify:dist && pnpm e2e` en verde; `research.md` sin "por registrar"; recordar la deuda de 001 (E5/T066, T067 y la definición de "en conflicto")
 

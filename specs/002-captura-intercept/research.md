@@ -301,7 +301,23 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
 - **Limitación**: si el preflight de un request no simple va a una API caída, el preflight falla
   y el mock nunca se aplica. Responder preflights localmente es alcance de 003.
 
+## Tamaño de los bundles (R13/R14)
+
+Build de producción (`pnpm build`), JS sin comprimir y total con `gzip -9`, 2026-10-22:
+
+| Bundle | 001 (`cb2fc9f`) | 002 | Diferencia |
+|---|---|---|---|
+| Service worker (`index.ts-*.js`) | 9,4 KB | 27,6 KB | +18,2 KB |
+| Compartido: Zod, protocolo y dominio con json-p3 (`src-*.js`) | 91,2 KB | 173,2 KB | +82,0 KB |
+| Panel: React, Zustand, Immer, react-virtual y vistas (`panel-*.js`) | 224,2 KB | 300,8 KB | +76,6 KB |
+| **Total** | **325,1 KB** (97,7 KB gzip) | **501,9 KB** (146,5 KB gzip) | **+176,8 KB** (+48,8 KB gzip) |
+
+Sin editor de código (R14) ni librería de componentes (R15), el panel crece menos de lo que
+añadiría solo Monaco. La verificación `verify:dist` confirma que json-p3, Zustand, Immer y
+react-virtual están en los bundles revisados sin `eval`, `new Function` ni red propia.
+
 ## Resultados por registrar en implementación
 
-- R13/R14: tamaño final del bundle del panel antes y después de 002.
-- SC-001: resultados de la prueba moderada con 5 devs (quickstart).
+- SC-001: resultados de la prueba moderada con 5 devs (quickstart). El recorrido guiado
+  automatizado (`first-use.spec.ts`: onboarding ⇒ plantilla ⇒ pausa ⇒ edición ⇒ continuar) tarda
+  ~1,3 s; es solo una referencia, no sustituye a la prueba con personas.
