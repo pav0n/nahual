@@ -316,6 +316,18 @@ Sin editor de código (R14) ni librería de componentes (R15), el panel crece me
 añadiría solo Monaco. La verificación `verify:dist` confirma que json-p3, Zustand, Immer y
 react-virtual están en los bundles revisados sin `eval`, `new Function` ni red propia.
 
+## Estabilidad de la E2E (T106, SC-003)
+
+Suite completa (54 pruebas, HeadlessChrome 156, Debian 13), 2026-10-22:
+
+- **Primera tanda de 10 corridas**: 7 en verde y 3 con **una** prueba fallida cada una (corridas 3,
+  5 y 6). El script solo guardaba el resumen, así que no se sabe qué prueba falló.
+- **Segunda tanda de 10 corridas**, con registro de fallos: **10 de 10 en verde**, 0 páginas
+  colgadas.
+
+Queda una inestabilidad intermitente sin identificar (3 de 20 corridas). Si reaparece, el script
+de la segunda tanda guarda el nombre y el error de la prueba.
+
 ## Resultados por registrar en implementación
 
 - SC-001: resultados de la prueba moderada con 5 devs (quickstart). El recorrido guiado
