@@ -238,7 +238,9 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
 - **Decision**: `settings.attachConsent` y `settings.autoAttach` (por defecto `true` tras el
   consentimiento). Al recibir `hello`, el SW responde con el estado; si hay consentimiento y
   `autoAttach`, el panel envía `attach` de inmediato. Tras un "Soltar" manual el panel no
-  reenvía `attach` hasta "Reconectar" o una nueva apertura (FR-027b).
+  reenvía `attach` hasta "Reconectar" o una nueva apertura (FR-027b). El panel recuerda ese
+  "Soltar" mientras sigue abierto: si su puerto se reconecta tras un reinicio del SW, no reenvía
+  `attach`; sin un "Soltar" previo, sí (con `autoAttach`).
 - **Rationale**: la decisión de adjuntar sigue en el panel, que es la única señal de que el dev lo
   tiene abierto (constitución: debugger solo con el panel abierto).
 

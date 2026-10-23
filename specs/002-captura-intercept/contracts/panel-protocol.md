@@ -64,5 +64,5 @@ Cada comando recibe exactamente un `ack` o `error` con `correlationId = id`.
   `error unknown_paused_id` y no llama a CDP.
 - Ningún evento contiene bodies salvo `body` y `paused`, y solo hacia el puerto dueño de esa
   pestaña.
-- Los `console.warn`/`console.error` del SW no contienen valores de headers sensibles ni bodies
+- Los `console.warn`/`console.error` del SW no contienen URLs, valores de headers sensibles ni bodies
   (FR-036).
