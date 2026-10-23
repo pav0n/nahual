@@ -87,3 +87,40 @@ export function startFetch(app: Page, url: string) {
     };
   }, url);
 }
+
+/** Llama a una ruta de la SPA de prueba (servers.ts) y devuelve su resultado. */
+export function callApi(app: Page, id: string) {
+  return app.evaluate(
+    (callId) =>
+      (
+        window as unknown as {
+          call(id: string): Promise<{ id: string; status?: number; body?: string; error?: string }>;
+        }
+      ).call(callId),
+    id,
+  );
+}
+
+export const trafficGrid = (panel: Page) => panel.getByRole("grid", { name: /traffic/i });
+
+export const trafficRow = (panel: Page, text: string | RegExp) =>
+  trafficGrid(panel).getByRole("row").filter({ hasText: text });
+
+/** Activa o desactiva un fallo inyectable del build de pruebas (test-hooks.ts). */
+export function setFault(worker: Worker, fault: string, on: boolean) {
+  return worker.evaluate(
+    ([name, enabled]) => {
+      const faults = (globalThis as { __nahualFaults?: Set<string> }).__nahualFaults;
+      if (!faults) throw new Error("build sin fallos inyectables");
+      if (enabled) faults.add(name as string);
+      else faults.delete(name as string);
+    },
+    [fault, on] as const,
+  );
+}
+
+/** Adjunta y recarga la app para capturar su tráfico desde el principio. */
+export async function attachAndReload(panel: Page, app: Page) {
+  await attach(panel);
+  await app.reload();
+}

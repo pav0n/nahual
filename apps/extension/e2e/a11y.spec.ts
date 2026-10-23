@@ -1,6 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
-import { attach, openApp, openPanel, statusOf, tabIdOf } from "./fixtures/panel.ts";
+import {
+  attach,
+  callApi,
+  openApp,
+  openPanel,
+  statusOf,
+  tabIdOf,
+  trafficRow,
+} from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -25,7 +33,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     extensionId,
     servers,
   }) => {
-    await openApp(context, servers.appOrigin);
+    const app = await openApp(context, servers.appOrigin);
     const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
     const panel = await openPanel(context, extensionId, tabId);
     await panel.emulateMedia({ colorScheme });
@@ -42,6 +50,26 @@ for (const colorScheme of ["light", "dark"] as const) {
     await attach(panel);
     await expectNoSeriousViolations(panel, "adjunto");
     await expectNoHorizontalScroll(panel);
+
+    // Historia 1: lista, filtros con error, detalle con headers y body.
+    await panel.getByRole("tab", { name: "Traffic" }).click();
+    await app.reload();
+    await callApi(app, "items");
+    await expect(trafficRow(panel, "/api/items")).toBeVisible();
+    await expectNoSeriousViolations(panel, "tráfico");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByLabel("URL regex").fill("([a-z");
+    await expectNoSeriousViolations(panel, "filtro inválido");
+    await panel.getByLabel("URL regex").fill("");
+    await trafficRow(panel, "/api/items").click();
+    await expectNoSeriousViolations(panel, "detalle: headers");
+    await expectNoHorizontalScroll(panel);
+    await panel.locator(".detail").getByRole("tab", { name: "Response" }).click();
+    await expect(panel.locator(".detail").getByLabel("Response body")).toBeVisible();
+    await expectNoSeriousViolations(panel, "detalle: body");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByRole("button", { name: "Clear" }).click();
+    await expectNoSeriousViolations(panel, "limpiado con deshacer");
   });
 }
 

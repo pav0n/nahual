@@ -6,6 +6,8 @@ import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
 import { Notices } from "./components/Notices.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
+import { SEARCH_INPUT_ID } from "./components/traffic/Filters.tsx";
+import { TrafficView } from "./components/traffic/TrafficView.tsx";
 import { usePanelStore } from "./store/index.ts";
 import type { PanelTab } from "./store/ui.ts";
 import "./theme.css";
@@ -31,6 +33,11 @@ export function App({ tabId }: { tabId: number | null }) {
       else void command(state.status === "conflict" || state.cause ? "reconnect" : "attach", {});
     },
     continueSelected: () => {},
+    focusSearch: () => {
+      usePanelStore.getState().setTab("traffic");
+      // La pestaña se monta en el mismo ciclo: se enfoca en el siguiente.
+      requestAnimationFrame(() => document.getElementById(SEARCH_INPUT_ID)?.focus());
+    },
   });
 
   if (tabId === null) {
@@ -60,7 +67,7 @@ export function App({ tabId }: { tabId: number | null }) {
       <Notices />
       <Tabs idPrefix={TABS} label={t("tabs_label")} tabs={tabs} selected={tab} onSelect={setTab} />
       <TabPanel idPrefix={TABS} id="traffic" hidden={tab !== "traffic"}>
-        <EmptyState title={t("empty_traffic_title")}>{t("empty_traffic_body")}</EmptyState>
+        <TrafficView />
       </TabPanel>
       <TabPanel idPrefix={TABS} id="rules" hidden={tab !== "rules"}>
         <EmptyState title={t("empty_rules_title")}>{t("empty_rules_body")}</EmptyState>

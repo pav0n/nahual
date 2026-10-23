@@ -157,5 +157,221 @@
   },
   "notice_settings_reset": {
     "message": "Some saved settings were invalid and were reset to their defaults."
+  },
+  "traffic_grid_label": {
+    "message": "Tab traffic"
+  },
+  "traffic_col_method": {
+    "message": "Method"
+  },
+  "traffic_col_url": {
+    "message": "URL"
+  },
+  "traffic_col_status": {
+    "message": "Status"
+  },
+  "traffic_col_type": {
+    "message": "Type"
+  },
+  "traffic_col_size": {
+    "message": "Size"
+  },
+  "traffic_col_time": {
+    "message": "Time"
+  },
+  "traffic_status_pending": {
+    "message": "Pending"
+  },
+  "traffic_status_failed": {
+    "message": "Failed"
+  },
+  "traffic_preflight": {
+    "message": "preflight"
+  },
+  "traffic_rule_applied": {
+    "message": "Rule “$1”: $2"
+  },
+  "traffic_at_cap": {
+    "message": "History is full: the oldest exchanges are dropped (limit 2,000)."
+  },
+  "filters_label": {
+    "message": "Filter traffic"
+  },
+  "filter_text": {
+    "message": "Search URLs"
+  },
+  "filter_regex": {
+    "message": "URL regex"
+  },
+  "filter_regex_invalid": {
+    "message": "Invalid regex: the last valid filter is kept."
+  },
+  "filter_status": {
+    "message": "Status"
+  },
+  "filter_status_invalid": {
+    "message": "Use codes (404) or classes (4xx) separated by commas."
+  },
+  "filter_types": {
+    "message": "Types"
+  },
+  "filter_count": {
+    "message": "$1 of $2"
+  },
+  "action_clear_traffic": {
+    "message": "Clear"
+  },
+  "action_undo": {
+    "message": "Undo"
+  },
+  "toast_traffic_cleared": {
+    "message": "History cleared."
+  },
+  "empty_traffic_reload": {
+    "message": "Reload the page to capture its requests."
+  },
+  "empty_traffic_filtered_title": {
+    "message": "Nothing matches the filters"
+  },
+  "empty_traffic_filtered_body": {
+    "message": "Change or clear the filters to see more exchanges."
+  },
+  "action_close_detail": {
+    "message": "Close details"
+  },
+  "detail_tabs_label": {
+    "message": "Exchange parts"
+  },
+  "detail_tab_headers": {
+    "message": "Headers"
+  },
+  "detail_tab_request": {
+    "message": "Request"
+  },
+  "detail_tab_response": {
+    "message": "Response"
+  },
+  "detail_request_headers": {
+    "message": "Request headers"
+  },
+  "detail_response_headers": {
+    "message": "Response headers"
+  },
+  "detail_no_headers": {
+    "message": "No headers."
+  },
+  "detail_transferred": {
+    "message": "Transferred"
+  },
+  "detail_decoded": {
+    "message": "Decoded"
+  },
+  "detail_url_truncated": {
+    "message": "The URL is very long and is shown truncated."
+  },
+  "action_show": {
+    "message": "Show"
+  },
+  "action_hide": {
+    "message": "Hide"
+  },
+  "action_show_value": {
+    "message": "Show the value of $1"
+  },
+  "action_hide_value": {
+    "message": "Hide the value of $1"
+  },
+  "body_loading": {
+    "message": "Loading body…"
+  },
+  "body_empty": {
+    "message": "Empty body."
+  },
+  "body_json": {
+    "message": "JSON"
+  },
+  "body_label_request": {
+    "message": "Request body"
+  },
+  "body_label_response": {
+    "message": "Response body"
+  },
+  "body_unavailable_none": {
+    "message": "No body."
+  },
+  "body_unavailable_pending": {
+    "message": "The response has not finished arriving yet."
+  },
+  "body_unavailable_redirect": {
+    "message": "Redirects have no body."
+  },
+  "body_unavailable_binary": {
+    "message": "Binary body: only its metadata is shown."
+  },
+  "body_unavailable_tooLarge": {
+    "message": "Body larger than 5 MB: only its metadata is shown."
+  },
+  "body_unavailable_evicted": {
+    "message": "Chrome already dropped this body from memory. Repeat the request to see it."
+  },
+  "body_unavailable_unknown": {
+    "message": "The body is not available."
+  },
+  "result_paused": {
+    "message": "paused"
+  },
+  "result_continued": {
+    "message": "continued"
+  },
+  "result_modified": {
+    "message": "modified"
+  },
+  "result_mocked": {
+    "message": "mocked"
+  },
+  "result_failed": {
+    "message": "failed"
+  },
+  "result_aborted": {
+    "message": "aborted"
+  },
+  "result_delayed": {
+    "message": "delayed"
+  },
+  "result_logged": {
+    "message": "logged"
+  },
+  "result_timed_out": {
+    "message": "continued after timeout"
+  },
+  "result_discarded_navigation": {
+    "message": "discarded by navigation"
+  },
+  "result_continued_on_detach": {
+    "message": "continued on detach"
+  },
+  "result_queue_full": {
+    "message": "queue full: continued unchanged"
+  },
+  "result_unevaluable": {
+    "message": "condition not evaluable"
+  },
+  "result_apply_failed": {
+    "message": "could not apply: continued unchanged"
+  },
+  "unevaluable_no_body": {
+    "message": "no body"
+  },
+  "unevaluable_binary": {
+    "message": "binary body"
+  },
+  "unevaluable_too_large": {
+    "message": "body larger than 5 MB"
+  },
+  "unevaluable_invalid_json": {
+    "message": "invalid JSON"
+  },
+  "unevaluable_not_graphql": {
+    "message": "not GraphQL"
   }
 }

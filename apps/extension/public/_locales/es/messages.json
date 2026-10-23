@@ -157,5 +157,221 @@
   },
   "notice_settings_reset": {
     "message": "Algunos ajustes guardados no eran válidos y volvieron a su valor por defecto."
+  },
+  "traffic_grid_label": {
+    "message": "Tráfico de la pestaña"
+  },
+  "traffic_col_method": {
+    "message": "Método"
+  },
+  "traffic_col_url": {
+    "message": "URL"
+  },
+  "traffic_col_status": {
+    "message": "Status"
+  },
+  "traffic_col_type": {
+    "message": "Tipo"
+  },
+  "traffic_col_size": {
+    "message": "Tamaño"
+  },
+  "traffic_col_time": {
+    "message": "Tiempo"
+  },
+  "traffic_status_pending": {
+    "message": "Pendiente"
+  },
+  "traffic_status_failed": {
+    "message": "Falló"
+  },
+  "traffic_preflight": {
+    "message": "preflight"
+  },
+  "traffic_rule_applied": {
+    "message": "Regla «$1»: $2"
+  },
+  "traffic_at_cap": {
+    "message": "Historial lleno: se descartan los intercambios más antiguos (tope de 2,000)."
+  },
+  "filters_label": {
+    "message": "Filtrar tráfico"
+  },
+  "filter_text": {
+    "message": "Buscar en la URL"
+  },
+  "filter_regex": {
+    "message": "Regex de URL"
+  },
+  "filter_regex_invalid": {
+    "message": "Regex inválida: se mantiene el último filtro válido."
+  },
+  "filter_status": {
+    "message": "Status"
+  },
+  "filter_status_invalid": {
+    "message": "Usa códigos (404) o clases (4xx) separados por comas."
+  },
+  "filter_types": {
+    "message": "Tipos"
+  },
+  "filter_count": {
+    "message": "$1 de $2"
+  },
+  "action_clear_traffic": {
+    "message": "Limpiar"
+  },
+  "action_undo": {
+    "message": "Deshacer"
+  },
+  "toast_traffic_cleared": {
+    "message": "Historial limpiado."
+  },
+  "empty_traffic_reload": {
+    "message": "Recarga la página para capturar sus requests."
+  },
+  "empty_traffic_filtered_title": {
+    "message": "Nada coincide con los filtros"
+  },
+  "empty_traffic_filtered_body": {
+    "message": "Cambia o borra los filtros para ver más intercambios."
+  },
+  "action_close_detail": {
+    "message": "Cerrar detalle"
+  },
+  "detail_tabs_label": {
+    "message": "Partes del intercambio"
+  },
+  "detail_tab_headers": {
+    "message": "Headers"
+  },
+  "detail_tab_request": {
+    "message": "Request"
+  },
+  "detail_tab_response": {
+    "message": "Response"
+  },
+  "detail_request_headers": {
+    "message": "Headers del request"
+  },
+  "detail_response_headers": {
+    "message": "Headers de la response"
+  },
+  "detail_no_headers": {
+    "message": "Sin headers."
+  },
+  "detail_transferred": {
+    "message": "Transferido"
+  },
+  "detail_decoded": {
+    "message": "Descomprimido"
+  },
+  "detail_url_truncated": {
+    "message": "La URL es muy larga y se muestra recortada."
+  },
+  "action_show": {
+    "message": "Mostrar"
+  },
+  "action_hide": {
+    "message": "Ocultar"
+  },
+  "action_show_value": {
+    "message": "Mostrar el valor de $1"
+  },
+  "action_hide_value": {
+    "message": "Ocultar el valor de $1"
+  },
+  "body_loading": {
+    "message": "Cargando body…"
+  },
+  "body_empty": {
+    "message": "Body vacío."
+  },
+  "body_json": {
+    "message": "JSON"
+  },
+  "body_label_request": {
+    "message": "Body del request"
+  },
+  "body_label_response": {
+    "message": "Body de la response"
+  },
+  "body_unavailable_none": {
+    "message": "Sin body."
+  },
+  "body_unavailable_pending": {
+    "message": "La respuesta aún no ha terminado de llegar."
+  },
+  "body_unavailable_redirect": {
+    "message": "Las redirecciones no tienen body."
+  },
+  "body_unavailable_binary": {
+    "message": "Body binario: solo se muestran sus metadatos."
+  },
+  "body_unavailable_tooLarge": {
+    "message": "Body mayor que 5 MB: solo se muestran sus metadatos."
+  },
+  "body_unavailable_evicted": {
+    "message": "Chrome ya descartó este body de su memoria. Repite el request para verlo."
+  },
+  "body_unavailable_unknown": {
+    "message": "El body no está disponible."
+  },
+  "result_paused": {
+    "message": "pausado"
+  },
+  "result_continued": {
+    "message": "continuado"
+  },
+  "result_modified": {
+    "message": "modificado"
+  },
+  "result_mocked": {
+    "message": "respondido con mock"
+  },
+  "result_failed": {
+    "message": "fallado"
+  },
+  "result_aborted": {
+    "message": "abortado"
+  },
+  "result_delayed": {
+    "message": "retrasado"
+  },
+  "result_logged": {
+    "message": "registrado"
+  },
+  "result_timed_out": {
+    "message": "continuado por timeout"
+  },
+  "result_discarded_navigation": {
+    "message": "descartado por navegación"
+  },
+  "result_continued_on_detach": {
+    "message": "continuado al soltar el debugger"
+  },
+  "result_queue_full": {
+    "message": "cola llena: continuó sin cambios"
+  },
+  "result_unevaluable": {
+    "message": "condición no evaluable"
+  },
+  "result_apply_failed": {
+    "message": "no se pudo aplicar: continuó sin cambios"
+  },
+  "unevaluable_no_body": {
+    "message": "sin body"
+  },
+  "unevaluable_binary": {
+    "message": "body binario"
+  },
+  "unevaluable_too_large": {
+    "message": "body mayor que 5 MB"
+  },
+  "unevaluable_invalid_json": {
+    "message": "JSON inválido"
+  },
+  "unevaluable_not_graphql": {
+    "message": "no es GraphQL"
   }
 }

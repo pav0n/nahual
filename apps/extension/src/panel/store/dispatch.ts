@@ -11,6 +11,11 @@ export function dispatchSwEvent(message: SwMessage): void {
     case "settings":
       store.setSettings(message.payload);
       break;
+    case "exchanges":
+      store.applyUpdates(message.payload.updates);
+      break;
+    case "navigated":
+      break;
     case "notice":
       store.pushNotice(message.payload.messageKey, message.payload.params);
       break;

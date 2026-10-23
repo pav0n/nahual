@@ -3,6 +3,7 @@ import { makeEvent } from "@nahual/protocol";
 import { createDebuggerManager } from "./debugger-manager.ts";
 import type { DebuggerPort } from "./debugger-port.ts";
 import { createFetchInterceptor } from "./fetch-interceptor.ts";
+import { createNetworkCapture } from "./network-capture.ts";
 import {
   createPanelPort,
   type CommandResult,
@@ -65,6 +66,11 @@ export function createBackground(deps: BackgroundDeps) {
     onNotice: (key) => notice(null, key),
   });
 
+  const capture = createNetworkCapture({
+    debugger: cdp,
+    onUpdates: (tabId, updates) => port.send(tabId, makeEvent("exchanges", { updates })),
+  });
+
   const interceptor = createFetchInterceptor({
     debugger: cdp,
     // Sin reglas todavía: todo continúa sin cambios (las reglas llegan con la historia 2).
@@ -83,6 +89,7 @@ export function createBackground(deps: BackgroundDeps) {
     onStateChange: sendState,
     onSessionEnded: (tabId) => {
       interceptor.sessionEnded(tabId);
+      capture.sessionEnded(tabId);
       sendState(tabId);
     },
     onAttached: (tabId) => {
@@ -110,6 +117,20 @@ export function createBackground(deps: BackgroundDeps) {
         return manager.detach(tabId, "user");
       case "updateSettings":
         return settings.update(command.payload);
+      case "getBody": {
+        const { exchangeId, side } = command.payload;
+        const body = await capture.getBody(tabId, exchangeId, side);
+        if (!body.ok) return { ok: false, code: "body_unavailable" };
+        port.send(
+          tabId,
+          makeEvent(
+            "body",
+            { exchangeId, side, encoding: body.encoding, content: body.content, size: body.size },
+            command.id,
+          ),
+        );
+        return { ok: true };
+      }
       default:
         return { ok: false, code: "invalid_message" };
     }
