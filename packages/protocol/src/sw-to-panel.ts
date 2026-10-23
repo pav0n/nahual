@@ -1,21 +1,27 @@
+import {
+  ExchangeUpdateSchema,
+  PausedItemViewSchema,
+  RuleResultSchema,
+  RuleSchema,
+  SettingsSchema,
+} from "@nahual/domain";
 import { z } from "zod";
 import { message } from "./envelope.ts";
-import {
-  InterceptionPatternSchema,
-  MAX_PAUSE_TIMEOUT_SECONDS,
-  MIN_PAUSE_TIMEOUT_SECONDS,
-  StageSchema,
-} from "./panel-to-sw.ts";
 
 export const ERROR_CODES = [
   "invalid_message",
   "not_attached",
   "already_attached",
   "restricted_page",
-  "pattern_invalid",
-  "timeout_out_of_range",
   "unknown_paused_id",
   "cdp_error",
+  "rule_invalid",
+  "unknown_rule",
+  "settings_invalid",
+  "storage_quota",
+  "edit_invalid",
+  "body_unavailable",
+  "no_site",
 ] as const;
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
@@ -36,55 +42,78 @@ export const CAUSES = [
 export const CauseSchema = z.enum(CAUSES);
 export type Cause = z.infer<typeof CauseSchema>;
 
-export const OUTCOMES = ["continued", "modified", "timed_out", "failed", "abandoned"] as const;
-export const OutcomeSchema = z.enum(OUTCOMES);
-export type Outcome = z.infer<typeof OutcomeSchema>;
-
-/**
- * Header tal como lo envía el servidor o el navegador, solo para mostrarlo. Es más permisivo
- * que `HeaderEdit` (los servidores mandan valores largos), pero acotado.
- */
-export const HeaderSchema = z.strictObject({
-  name: z.string().min(1).max(1024),
-  value: z.string().max(65_536),
+/** Problema de validación de un campo, para mostrarlo junto a él (FR-013). */
+export const IssueSchema = z.strictObject({
+  path: z.string().max(256),
+  messageKey: z.string().min(1).max(128),
 });
-export type Header = z.infer<typeof HeaderSchema>;
-
-export const PausedRequestViewSchema = z.strictObject({
-  pausedId: z.string().min(1).max(256),
-  tabId: z.int().min(0),
-  stage: StageSchema,
-  method: z.string().min(1).max(64),
-  url: z.string().min(1),
-  headers: z.array(HeaderSchema).max(500),
-  statusCode: z.int().min(100).max(599).nullable(),
-  bodyAvailable: z.boolean(),
-  bodySize: z.int().min(0).nullable(),
-  pausedAt: z.number(),
-  expiresAt: z.number(),
-});
-export type PausedRequestView = z.infer<typeof PausedRequestViewSchema>;
+export type Issue = z.infer<typeof IssueSchema>;
 
 export const SessionStateSchema = z.strictObject({
   status: SessionStatusSchema,
   cause: CauseSchema.nullable(),
   attachedAt: z.number().nullable(),
-  patterns: z.array(InterceptionPatternSchema),
-  pauseTimeoutSeconds: z.int().min(MIN_PAUSE_TIMEOUT_SECONDS).max(MAX_PAUSE_TIMEOUT_SECONDS),
+  site: z.string().nullable(),
+  activeRuleCount: z.int().min(0),
+  queueSize: z.int().min(0),
+  globalPaused: z.boolean(),
 });
 export type SessionState = z.infer<typeof SessionStateSchema>;
 
+export const MAX_EXCHANGE_UPDATES = 200;
+
+const Side = z.enum(["request", "response"]);
+
 export const SwMessageSchema = z.discriminatedUnion("type", [
   message("ack", z.strictObject({})),
-  message("error", z.strictObject({ code: ErrorCodeSchema, messageKey: z.string().min(1) })),
+  message(
+    "error",
+    z.strictObject({
+      code: ErrorCodeSchema,
+      messageKey: z.string().min(1),
+      issues: z.array(IssueSchema).max(50).optional(),
+    }),
+  ),
   message("state", SessionStateSchema),
-  message("paused", PausedRequestViewSchema),
+  message("settings", SettingsSchema),
+  message(
+    "rules",
+    z.strictObject({
+      rules: z.array(RuleSchema).max(500),
+      discarded: z
+        .array(z.strictObject({ count: z.int().min(1), reasonKey: z.string().min(1).max(128) }))
+        .max(20),
+    }),
+  ),
+  message(
+    "exchanges",
+    z.strictObject({ updates: z.array(ExchangeUpdateSchema).max(MAX_EXCHANGE_UPDATES) }),
+  ),
+  message("navigated", z.strictObject({ site: z.string().nullable(), url: z.string() })),
+  message("paused", PausedItemViewSchema),
   message(
     "resolved",
     z.strictObject({
       pausedId: z.string().min(1).max(256),
-      outcome: OutcomeSchema,
+      outcome: RuleResultSchema,
       errorKey: z.string().min(1).optional(),
+    }),
+  ),
+  message(
+    "body",
+    z.strictObject({
+      exchangeId: z.string().min(1).max(256),
+      side: Side,
+      encoding: z.enum(["text", "base64"]),
+      content: z.string(),
+      size: z.int().min(0),
+    }),
+  ),
+  message(
+    "notice",
+    z.strictObject({
+      messageKey: z.string().min(1).max(128),
+      params: z.array(z.string().max(256)).max(5).optional(),
     }),
   ),
 ]);

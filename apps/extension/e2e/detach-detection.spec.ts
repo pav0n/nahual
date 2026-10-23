@@ -1,8 +1,9 @@
 import {
-  addPattern,
   attach,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
   ownSessions,
   pausedOption,
   startFetch,
@@ -50,10 +51,11 @@ test("con otra extensión ya adjunta, Nahual coexiste: adjunta, pausa y continú
   await attach(panel);
   expect(await ownSessions(nahualWorker)).toEqual([tabId]);
 
-  await addPattern(panel, "*echo-headers*", "request");
+  await createRule(panel, { name: "Echo", pattern: "*echo-headers*", stage: "request" });
   const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
+  await openQueue(panel);
   await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-  await panel.getByRole("button", { name: /^Continue Alt/ }).click();
+  await panel.keyboard.press("Alt+Shift+C");
   expect((await response).status).toBe(200);
 
   // Si el otro cliente se suelta, Nahual sigue adjunto.

@@ -53,12 +53,6 @@
   "error_restricted_page": {
     "message": "Chrome no permite depurar esta página. Abre otra página."
   },
-  "error_pattern_invalid": {
-    "message": "Patrón inválido: usa de 1 a 2 048 caracteres, sin espacios, con * y ? como comodines (máximo 10 patrones)."
-  },
-  "error_timeout_out_of_range": {
-    "message": "El timeout debe estar entre 5 y 120 segundos. Se conserva el valor anterior."
-  },
   "error_unknown_paused_id": {
     "message": "Esa pausa ya se resolvió (continuó, venció o se abandonó)."
   },
@@ -74,30 +68,6 @@
   "action_reconnect": {
     "message": "Reconectar"
   },
-  "action_continue": {
-    "message": "Continuar"
-  },
-  "action_continue_modified": {
-    "message": "Continuar con cambios"
-  },
-  "action_add_pattern": {
-    "message": "Añadir patrón"
-  },
-  "action_remove_pattern": {
-    "message": "Quitar patrón $1"
-  },
-  "action_add_header": {
-    "message": "Añadir header"
-  },
-  "action_remove_header": {
-    "message": "Quitar header $1"
-  },
-  "action_apply_timeout": {
-    "message": "Aplicar"
-  },
-  "label_url_pattern": {
-    "message": "Patrón de URL"
-  },
   "label_stage": {
     "message": "Etapa"
   },
@@ -107,67 +77,892 @@
   "stage_response": {
     "message": "Response"
   },
-  "label_timeout_seconds": {
-    "message": "Timeout de pausa (segundos, 5–120)"
-  },
-  "label_header_name": {
-    "message": "Nombre"
-  },
-  "label_header_value": {
-    "message": "Valor"
-  },
-  "section_patterns": {
-    "message": "Patrones de intercepción"
-  },
-  "section_paused": {
-    "message": "Requests pausados"
-  },
-  "section_headers": {
-    "message": "Headers"
-  },
-  "empty_no_patterns": {
-    "message": "Sin patrones: no se pausa nada. Añade un patrón de URL para empezar."
-  },
-  "empty_no_paused": {
-    "message": "No hay requests pausados."
-  },
   "empty_not_attached": {
     "message": "Adjunta el debugger para interceptar el tráfico de esta pestaña."
-  },
-  "paused_expires_in": {
-    "message": "Continúa solo en $1 s"
-  },
-  "paused_body_unavailable": {
-    "message": "Body no disponible"
-  },
-  "paused_body_size": {
-    "message": "Body: $1 bytes"
-  },
-  "paused_status": {
-    "message": "Status $1"
-  },
-  "outcome_continued": {
-    "message": "Continuado sin cambios"
-  },
-  "outcome_modified": {
-    "message": "Continuado con cambios"
-  },
-  "outcome_timed_out": {
-    "message": "Venció el timeout: continuó sin cambios"
-  },
-  "outcome_failed": {
-    "message": "Falló: continuó sin cambios"
-  },
-  "outcome_abandoned": {
-    "message": "Abandonado (la página navegó, se cerró o el debugger se soltó)"
   },
   "shortcut_hint": {
     "message": "Atajo: $1"
   },
-  "error_header_invalid": {
-    "message": "Header inválido: el nombre debe ser un token HTTP de 1 a 256 caracteres y el valor no puede tener saltos de línea (máximo 8 192 caracteres, 50 cambios)."
-  },
   "error_no_tab": {
     "message": "No se pudo identificar la pestaña inspeccionada. Cierra y vuelve a abrir DevTools."
+  },
+  "tabs_label": {
+    "message": "Secciones de Nahual"
+  },
+  "tab_traffic": {
+    "message": "Tráfico"
+  },
+  "tab_rules": {
+    "message": "Reglas"
+  },
+  "tab_queue": {
+    "message": "Cola"
+  },
+  "tab_queue_count": {
+    "message": "Cola ($1)"
+  },
+  "site_label": {
+    "message": "Sitio: $1"
+  },
+  "site_none": {
+    "message": "Esta página no tiene sitio (origen opaco): solo se captura, no se aplican reglas."
+  },
+  "toasts_label": {
+    "message": "Avisos"
+  },
+  "action_dismiss": {
+    "message": "Cerrar aviso"
+  },
+  "empty_traffic_title": {
+    "message": "Todavía no hay tráfico"
+  },
+  "empty_traffic_body": {
+    "message": "Adjunta el debugger y recarga la página para capturar sus requests."
+  },
+  "empty_rules_title": {
+    "message": "No hay reglas"
+  },
+  "empty_rules_body": {
+    "message": "Una regla pausa, simula o retrasa solo los requests que cumplen una condición."
+  },
+  "empty_queue_title": {
+    "message": "No hay nada pausado"
+  },
+  "empty_queue_body": {
+    "message": "Cuando una regla pause un request, aparecerá aquí para editarlo."
+  },
+  "error_disconnected": {
+    "message": "El panel perdió la conexión con Nahual. Se reconectará solo en unos segundos."
+  },
+  "error_rule_invalid": {
+    "message": "La regla tiene errores. Revisa los campos marcados."
+  },
+  "error_unknown_rule": {
+    "message": "Esa regla ya no existe. Puede que se haya eliminado en otra pestaña."
+  },
+  "error_settings_invalid": {
+    "message": "Ese ajuste no es válido. Revisa el rango permitido."
+  },
+  "error_storage_quota": {
+    "message": "No queda espacio para guardar. Elimina reglas o reduce el body de los mocks."
+  },
+  "error_edit_invalid": {
+    "message": "La edición tiene errores. Revisa los campos marcados."
+  },
+  "error_body_unavailable": {
+    "message": "El body ya no está disponible: Chrome lo descartó o nunca existió."
+  },
+  "error_no_site": {
+    "message": "Esta página no tiene sitio, así que no se le pueden asignar reglas."
+  },
+  "notice_settings_reset": {
+    "message": "Algunos ajustes guardados no eran válidos y volvieron a su valor por defecto."
+  },
+  "traffic_grid_label": {
+    "message": "Tráfico de la pestaña"
+  },
+  "traffic_col_method": {
+    "message": "Método"
+  },
+  "traffic_col_url": {
+    "message": "URL"
+  },
+  "traffic_col_status": {
+    "message": "Status"
+  },
+  "traffic_col_type": {
+    "message": "Tipo"
+  },
+  "traffic_col_size": {
+    "message": "Tamaño"
+  },
+  "traffic_col_time": {
+    "message": "Tiempo"
+  },
+  "traffic_status_pending": {
+    "message": "Pendiente"
+  },
+  "traffic_status_failed": {
+    "message": "Falló"
+  },
+  "traffic_preflight": {
+    "message": "preflight"
+  },
+  "traffic_rule_applied": {
+    "message": "Regla «$1»: $2"
+  },
+  "traffic_at_cap": {
+    "message": "Historial lleno: se descartan los intercambios más antiguos (tope de 2,000)."
+  },
+  "filters_label": {
+    "message": "Filtrar tráfico"
+  },
+  "filter_text": {
+    "message": "Buscar en la URL"
+  },
+  "filter_regex": {
+    "message": "Regex de URL"
+  },
+  "filter_regex_invalid": {
+    "message": "Regex inválida: se mantiene el último filtro válido."
+  },
+  "filter_status": {
+    "message": "Status"
+  },
+  "filter_status_invalid": {
+    "message": "Usa códigos (404) o clases (4xx) separados por comas."
+  },
+  "filter_types": {
+    "message": "Tipos"
+  },
+  "filter_count": {
+    "message": "$1 de $2"
+  },
+  "action_clear_traffic": {
+    "message": "Limpiar"
+  },
+  "action_undo": {
+    "message": "Deshacer"
+  },
+  "toast_traffic_cleared": {
+    "message": "Historial limpiado."
+  },
+  "empty_traffic_reload": {
+    "message": "Recarga la página para capturar sus requests."
+  },
+  "empty_traffic_filtered_title": {
+    "message": "Nada coincide con los filtros"
+  },
+  "empty_traffic_filtered_body": {
+    "message": "Cambia o borra los filtros para ver más intercambios."
+  },
+  "action_close_detail": {
+    "message": "Cerrar detalle"
+  },
+  "detail_tabs_label": {
+    "message": "Partes del intercambio"
+  },
+  "detail_tab_headers": {
+    "message": "Headers"
+  },
+  "detail_tab_request": {
+    "message": "Request"
+  },
+  "detail_tab_response": {
+    "message": "Response"
+  },
+  "detail_request_headers": {
+    "message": "Headers del request"
+  },
+  "detail_response_headers": {
+    "message": "Headers de la response"
+  },
+  "detail_no_headers": {
+    "message": "Sin headers."
+  },
+  "detail_transferred": {
+    "message": "Transferido"
+  },
+  "detail_decoded": {
+    "message": "Descomprimido"
+  },
+  "detail_url_truncated": {
+    "message": "La URL es muy larga y se muestra recortada."
+  },
+  "action_show": {
+    "message": "Mostrar"
+  },
+  "action_hide": {
+    "message": "Ocultar"
+  },
+  "action_show_value": {
+    "message": "Mostrar el valor de $1"
+  },
+  "action_hide_value": {
+    "message": "Ocultar el valor de $1"
+  },
+  "body_loading": {
+    "message": "Cargando body…"
+  },
+  "body_empty": {
+    "message": "Body vacío."
+  },
+  "body_json": {
+    "message": "JSON"
+  },
+  "body_label_request": {
+    "message": "Body del request"
+  },
+  "body_label_response": {
+    "message": "Body de la response"
+  },
+  "body_unavailable_none": {
+    "message": "Sin body."
+  },
+  "body_unavailable_pending": {
+    "message": "La respuesta aún no ha terminado de llegar."
+  },
+  "body_unavailable_redirect": {
+    "message": "Las redirecciones no tienen body."
+  },
+  "body_unavailable_binary": {
+    "message": "Body binario: solo se muestran sus metadatos."
+  },
+  "body_unavailable_tooLarge": {
+    "message": "Body mayor que 5 MB: solo se muestran sus metadatos."
+  },
+  "body_unavailable_evicted": {
+    "message": "Chrome ya descartó este body de su memoria. Repite el request para verlo."
+  },
+  "body_unavailable_unknown": {
+    "message": "El body no está disponible."
+  },
+  "result_paused": {
+    "message": "pausado"
+  },
+  "result_continued": {
+    "message": "continuado"
+  },
+  "result_modified": {
+    "message": "modificado"
+  },
+  "result_mocked": {
+    "message": "respondido con mock"
+  },
+  "result_failed": {
+    "message": "fallado"
+  },
+  "result_aborted": {
+    "message": "abortado"
+  },
+  "result_delayed": {
+    "message": "retrasado"
+  },
+  "result_logged": {
+    "message": "registrado"
+  },
+  "result_timed_out": {
+    "message": "continuado por timeout"
+  },
+  "result_discarded_navigation": {
+    "message": "descartado por navegación"
+  },
+  "result_continued_on_detach": {
+    "message": "continuado al soltar el debugger"
+  },
+  "result_queue_full": {
+    "message": "cola llena: continuó sin cambios"
+  },
+  "result_unevaluable": {
+    "message": "condición no evaluable"
+  },
+  "result_apply_failed": {
+    "message": "no se pudo aplicar: continuó sin cambios"
+  },
+  "unevaluable_no_body": {
+    "message": "sin body"
+  },
+  "unevaluable_binary": {
+    "message": "body binario"
+  },
+  "unevaluable_too_large": {
+    "message": "body mayor que 5 MB"
+  },
+  "unevaluable_invalid_json": {
+    "message": "JSON inválido"
+  },
+  "unevaluable_not_graphql": {
+    "message": "no es GraphQL"
+  },
+  "action_abort": {
+    "message": "Abortar"
+  },
+  "action_add_condition": {
+    "message": "Añadir condición"
+  },
+  "action_add_header": {
+    "message": "Añadir header"
+  },
+  "action_apply": {
+    "message": "Aplicar"
+  },
+  "action_cancel": {
+    "message": "Cancelar"
+  },
+  "action_continue": {
+    "message": "Continuar"
+  },
+  "action_continue_edited": {
+    "message": "Continuar con cambios"
+  },
+  "action_continue_all": {
+    "message": "Continuar todos"
+  },
+  "action_continue_unchanged": {
+    "message": "Continuar sin cambios"
+  },
+  "action_create_first_rule": {
+    "message": "Crea tu primera regla"
+  },
+  "action_delete": {
+    "message": "Eliminar"
+  },
+  "action_delete_rule": {
+    "message": "Eliminar la regla «$1»"
+  },
+  "action_duplicate": {
+    "message": "Duplicar"
+  },
+  "action_duplicate_rule": {
+    "message": "Duplicar la regla «$1»"
+  },
+  "action_edit": {
+    "message": "Editar"
+  },
+  "action_edit_rule": {
+    "message": "Editar la regla «$1»"
+  },
+  "action_format_json": {
+    "message": "Formatear"
+  },
+  "action_kind_pause": {
+    "message": "Pausar"
+  },
+  "action_new_rule": {
+    "message": "Nueva regla"
+  },
+  "action_remove": {
+    "message": "Quitar"
+  },
+  "action_remove_condition": {
+    "message": "Quitar la condición $1"
+  },
+  "action_remove_header": {
+    "message": "Quitar el header $1"
+  },
+  "action_respond_mock": {
+    "message": "Responder con mock"
+  },
+  "action_save_rule": {
+    "message": "Guardar regla"
+  },
+  "action_send_mock": {
+    "message": "Enviar mock"
+  },
+  "action_validate_json": {
+    "message": "Validar JSON"
+  },
+  "body_json_invalid": {
+    "message": "El body no es JSON válido; puedes continuar igualmente."
+  },
+  "body_json_valid": {
+    "message": "JSON válido."
+  },
+  "condition_errors_no": {
+    "message": "No hay errors"
+  },
+  "condition_errors_present": {
+    "message": "Respuesta GraphQL"
+  },
+  "condition_errors_yes": {
+    "message": "Tiene errors"
+  },
+  "condition_kind": {
+    "message": "Tipo"
+  },
+  "condition_kind_method": {
+    "message": "Método"
+  },
+  "condition_kind_header": {
+    "message": "Header"
+  },
+  "condition_kind_query": {
+    "message": "Query param"
+  },
+  "condition_kind_jsonPath": {
+    "message": "JSONPath del body"
+  },
+  "condition_kind_graphqlOperation": {
+    "message": "operationName de GraphQL"
+  },
+  "condition_kind_graphqlErrors": {
+    "message": "errors de GraphQL"
+  },
+  "condition_kind_status": {
+    "message": "Status"
+  },
+  "condition_label": {
+    "message": "Condición $1"
+  },
+  "condition_header_name": {
+    "message": "Nombre del header"
+  },
+  "condition_query_name": {
+    "message": "Nombre del parámetro"
+  },
+  "condition_list": {
+    "message": "Códigos"
+  },
+  "condition_list_hint": {
+    "message": "Separados por comas, p. ej. 500, 502, 503"
+  },
+  "condition_max": {
+    "message": "Hasta"
+  },
+  "condition_min": {
+    "message": "Desde"
+  },
+  "condition_op": {
+    "message": "Operador"
+  },
+  "condition_path": {
+    "message": "Ruta JSONPath"
+  },
+  "condition_path_hint": {
+    "message": "Por ejemplo $.items o $.data.user.id"
+  },
+  "condition_value": {
+    "message": "Valor"
+  },
+  "op_exists": {
+    "message": "existe"
+  },
+  "op_notExists": {
+    "message": "no existe"
+  },
+  "op_equals": {
+    "message": "es igual a"
+  },
+  "op_notEquals": {
+    "message": "es distinto de"
+  },
+  "op_contains": {
+    "message": "contiene"
+  },
+  "op_matches": {
+    "message": "coincide con la regex"
+  },
+  "op_empty": {
+    "message": "está vacío"
+  },
+  "op_notEmpty": {
+    "message": "no está vacío"
+  },
+  "op_lt": {
+    "message": "<"
+  },
+  "op_lte": {
+    "message": "≤"
+  },
+  "op_gt": {
+    "message": ">"
+  },
+  "op_gte": {
+    "message": "≥"
+  },
+  "op_eq": {
+    "message": "="
+  },
+  "op_ne": {
+    "message": "≠"
+  },
+  "op_between": {
+    "message": "entre (inclusivo)"
+  },
+  "op_in": {
+    "message": "en la lista"
+  },
+  "confirm_continue_all_body": {
+    "message": "Hay $1 ediciones sin aplicar. Si continúas todos, se perderán."
+  },
+  "confirm_continue_all_title": {
+    "message": "¿Continuar todos sin cambios?"
+  },
+  "header_name_n": {
+    "message": "Nombre del header $1"
+  },
+  "header_value_of": {
+    "message": "Valor de $1"
+  },
+  "mock_body": {
+    "message": "Body del mock"
+  },
+  "mock_headers": {
+    "message": "Headers del mock"
+  },
+  "mock_status": {
+    "message": "Status del mock"
+  },
+  "paused_edited": {
+    "message": "editado"
+  },
+  "paused_expires_in": {
+    "message": "Continúa solo en $1 s"
+  },
+  "paused_editor_request": {
+    "message": "Request pausado"
+  },
+  "paused_editor_response": {
+    "message": "Response pausada"
+  },
+  "paused_method": {
+    "message": "Método"
+  },
+  "paused_rule": {
+    "message": "Regla: $1"
+  },
+  "paused_status": {
+    "message": "Status $1"
+  },
+  "paused_status_field": {
+    "message": "Status"
+  },
+  "paused_url": {
+    "message": "URL"
+  },
+  "queue_title": {
+    "message": "Pausados ($1)"
+  },
+  "rule_action": {
+    "message": "Acción"
+  },
+  "rule_conditions": {
+    "message": "Condiciones (todas deben cumplirse)"
+  },
+  "rule_conditions_none": {
+    "message": "Sin condiciones: basta con el prefiltro."
+  },
+  "rule_editor_edit": {
+    "message": "Editar regla"
+  },
+  "rule_editor_new": {
+    "message": "Nueva regla"
+  },
+  "rule_enabled": {
+    "message": "Regla «$1» activa"
+  },
+  "rule_methods": {
+    "message": "Métodos"
+  },
+  "rule_methods_all_hint": {
+    "message": "Métodos (ninguno = todos)"
+  },
+  "rule_name": {
+    "message": "Nombre"
+  },
+  "rule_prefilter": {
+    "message": "Prefiltro de URL"
+  },
+  "rule_prefilter_glob": {
+    "message": "Glob"
+  },
+  "rule_prefilter_glob_hint": {
+    "message": "* = cualquier texto, ? = un carácter. Ejemplo: *api/items*"
+  },
+  "rule_prefilter_kind": {
+    "message": "Tipo de prefiltro"
+  },
+  "rule_prefilter_regex": {
+    "message": "Regex"
+  },
+  "rule_prefilter_regex_hint": {
+    "message": "Expresión regular sobre la URL completa."
+  },
+  "rule_stage": {
+    "message": "Etapa"
+  },
+  "rule_stage_request_hint": {
+    "message": "Antes de que el request salga a la red."
+  },
+  "rule_stage_response_hint": {
+    "message": "Cuando llega la respuesta, antes de que la reciba la página."
+  },
+  "rule_summary": {
+    "message": "$1 · $2 · $3 condiciones"
+  },
+  "rule_types_all_hint": {
+    "message": "Tipos de recurso (ninguno = todos)"
+  },
+  "rules_for_site": {
+    "message": "Reglas de $1"
+  },
+  "rules_other_sites": {
+    "message": "Reglas de otros sitios ($1)"
+  },
+  "rules_priority_label": {
+    "message": "Reglas en orden de prioridad"
+  },
+  "empty_rules_no_site": {
+    "message": "Esta página no tiene sitio: abre tu app para crear reglas para ella."
+  },
+  "settings_timeout": {
+    "message": "Timeout de pausa (s)"
+  },
+  "settings_timeout_hint": {
+    "message": "Entre 5 y 300 s. Al vencer, el request continúa sin cambios."
+  },
+  "settings_timeout_range": {
+    "message": "El timeout debe ser un entero entre 5 y 300 s."
+  },
+  "settings_title": {
+    "message": "Ajustes"
+  },
+  "shortcut_continue_selected": {
+    "message": "Atajo para continuar el seleccionado: $1"
+  },
+  "toast_apply_failed": {
+    "message": "No se pudo aplicar el cambio: el request continuó sin cambios."
+  },
+  "toast_edit_not_applied": {
+    "message": "La edición no se aplicó: $1."
+  },
+  "toast_queue_released": {
+    "message": "El debugger se soltó: los requests pausados continuaron sin cambios."
+  },
+  "toast_rule_deleted": {
+    "message": "Regla «$1» eliminada."
+  },
+  "error_request_gone": {
+    "message": "El request ya no existe (la página navegó o se cerró)."
+  },
+  "notice_rules_invalid": {
+    "message": "Se descartaron $1 reglas guardadas que no eran válidas."
+  },
+  "notice_rules_version": {
+    "message": "Las reglas guardadas son de una versión desconocida y no se usarán."
+  },
+  "rule_error_required": {
+    "message": "Este campo es obligatorio."
+  },
+  "rule_error_too_long": {
+    "message": "Es demasiado largo."
+  },
+  "rule_error_regex_too_long": {
+    "message": "La regex no puede pasar de 512 caracteres."
+  },
+  "rule_error_regex_invalid": {
+    "message": "La regex no es válida: revisa paréntesis y corchetes."
+  },
+  "rule_error_header_name": {
+    "message": "Nombre de header inválido: sin espacios ni caracteres especiales."
+  },
+  "rule_error_header_value": {
+    "message": "El valor no puede tener saltos de línea."
+  },
+  "rule_error_status": {
+    "message": "El status debe estar entre 100 y 599."
+  },
+  "rule_error_duplicates": {
+    "message": "Hay valores repetidos."
+  },
+  "rule_error_too_many": {
+    "message": "Hay demasiados elementos."
+  },
+  "rule_error_number": {
+    "message": "Debe ser un número."
+  },
+  "rule_error_range": {
+    "message": "El mínimo no puede ser mayor que el máximo."
+  },
+  "rule_error_condition_stage": {
+    "message": "Esta condición no existe en esta etapa."
+  },
+  "rule_error_site": {
+    "message": "El sitio no es válido."
+  },
+  "rule_error_body_too_large": {
+    "message": "El body es demasiado grande (1 MB en una regla, 5 MB desde la cola)."
+  },
+  "rule_error_delay": {
+    "message": "El retraso debe ser un entero entre 1 y 60,000 ms."
+  },
+  "rule_error_jsonpath": {
+    "message": "La ruta JSONPath no es válida. Debe empezar con $."
+  },
+  "rule_error_invalid": {
+    "message": "Valor no válido."
+  },
+  "rule_error_too_many_rules": {
+    "message": "Ya hay 500 reglas: elimina alguna para crear otra."
+  },
+  "rule_error_stage_field": {
+    "message": "Este campo no se puede editar en esta etapa."
+  },
+  "rule_error_method": {
+    "message": "Método inválido."
+  },
+  "rule_error_url": {
+    "message": "La URL debe ser absoluta (http o https)."
+  },
+  "toast_paused": {
+    "message": "Request pausado: $1"
+  },
+  "action_view_queue": {
+    "message": "Ver la cola"
+  },
+  "onboarding_step": {
+    "message": "Paso $1 de $2"
+  },
+  "onboarding_bar_title": {
+    "message": "Chrome mostrará una barra amarilla"
+  },
+  "onboarding_bar_body": {
+    "message": "Al adjuntar, Chrome muestra «Nahual está depurando este navegador». Es normal: Nahual usa el debugger de Chrome para ver y pausar el tráfico de esta pestaña. Puedes soltarlo cuando quieras desde el panel o desde la barra."
+  },
+  "onboarding_data_title": {
+    "message": "Qué ve Nahual"
+  },
+  "onboarding_data_body": {
+    "message": "Mientras está adjunto, Nahual ve todo el tráfico de esta pestaña: URLs, headers y bodies, incluidas cookies y tokens. Solo mientras el panel está abierto."
+  },
+  "onboarding_data_mask": {
+    "message": "Los valores sensibles (Authorization, Cookie, tokens) se muestran enmascarados hasta que pulses «Mostrar»."
+  },
+  "onboarding_local_title": {
+    "message": "Nada sale de tu navegador"
+  },
+  "onboarding_local_body": {
+    "message": "Nahual no tiene servidor ni hace requests propios. El historial vive en memoria y se borra al cerrar el panel; solo tus reglas se guardan, en este navegador."
+  },
+  "action_back": {
+    "message": "Atrás"
+  },
+  "action_next": {
+    "message": "Siguiente"
+  },
+  "action_skip": {
+    "message": "Omitir"
+  },
+  "action_close": {
+    "message": "Cerrar"
+  },
+  "action_attach_and_start": {
+    "message": "Adjuntar y empezar"
+  },
+  "action_help": {
+    "message": "Ayuda"
+  },
+  "status_rules_active": {
+    "message": "$1 reglas activas"
+  },
+  "status_queue_size": {
+    "message": "$1 en cola"
+  },
+  "status_global_paused": {
+    "message": "Nahual en pausa: las reglas no se aplican; la captura sigue."
+  },
+  "solution_restricted_page": {
+    "message": "Abre tu app en una pestaña normal (http o https) y vuelve a intentarlo."
+  },
+  "solution_already_attached": {
+    "message": "Cierra la otra herramienta que usa el debugger en esta pestaña y pulsa Reconectar."
+  },
+  "solution_unknown": {
+    "message": "Pulsa Reconectar. Si se repite, recarga la pestaña."
+  },
+  "settings_auto_attach": {
+    "message": "Adjuntar al abrir el panel"
+  },
+  "settings_auto_attach_hint": {
+    "message": "Desactívalo para adjuntar siempre a mano."
+  },
+  "settings_auto_attach_no_consent": {
+    "message": "Se activa después de tu primer «Adjuntar»."
+  },
+  "templates_label": {
+    "message": "Plantillas"
+  },
+  "template_suggested": {
+    "message": "sugerida"
+  },
+  "template_errors": {
+    "message": "Pausar respuestas con error"
+  },
+  "template_empty": {
+    "message": "Pausar respuestas vacías"
+  },
+  "template_mock503": {
+    "message": "Simular API caída"
+  },
+  "template_slow3s": {
+    "message": "Simular red lenta"
+  },
+  "action_kind": {
+    "message": "Acción"
+  },
+  "action_kind_mock": {
+    "message": "Mock"
+  },
+  "action_kind_fail": {
+    "message": "Fallar"
+  },
+  "action_kind_delay": {
+    "message": "Retrasar"
+  },
+  "action_kind_log": {
+    "message": "Solo registrar"
+  },
+  "action_kind_pause_hint": {
+    "message": "Detiene el request y lo pone en la cola para editarlo."
+  },
+  "action_kind_mock_hint": {
+    "message": "En Request responde sin tocar la red; en Response reemplaza la respuesta."
+  },
+  "action_kind_fail_hint": {
+    "message": "La página recibe un error de red."
+  },
+  "action_kind_delay_hint": {
+    "message": "El request continúa sin cambios tras el retraso; el resto del tráfico no espera."
+  },
+  "action_kind_log_hint": {
+    "message": "Continúa sin cambios y marca el intercambio en el historial."
+  },
+  "action_fail_reason": {
+    "message": "Error de red"
+  },
+  "fail_failed": {
+    "message": "Fallido"
+  },
+  "fail_aborted": {
+    "message": "Abortado"
+  },
+  "fail_timedOut": {
+    "message": "Timeout"
+  },
+  "fail_connectionRefused": {
+    "message": "Conexión rechazada"
+  },
+  "fail_nameNotResolved": {
+    "message": "Nombre no resuelto"
+  },
+  "fail_accessDenied": {
+    "message": "Acceso denegado"
+  },
+  "fail_internetDisconnected": {
+    "message": "Sin conexión"
+  },
+  "action_delay_ms": {
+    "message": "Retraso (ms)"
+  },
+  "action_delay_hint": {
+    "message": "Entre 1 y $1 ms."
+  },
+  "action_move_up": {
+    "message": "Subir"
+  },
+  "action_move_down": {
+    "message": "Bajar"
+  },
+  "action_move_up_rule": {
+    "message": "Subir la regla «$1»"
+  },
+  "action_move_down_rule": {
+    "message": "Bajar la regla «$1»"
+  },
+  "toast_rule_moved": {
+    "message": "Regla «$1» en la posición $2 de $3."
+  },
+  "action_pause_nahual": {
+    "message": "Pausar Nahual"
   }
 }

@@ -1,89 +1,88 @@
 import { describe, expect, it } from "vitest";
-import { PanelMessageSchema } from "../src/panel-to-sw.ts";
-import { envelope } from "./helpers.ts";
+import { MAX_PANEL_MESSAGE_CHARS, PanelMessageSchema } from "../src/panel-to-sw.ts";
+import { UUID, UUID2, envelope } from "./helpers.ts";
 
 const ok = (type: string, payload: unknown) =>
   expect(PanelMessageSchema.safeParse(envelope(type, payload)).success).toBe(true);
 const bad = (type: string, payload: unknown) =>
   expect(PanelMessageSchema.safeParse(envelope(type, payload)).success).toBe(false);
 
-const pattern = (urlPattern: string, stage = "request") => ({ urlPattern, stage });
-
-describe("PanelMessageSchema", () => {
+describe("PanelMessageSchema v2", () => {
   it("hello { tabId: int ≥ 0 }", () => {
     ok("hello", { tabId: 0 });
-    ok("hello", { tabId: 42 });
     bad("hello", { tabId: -1 });
     bad("hello", { tabId: 1.5 });
-    bad("hello", {});
   });
 
-  it.each(["attach", "detach", "reconnect"])("%s {}", (type) => {
+  it("attach con consentimiento opcional", () => {
+    ok("attach", {});
+    ok("attach", { consent: true });
+    bad("attach", { consent: false });
+    bad("attach", { force: true });
+  });
+
+  it.each(["detach", "reconnect", "continueAll"])("%s {}", (type) => {
     ok(type, {});
     bad(type, { tabId: 1 });
   });
 
-  it("setPatterns: 0–10 elementos", () => {
-    ok("setPatterns", { patterns: [] });
-    ok("setPatterns", { patterns: Array.from({ length: 10 }, (_, i) => pattern(`*api${i}*`)) });
-    bad("setPatterns", { patterns: Array.from({ length: 11 }, (_, i) => pattern(`*${i}*`)) });
+  it("los comandos de 001 ya no existen", () => {
+    bad("setPatterns", { patterns: [] });
+    bad("setPauseTimeout", { seconds: 30 });
+    bad("continue", { pausedId: "p" });
   });
 
-  it("setPatterns: urlPattern 1–2 048 caracteres, sin espacios", () => {
-    ok("setPatterns", { patterns: [pattern("*")] });
-    ok("setPatterns", { patterns: [pattern("a".repeat(2048))] });
-    bad("setPatterns", { patterns: [pattern("")] });
-    bad("setPatterns", { patterns: [pattern("a".repeat(2049))] });
-    bad("setPatterns", { patterns: [pattern("*api *")] });
-    bad("setPatterns", { patterns: [pattern("*api\t*")] });
+  it("updateSettings: cambio parcial validado con Settings", () => {
+    ok("updateSettings", { pauseTimeoutSeconds: 300 });
+    ok("updateSettings", { globalPaused: true, autoAttach: false });
+    bad("updateSettings", { pauseTimeoutSeconds: 301 });
+    bad("updateSettings", { theme: "dark" });
   });
 
-  it('setPatterns: stage "request" | "response"', () => {
-    ok("setPatterns", { patterns: [pattern("*", "response")] });
-    bad("setPatterns", { patterns: [pattern("*", "Request")] });
+  it("saveRule: estructura libre (la valida el SW para devolver issues por campo)", () => {
+    ok("saveRule", { rule: { name: "x", prefilter: { kind: "regex", pattern: "([a-z" } } });
+    ok("saveRule", { rule: { id: UUID, name: "x" } });
+    bad("saveRule", {});
+    bad("saveRule", { rule: "x" });
   });
 
-  it("setPauseTimeout { seconds: int 5–120 }", () => {
-    ok("setPauseTimeout", { seconds: 5 });
-    ok("setPauseTimeout", { seconds: 120 });
-    bad("setPauseTimeout", { seconds: 4 });
-    bad("setPauseTimeout", { seconds: 121 });
-    bad("setPauseTimeout", { seconds: 30.5 });
+  it("deleteRule, restoreRule y setRuleEnabled exigen un uuid", () => {
+    ok("deleteRule", { ruleId: UUID });
+    ok("restoreRule", { ruleId: UUID });
+    ok("setRuleEnabled", { ruleId: UUID, enabled: false });
+    bad("deleteRule", { ruleId: "1" });
+    bad("setRuleEnabled", { ruleId: UUID });
   });
 
-  it("continue sin headers", () => {
-    ok("continue", { pausedId: "interception-1" });
-    bad("continue", { pausedId: "" });
-    bad("continue", {});
+  it("reorderRules: sitio válido e ids únicos", () => {
+    ok("reorderRules", { site: "http://localhost:3000", ruleIds: [UUID, UUID2] });
+    bad("reorderRules", { site: "http://localhost:3000", ruleIds: [UUID, UUID] });
+    bad("reorderRules", { site: "file:///x", ruleIds: [UUID] });
   });
 
-  it("continue: HeaderEdit name 1–256, token HTTP válido (RFC 9110)", () => {
-    ok("continue", { pausedId: "p", headers: [{ name: "X-Nahual", value: "1" }] });
-    ok("continue", { pausedId: "p", headers: [{ name: "a".repeat(256), value: "1" }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "", value: "1" }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "a".repeat(257), value: "1" }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "X Nahual", value: "1" }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "X:Nahual", value: "1" }] });
+  it("resolvePaused: edit solo con continue, mock solo y obligatorio con mock", () => {
+    ok("resolvePaused", { pausedId: "p", action: "continue" });
+    ok("resolvePaused", { pausedId: "p", action: "continue", edit: { status: 200 } });
+    ok("resolvePaused", { pausedId: "p", action: "continueUnchanged" });
+    ok("resolvePaused", { pausedId: "p", action: "abort" });
+    ok("resolvePaused", { pausedId: "p", action: "mock", mock: { status: 200 } });
+    bad("resolvePaused", { pausedId: "p", action: "mock" });
+    bad("resolvePaused", { pausedId: "p", action: "abort", edit: { status: 200 } });
+    bad("resolvePaused", { pausedId: "p", action: "continueUnchanged", mock: { status: 200 } });
+    bad("resolvePaused", { pausedId: "", action: "continue" });
+    bad("resolvePaused", { pausedId: "p", action: "skip" });
   });
 
-  it("continue: HeaderEdit value string | null, 0–8 192 caracteres, sin \\r ni \\n", () => {
-    ok("continue", { pausedId: "p", headers: [{ name: "x", value: null }] });
-    ok("continue", { pausedId: "p", headers: [{ name: "x", value: "" }] });
-    ok("continue", { pausedId: "p", headers: [{ name: "x", value: "v".repeat(8192) }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "x", value: "v".repeat(8193) }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "x", value: "a\r\nSet-Cookie: y" }] });
-    bad("continue", { pausedId: "p", headers: [{ name: "x", value: "a\nb" }] });
+  it("getBody: lado request o response", () => {
+    ok("getBody", { exchangeId: "net-1", side: "response" });
+    bad("getBody", { exchangeId: "net-1", side: "both" });
   });
 
-  it("continue: como máximo 50 headers", () => {
-    const headers = (n: number) =>
-      Array.from({ length: n }, (_, i) => ({ name: `h${i}`, value: "" }));
-    ok("continue", { pausedId: "p", headers: headers(50) });
-    bad("continue", { pausedId: "p", headers: headers(51) });
+  it("límite de tamaño de un mensaje del panel: 6 MB", () => {
+    expect(MAX_PANEL_MESSAGE_CHARS).toBe(6 * 1024 * 1024);
   });
 
-  it("rechaza type desconocido y payload con campos extra", () => {
+  it("rechaza type desconocido", () => {
     bad("evalCode", {});
-    bad("attach", { force: true });
   });
 });

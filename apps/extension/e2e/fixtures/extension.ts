@@ -10,6 +10,11 @@ export const CONFLICT_EXTENSION = path.resolve(here, "conflict-extension");
 interface Fixtures {
   /** Carga también la extensión auxiliar que actúa como segundo cliente de debugger. */
   withConflictExtension: boolean;
+  /**
+   * Perfil recién instalado: muestra el onboarding. Por defecto las pruebas empiezan con el
+   * onboarding ya visto y sin consentimiento de adjunto automático.
+   */
+  freshProfile: boolean;
   context: BrowserContext;
   nahualWorker: Worker;
   extensionId: string;
@@ -21,6 +26,7 @@ const isNahual = (w: Worker) => !w.url().endsWith("/background.js");
 
 export const test = base.extend<Fixtures>({
   withConflictExtension: [false, { option: true }],
+  freshProfile: [false, { option: true }],
 
   context: async ({ withConflictExtension }, use) => {
     const extensions = withConflictExtension ? [NAHUAL_DIST, CONFLICT_EXTENSION] : [NAHUAL_DIST];
@@ -37,11 +43,27 @@ export const test = base.extend<Fixtures>({
     await context.close();
   },
 
-  nahualWorker: async ({ context }, use) => {
+  nahualWorker: async ({ context, freshProfile }, use) => {
     let worker = context.serviceWorkers().find(isNahual);
     while (!worker) {
       const next = await context.waitForEvent("serviceworker");
       if (isNahual(next)) worker = next;
+    }
+    if (!freshProfile) {
+      await worker.evaluate(() =>
+        chrome.storage.local.set({
+          "nahual.settings.v1": {
+            version: 1,
+            settings: {
+              pauseTimeoutSeconds: 60,
+              globalPaused: false,
+              onboardingSeen: true,
+              attachConsent: false,
+              autoAttach: true,
+            },
+          },
+        }),
+      );
     }
     await use(worker);
   },

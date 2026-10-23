@@ -119,9 +119,12 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
   conexión rechazada ⇒ `ConnectionRefused`, nombre no resuelto ⇒ `NameNotResolved`, acceso
   denegado ⇒ `AccessDenied`, sin conexión ⇒ `InternetDisconnected`. Abortar desde la cola usa
   `Aborted`.
-- **A verificar en implementación** (prueba de integración real en la E2E): que un cambio de URL
-  en `continueRequest` con otro esquema u origen se acepta o falla; si falla, se aplica FR-021
-  (continuar sin cambios y mostrar el error) y el editor lo advierte de antemano.
+- **Verificado en la E2E** (`conditional-pause.spec.ts`, "research R7"): Chrome **acepta** un
+  cambio de URL a otro origen en `continueRequest`. El request va al nuevo origen sin que la
+  página lo note, pero la respuesta sigue sujeta a CORS frente al origen de la página: en la
+  prueba, el 404 sin headers CORS del otro origen llegó como `TypeError: Failed to fetch`. La
+  página no queda colgada. El editor no necesita advertirlo de antemano; FR-021 cubre los
+  fallos de aplicación.
 - **Fallo seguro**: igual que en 001 — si el comando falla, un reintento sin cambios y error al
   panel con `messageKey` (FR-021).
 
@@ -267,10 +270,72 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
   regla de Response con condición JSONPath que no se cumple (incluye pedir el body). Presupuesto:
   p95 del overhead < 20 ms en las corridas 3 y 4. Se registra en este archivo durante la
   implementación.
+- **Resultado** (`e2e/experiments/e4-overhead-rules.spec.ts`, fixture local, HeadlessChrome 156,
+  Debian 13, 500 fetch secuenciales por corrida tras 10 de calentamiento, 2026-10-22):
 
-## Resultados por registrar en implementación
+  | Corrida | p50 (ms) | p95 (ms) | Overhead p95 (ms) |
+  |---|---|---|---|
+  | 1. Sin debugger | 1,9 | 4,1 | — |
+  | 2. Adjunto, sin reglas (solo Network) | 1,5 | 2,6 | — |
+  | 3. Regla Request: prefiltro coincide, condición de header no | 2,6 | 6,6 | **2,5** |
+  | 4. Regla Response: prefiltro coincide, JSONPath no (pide el body) | 2,5 | 6,7 | **2,6** |
 
-- R7: comportamiento de un cambio de URL a otro origen en `continueRequest`.
-- R13/R14: tamaño final del bundle del panel antes y después de 002.
-- R20: tabla de overhead.
-- SC-001: resultados de la prueba moderada con 5 devs (quickstart).
+  Dentro del presupuesto de 20 ms (SC-002). La corrida 2 sale por debajo de la 1 por ruido del
+  fixture local; el overhead de la captura pasiva no es medible a esta escala.
+
+## R21. Mocks locales y CORS (decisión de implementación)
+
+- **Contexto**: hallado en la E2E de la historia 4. Un mock respondido con `Fetch.fulfillRequest`
+  a un request de **otro origen** no lleva headers CORS, y la página lo descarta (`Failed to
+  fetch`). Como casi todas las SPA llaman a su API en otro origen, sin esto "Simular API caída"
+  (FR-018) y la acción Mock (FR-019) no servirían.
+- **Decision**: función pura `mockHeadersFor` en `packages/domain`: si el request va a otro origen
+  que la página y el mock no define `Access-Control-Allow-Origin`, se añade
+  `Access-Control-Allow-Origin: <origen exacto de la página>` (nunca `*`) y
+  `Access-Control-Allow-Credentials: true`. Se aplica a los mocks de reglas y a los creados desde
+  la cola. Los preflight (`OPTIONS` con `Access-Control-Request-Method`) no se responden con el
+  mock: continúan sin cambios.
+- **Rationale**: el contenido del mock es sintético (lo escribió el dev), así que no expone datos
+  de ningún servidor; el origen es exacto y solo afecta a ese mock. Es distinto del modo CORS de
+  desarrollo de 003, que relaja respuestas reales del servidor.
+- **Limitación**: si el preflight de un request no simple va a una API caída, el preflight falla
+  y el mock nunca se aplica. Responder preflights localmente es alcance de 003.
+
+## Tamaño de los bundles (R13/R14)
+
+Build de producción (`pnpm build`), JS sin comprimir y total con `gzip -9`, 2026-10-22:
+
+| Bundle | 001 (`cb2fc9f`) | 002 | Diferencia |
+|---|---|---|---|
+| Service worker (`index.ts-*.js`) | 9,4 KB | 27,6 KB | +18,2 KB |
+| Compartido: Zod, protocolo y dominio con json-p3 (`src-*.js`) | 91,2 KB | 173,2 KB | +82,0 KB |
+| Panel: React, Zustand, Immer, react-virtual y vistas (`panel-*.js`) | 224,2 KB | 300,8 KB | +76,6 KB |
+| **Total** | **325,1 KB** (97,7 KB gzip) | **501,9 KB** (146,5 KB gzip) | **+176,8 KB** (+48,8 KB gzip) |
+
+Sin editor de código (R14) ni librería de componentes (R15), el panel crece menos de lo que
+añadiría solo Monaco. La verificación `verify:dist` confirma que json-p3, Zustand, Immer y
+react-virtual están en los bundles revisados sin `eval`, `new Function` ni red propia.
+
+## Estabilidad de la E2E (T106, SC-003)
+
+Suite completa (54 pruebas, HeadlessChrome 156, Debian 13), 2026-10-22:
+
+- **Primera tanda de 10 corridas**: 7 en verde y 3 con **una** prueba fallida cada una (corridas 3,
+  5 y 6). El script solo guardaba el resumen, así que no se sabe qué prueba falló.
+- **Segunda tanda de 10 corridas**, con registro de fallos: **10 de 10 en verde**, 0 páginas
+  colgadas.
+
+Queda una inestabilidad intermitente sin identificar (3 de 20 corridas). Si reaparece, el script
+de la segunda tanda guarda el nombre y el error de la prueba.
+
+## Validación con personas (T109, T110)
+
+- **SC-001 / T109** (2026-10-22): el equipo reportó que el recorrido de primer uso (pausar y
+  editar la primera respuesta sin documentación) se completa sin problema en menos de 2 minutos.
+  El reporte no detalla el número de participantes ni los tiempos individuales. Como referencia,
+  el recorrido automatizado (`first-use.spec.ts`) tarda ~1,3 s.
+- **T110** (2026-10-22): el equipo reportó que la demo de punta a punta con los pasos del
+  quickstart pasa sin problema.
+- **Fricción observada**: falta poder crear una regla desde un intercambio de la lista (clic
+  derecho sobre un request ⇒ "Crear regla a partir de este request", con el prefiltro, el método
+  y el tipo ya rellenados). Queda como candidata para una feature futura; no bloquea SC-001.

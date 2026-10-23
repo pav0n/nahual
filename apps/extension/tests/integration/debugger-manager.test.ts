@@ -8,6 +8,7 @@ import {
   createSessionRegistry,
   type SessionRegistry,
 } from "../../src/background/session-registry.ts";
+import { frameNavigated } from "../fakes/cdp-events.ts";
 import { FakeDebugger } from "../fakes/fake-debugger.ts";
 import { FakeStorage } from "../fakes/fake-storage.ts";
 
@@ -16,6 +17,8 @@ let registry: SessionRegistry;
 let manager: DebuggerManager;
 let changes: { tabId: number; snapshot: SessionSnapshot }[];
 let ended: number[];
+let attachedTabs: number[];
+let navigations: { tabId: number; site: string | null; url: string }[];
 let clock: number;
 
 beforeEach(() => {
@@ -23,13 +26,20 @@ beforeEach(() => {
   registry = createSessionRegistry(new FakeStorage());
   changes = [];
   ended = [];
+  attachedTabs = [];
+  navigations = [];
   clock = 1_000;
+  cdp.respond("Target.getTargetInfo", () => ({
+    targetInfo: { targetId: "t1", type: "page", url: "http://localhost:3000/app?x=1" },
+  }));
   manager = createDebuggerManager({
     debugger: cdp,
     registry,
     now: () => clock,
     onStateChange: (tabId, snapshot) => void changes.push({ tabId, snapshot }),
     onSessionEnded: (tabId) => void ended.push(tabId),
+    onAttached: (tabId) => void attachedTabs.push(tabId),
+    onNavigated: (tabId, site, url) => void navigations.push({ tabId, site, url }),
   });
 });
 
@@ -156,5 +166,57 @@ describe("DebuggerManager: transiciones (data-model.md)", () => {
     expect(manager.isAttached(1)).toBe(false);
     await manager.attach(1);
     expect(manager.isAttached(1)).toBe(true);
+  });
+});
+
+describe("DebuggerManager: captura pasiva y sitio (research R1, R9)", () => {
+  it("al adjuntar habilita Network con buffers de 5 MB / 50 MB y Page", async () => {
+    await manager.attach(1);
+    expect(cdp.calls("Network.enable", 1)).toEqual([
+      { maxResourceBufferSize: 5 * 1024 * 1024, maxTotalBufferSize: 50 * 1024 * 1024 },
+    ]);
+    expect(cdp.sentMethods(1)).toContain("Page.enable");
+  });
+
+  it("obtiene el sitio con Target.getTargetInfo antes de avisar onAttached", async () => {
+    await manager.attach(1);
+    expect(manager.siteOf(1)).toBe("http://localhost:3000");
+    expect(attachedTabs).toEqual([1]);
+  });
+
+  it("si Network.enable falla, la sesión sigue adjunta (la captura es opcional)", async () => {
+    cdp.failSend("Network.enable", "cdp_error");
+    expect(await manager.attach(1)).toEqual({ ok: true });
+    expect(manager.isAttached(1)).toBe(true);
+  });
+
+  it("Page.frameNavigated del frame principal actualiza el sitio y avisa", async () => {
+    await manager.attach(1);
+    cdp.emit(1, "Page.frameNavigated", frameNavigated("https://otro.test/inicio"));
+    expect(manager.siteOf(1)).toBe("https://otro.test");
+    expect(navigations).toEqual([
+      { tabId: 1, site: "https://otro.test", url: "https://otro.test/inicio" },
+    ]);
+  });
+
+  it("los iframes no cambian el sitio", async () => {
+    await manager.attach(1);
+    cdp.emit(1, "Page.frameNavigated", frameNavigated("https://ads.test/", "main"));
+    expect(manager.siteOf(1)).toBe("http://localhost:3000");
+    expect(navigations).toEqual([]);
+  });
+
+  it("un origen opaco deja el sitio en null", async () => {
+    await manager.attach(1);
+    cdp.emit(1, "Page.frameNavigated", frameNavigated("about:blank"));
+    expect(manager.siteOf(1)).toBeNull();
+    cdp.emit(1, "Page.frameNavigated", frameNavigated("data:text/html,hola"));
+    expect(manager.siteOf(1)).toBeNull();
+  });
+
+  it("al soltarse, el sitio vuelve a null", async () => {
+    await manager.attach(1);
+    await manager.detach(1, "user");
+    expect(manager.siteOf(1)).toBeNull();
   });
 });

@@ -1,17 +1,20 @@
 import {
-  addPattern,
   attach,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
   ownSessions,
+  pausedEditor,
   pausedOption,
-  removeAllPatterns,
+  setPauseTimeout,
   startFetch,
   statusOf,
   tabIdOf,
 } from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
+// Ciclo de 001 con reglas (T075): adjuntar → pausar → continuar → soltar.
 test("adjuntar → pausar → continuar → soltar", async ({
   context,
   nahualWorker,
@@ -28,64 +31,38 @@ test("adjuntar → pausar → continuar → soltar", async ({
     expect(await ownSessions(nahualWorker)).toEqual([tabId]);
   });
 
-  await test.step("pausa en Request y continuar sin cambios", async () => {
-    await addPattern(panel, "*echo-headers*", "request");
+  await createRule(panel, { name: "Echo", pattern: "*echo-headers*", stage: "request" });
+
+  await test.step("pausar y continuar sin cambios", async () => {
     const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
+    await openQueue(panel);
     await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
     await expect(pausedOption(panel, "/echo-headers")).toContainText("Continues automatically in");
-    await panel.getByRole("button", { name: /^Continue Alt/ }).click();
-    expect((await response).status).toBe(200);
-    await expect(panel.getByText("Continued unchanged")).toBeVisible();
-  });
-
-  await test.step("pausa en Request y continuar con X-Nahual: 1", async () => {
-    const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
-    await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-    await panel.getByRole("button", { name: "Add header" }).click();
-    await panel.getByLabel("Name").last().fill("X-Nahual");
-    await panel.getByLabel("Value").last().fill("1");
-    await panel.getByRole("button", { name: "Continue with changes" }).click();
-    const { body } = await response;
-    expect(JSON.parse(body).headers["x-nahual"]).toBe("1");
-    await expect(panel.getByText("Continued with changes")).toBeVisible();
-  });
-
-  await test.step("pausa en Response y añadir un header de respuesta", async () => {
-    await removeAllPatterns(panel);
-    await addPattern(panel, "*/data", "response");
-    const response = startFetch(app, `${servers.apiOrigin}/data`);
-    await expect(pausedOption(panel, "/data")).toContainText("Status 200");
-    await expect(pausedOption(panel, "/data")).toContainText("Body: 11 bytes");
-    await panel.getByRole("button", { name: "Add header" }).click();
-    await panel.getByLabel("Name").last().fill("X-Nahual-Response");
-    await panel.getByLabel("Value").last().fill("yes");
-    await panel.getByRole("button", { name: "Continue with changes" }).click();
-    expect((await response).nahualResponse).toBe("yes");
-  });
-
-  await test.step("redirección: body no disponible", async () => {
-    await removeAllPatterns(panel);
-    await addPattern(panel, "*redirect*", "response");
-    const response = startFetch(app, `${servers.apiOrigin}/redirect`);
-    await expect(pausedOption(panel, "/redirect")).toContainText("Status 302");
-    await expect(pausedOption(panel, "/redirect")).toContainText("Body not available");
-    await panel.getByRole("button", { name: /^Continue Alt/ }).click();
+    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
     const result = await response;
     expect(result.status).toBe(200);
-    expect(result.url).toBe(`${servers.apiOrigin}/data`);
+    expect(JSON.parse(result.body).headers["x-nahual"]).toBeUndefined();
   });
 
-  await test.step("navegar con un request pausado: la pausa se abandona y la página carga", async () => {
-    await removeAllPatterns(panel);
-    await panel.getByLabel(/Pause timeout/).fill("5");
-    await panel.getByRole("button", { name: "Apply" }).click();
-    await addPattern(panel, "*echo-headers*", "request");
-    void startFetch(app, `${servers.apiOrigin}/echo-headers`).catch(() => {});
+  await test.step("continuar con un header añadido", async () => {
+    const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
     await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-    await app.goto(`${servers.appOrigin}/next`);
-    await expect(app.getByRole("heading", { name: "Nahual test app" })).toBeVisible();
+    const editor = pausedEditor(panel);
+    await editor.getByRole("button", { name: "Add header" }).click();
+    const names = editor.getByLabel(/^Header name \d+$/);
+    await names.last().fill("x-nahual");
+    await editor.getByLabel("Value of x-nahual").fill("1");
+    await editor.getByRole("button", { name: "Continue with changes" }).click();
+    expect(JSON.parse((await response).body).headers["x-nahual"]).toBe("1");
+  });
+
+  await test.step("el timeout continúa sin cambios", async () => {
+    await setPauseTimeout(panel, 5);
+    void startFetch(app, `${servers.apiOrigin}/echo-headers`).catch(() => {});
+    await expect(pausedOption(panel, "/echo-headers")).toContainText(
+      "Continues automatically in 5 s",
+    );
     await expect(pausedOption(panel, "/echo-headers")).toHaveCount(0, { timeout: 10_000 });
-    await expect(panel.locator('[data-outcome="abandoned"]')).toHaveCount(1);
   });
 
   await test.step("soltar", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@nahual/extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -11,13 +11,18 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "verify:dist": "vitest run --config vitest.dist.config.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "fixture:serve": "node e2e/fixtures/serve.ts"
   },
   "dependencies": {
+    "@nahual/domain": "workspace:*",
     "@nahual/protocol": "workspace:*",
+    "@tanstack/react-virtual": "3.14.13",
+    "immer": "11.1.21",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

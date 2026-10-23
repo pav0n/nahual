@@ -1,9 +1,10 @@
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 import {
-  addPattern,
   attach,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
   ownSessions,
   pausedOption,
   startFetch,
@@ -23,9 +24,10 @@ async function nextNahualWorker(context: BrowserContext, previous: Worker): Prom
 }
 
 async function pauseOne(page: Page, panel: Page, apiOrigin: string) {
-  await addPattern(panel, "*echo-headers*", "request");
+  await createRule(panel, { name: "Echo", pattern: "*echo-headers*", stage: "request" });
   const started = Date.now();
   const response = startFetch(page, `${apiOrigin}/echo-headers`);
+  await openQueue(panel);
   await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
   return { response, started };
 }

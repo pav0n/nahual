@@ -1,28 +1,29 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import {
-  addPattern,
   attach,
+  callApi,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
+  pausedEditor,
   pausedOption,
-  startFetch,
   statusOf,
   tabIdOf,
+  trafficRow,
 } from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
-const paused = (panel: Page) => panel.getByRole("listbox").getByRole("option");
-
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
-async function expectNoSeriousViolations(panel: Page, label: string) {
+export async function expectNoSeriousViolations(panel: Page, label: string) {
   const { violations } = await new AxeBuilder({ page: panel }).withTags(WCAG).analyze();
   const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious.map((v) => `${label}: ${v.id} (${v.nodes.length})`)).toEqual([]);
 }
 
-async function expectNoHorizontalScroll(panel: Page) {
+export async function expectNoHorizontalScroll(panel: Page) {
   const overflow = await panel.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
@@ -44,63 +45,148 @@ for (const colorScheme of ["light", "dark"] as const) {
     await panel.setViewportSize({ width: 320, height: 900 });
     await expect(panel.locator("html")).toHaveAttribute("data-theme", colorScheme);
 
-    await expectNoSeriousViolations(panel, "vacío");
-    await expectNoHorizontalScroll(panel);
+    for (const tab of ["Traffic", "Rules", "Queue"]) {
+      await panel.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+      await expectNoSeriousViolations(panel, `vacío: ${tab}`);
+      await expectNoHorizontalScroll(panel);
+    }
 
     await attach(panel);
-    await addPattern(panel, "*echo-headers*", "request");
-    void startFetch(app, `${servers.apiOrigin}/echo-headers`).catch(() => {});
-    await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-    await expectNoSeriousViolations(panel, "con pausas");
+    await expectNoSeriousViolations(panel, "adjunto");
     await expectNoHorizontalScroll(panel);
 
-    await panel.getByLabel(/Pause timeout/).fill("200");
-    await panel.getByRole("button", { name: "Apply" }).click();
-    await expect(panel.getByRole("alert")).toContainText("between 5 and 120");
-    await expectNoSeriousViolations(panel, "error");
+    // Historia 1: lista, filtros con error, detalle con headers y body.
+    await panel.getByRole("tab", { name: "Traffic" }).click();
+    await app.reload();
+    await callApi(app, "items");
+    await expect(trafficRow(panel, "/api/items")).toBeVisible();
+    await expectNoSeriousViolations(panel, "tráfico");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByLabel("URL regex").fill("([a-z");
+    await expectNoSeriousViolations(panel, "filtro inválido");
+    await panel.getByLabel("URL regex").fill("");
+    await trafficRow(panel, "/api/items").click();
+    await expectNoSeriousViolations(panel, "detalle: headers");
+    await expectNoHorizontalScroll(panel);
+    await panel.locator(".detail").getByRole("tab", { name: "Response" }).click();
+    await expect(panel.locator(".detail").getByLabel("Response body")).toBeVisible();
+    await expectNoSeriousViolations(panel, "detalle: body");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByRole("button", { name: "Clear" }).click();
+    await expectNoSeriousViolations(panel, "limpiado con deshacer");
+
+    // Historia 2: lista de reglas, editor con errores, cola y editor de pausados.
+    await createRule(panel, {
+      name: "Errores",
+      pattern: "*/api/*",
+      stage: "response",
+      conditions: [{ kind: "Status", op: "≥", fields: { Value: "500" } }],
+    });
+    await expectNoSeriousViolations(panel, "reglas");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByRole("button", { name: "New rule" }).click();
+    await panel.locator(".editor").getByLabel("Prefilter type").selectOption("regex");
+    await panel.locator(".editor").getByLabel("URL prefilter").fill("([a-z");
+    await panel.locator(".editor").getByRole("button", { name: "Add condition" }).click();
+    await panel.locator(".editor").getByRole("button", { name: "Save rule" }).click();
+    await expect(panel.locator(".editor [aria-invalid=true]").first()).toBeVisible();
+    await expectNoSeriousViolations(panel, "editor con errores");
+    await expectNoHorizontalScroll(panel);
+    await panel.locator(".editor").getByRole("button", { name: "Cancel" }).click();
+
+    const error = callApi(app, "error");
+    await openQueue(panel);
+    await expect(pausedOption(panel, "/api/error")).toBeVisible();
+    await expectNoSeriousViolations(panel, "cola y editor de pausados");
+    await expectNoHorizontalScroll(panel);
+    await pausedEditor(panel).getByRole("button", { name: "Respond with mock" }).click();
+    await expectNoSeriousViolations(panel, "mock desde la cola");
+    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
+    expect((await error).status).toBe(500);
+
+    // Historia 4: editor de acciones (mock, fallar, retrasar) y lista reordenable.
+    await panel.getByRole("tab", { name: "Rules" }).click();
+    await panel.getByRole("button", { name: "New rule" }).click();
+    const editor = panel.locator(".editor");
+    for (const action of ["mock", "fail", "delay"]) {
+      await editor.getByLabel("Action").selectOption(action);
+      await expectNoSeriousViolations(panel, `acción ${action}`);
+      await expectNoHorizontalScroll(panel);
+    }
+    await editor.getByLabel("Name", { exact: true }).fill("Segunda");
+    await editor.getByRole("button", { name: "Save rule" }).click();
+    await expect(panel.locator(".rule-item")).toHaveCount(2);
+    await expectNoSeriousViolations(panel, "lista reordenable");
     await expectNoHorizontalScroll(panel);
   });
 }
 
-test("ciclo completo solo con teclado", async ({ context, nahualWorker, extensionId, servers }) => {
-  const app = await openApp(context, servers.appOrigin);
+test("pestañas y adjuntar solo con teclado", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  await openApp(context, servers.appOrigin);
   const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
   const panel = await openPanel(context, extensionId, tabId);
   await panel.bringToFront();
 
-  const tabUntil = async (predicate: () => boolean) => {
-    for (let i = 0; i < 30; i++) {
-      await panel.keyboard.press("Tab");
-      if (await panel.evaluate(predicate)) return;
-    }
-    throw new Error("No se llegó al elemento con Tab");
-  };
-
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Attached");
 
-  await tabUntil(
-    () => document.activeElement?.closest("label")?.textContent?.includes("URL pattern") ?? false,
+  await panel.getByRole("tab", { name: "Traffic" }).focus();
+  await panel.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "Rules" })).toHaveAttribute("aria-selected", "true");
+  await expect(panel.getByRole("tab", { name: "Rules" })).toBeFocused();
+  await panel.keyboard.press("End");
+  await expect(panel.getByRole("tab", { name: /^Queue/ })).toHaveAttribute("aria-selected", "true");
+  await panel.keyboard.press("Home");
+  await expect(panel.getByRole("tab", { name: "Traffic" })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
-  await panel.keyboard.type("*echo-headers*");
-  await panel.keyboard.press("Enter");
-  await expect(panel.getByText("*echo-headers*", { exact: true })).toBeVisible();
-
-  const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
-  await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-  void startFetch(app, `${servers.apiOrigin}/echo-headers?2`).catch(() => {});
-  await expect(paused(panel)).toHaveCount(2);
-
-  await tabUntil(() => document.activeElement?.getAttribute("role") === "listbox");
-  await panel.keyboard.press("ArrowDown");
-  await expect(paused(panel).nth(1)).toHaveAttribute("aria-selected", "true");
-  await panel.keyboard.press("ArrowUp");
-  await panel.keyboard.press("Alt+Shift+C");
-  expect((await response).status).toBe(200);
-  await expect(paused(panel)).toHaveCount(1);
-  await panel.keyboard.press("Alt+Shift+C");
-  await expect(paused(panel)).toHaveCount(0);
 
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Disconnected");
+});
+
+test.describe("primer uso", () => {
+  test.use({ freshProfile: true });
+
+  test("onboarding: axe en cada paso, foco atrapado y Escape", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await context.newPage();
+    await panel.setViewportSize({ width: 320, height: 800 });
+    await panel.goto(
+      `chrome-extension://${extensionId}/src/panel/panel.html?__nahualTestTabId=${tabId}`,
+    );
+    await panel.bringToFront();
+    const dialog = panel.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    for (let step = 1; step <= 3; step++) {
+      await expectNoSeriousViolations(panel, `onboarding paso ${step}`);
+      await expectNoHorizontalScroll(panel);
+      if (step < 3) await dialog.getByRole("button", { name: "Next" }).click();
+    }
+    // El resto de la página queda inerte: el foco nunca cae en un elemento fuera del diálogo
+    // (puede salir a la interfaz del navegador, que no es parte de la página).
+    for (let i = 0; i < 8; i++) {
+      await panel.keyboard.press("Tab");
+      const outside = await panel.evaluate(() => {
+        const el = document.activeElement;
+        return el !== null && el !== document.body && !el.closest("dialog");
+      });
+      expect(outside).toBe(false);
+    }
+    await panel.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expectNoSeriousViolations(panel, "tras el onboarding");
+  });
 });

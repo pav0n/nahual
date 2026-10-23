@@ -1,56 +1,62 @@
+import { SettingsPatchSchema, SiteSchema } from "@nahual/domain";
 import { z } from "zod";
 import { message } from "./envelope.ts";
 
-/** Token HTTP (RFC 9110, sección 5.6.2). */
-const HTTP_TOKEN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
-
-export const StageSchema = z.enum(["request", "response"]);
-export type Stage = z.infer<typeof StageSchema>;
-
-export const InterceptionPatternSchema = z.strictObject({
-  urlPattern: z.string().min(1).max(2048).regex(/^\S+$/, "sin espacios"),
-  stage: StageSchema,
-});
-export type InterceptionPattern = z.infer<typeof InterceptionPatternSchema>;
-
-export const MAX_PATTERNS = 10;
-export const MIN_PAUSE_TIMEOUT_SECONDS = 5;
-export const MAX_PAUSE_TIMEOUT_SECONDS = 120;
-export const DEFAULT_PAUSE_TIMEOUT_SECONDS = 30;
-
-export const HeaderEditSchema = z.strictObject({
-  name: z.string().min(1).max(256).regex(HTTP_TOKEN, "token HTTP"),
-  /** `null` elimina el header; otro valor lo añade o reemplaza. */
-  value: z
-    .string()
-    .max(8192)
-    .regex(/^[^\r\n]*$/, "sin saltos de línea")
-    .nullable(),
-});
-export type HeaderEdit = z.infer<typeof HeaderEditSchema>;
+/**
+ * Los mensajes del panel que superan este tamaño se descartan antes de parsearlos: un mock o un
+ * body editado de 5 MB más sus metadatos (contracts/panel-protocol.md).
+ */
+export const MAX_PANEL_MESSAGE_CHARS = 6 * 1024 * 1024;
 
 const Empty = z.strictObject({});
+const RuleId = z.uuid();
+const PausedId = z.string().min(1).max(256);
+
+/**
+ * Objeto que el SW valida con los schemas de dominio para responder `issues` por campo; aquí
+ * solo se comprueba la forma.
+ */
+const Unvalidated = z.record(z.string(), z.unknown());
+
+export const RESOLVE_ACTIONS = ["continue", "continueUnchanged", "mock", "abort"] as const;
+
+const ResolvePausedSchema = z
+  .strictObject({
+    pausedId: PausedId,
+    action: z.enum(RESOLVE_ACTIONS),
+    edit: Unvalidated.optional(),
+    mock: Unvalidated.optional(),
+  })
+  .refine((p) => p.edit === undefined || p.action === "continue", { path: ["edit"] })
+  .refine((p) => (p.action === "mock") === (p.mock !== undefined), { path: ["mock"] });
 
 export const PanelMessageSchema = z.discriminatedUnion("type", [
   message("hello", z.strictObject({ tabId: z.int().min(0) })),
-  message("attach", Empty),
+  message("attach", z.strictObject({ consent: z.literal(true).optional() })),
   message("detach", Empty),
   message("reconnect", Empty),
+  message("updateSettings", SettingsPatchSchema.strict()),
+  message("saveRule", z.strictObject({ rule: Unvalidated })),
+  message("deleteRule", z.strictObject({ ruleId: RuleId })),
+  message("restoreRule", z.strictObject({ ruleId: RuleId })),
   message(
-    "setPatterns",
-    z.strictObject({ patterns: z.array(InterceptionPatternSchema).max(MAX_PATTERNS) }),
-  ),
-  message(
-    "setPauseTimeout",
+    "reorderRules",
     z.strictObject({
-      seconds: z.int().min(MIN_PAUSE_TIMEOUT_SECONDS).max(MAX_PAUSE_TIMEOUT_SECONDS),
+      site: SiteSchema,
+      ruleIds: z
+        .array(RuleId)
+        .max(500)
+        .refine((ids) => new Set(ids).size === ids.length),
     }),
   ),
+  message("setRuleEnabled", z.strictObject({ ruleId: RuleId, enabled: z.boolean() })),
+  message("resolvePaused", ResolvePausedSchema),
+  message("continueAll", Empty),
   message(
-    "continue",
+    "getBody",
     z.strictObject({
-      pausedId: z.string().min(1).max(256),
-      headers: z.array(HeaderEditSchema).max(50).optional(),
+      exchangeId: z.string().min(1).max(256),
+      side: z.enum(["request", "response"]),
     }),
   ),
 ]);

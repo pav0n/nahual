@@ -98,15 +98,21 @@ describe("panel-port: mensajes", () => {
   });
 
   it.each([
-    ["v ≠ 1", (m: Record<string, unknown>) => ({ ...m, v: 2 })],
+    ["v ≠ 2 (mensaje de 001)", (m: Record<string, unknown>) => ({ ...m, v: 1 })],
     ["type desconocido", (m: Record<string, unknown>) => ({ ...m, type: "eval" })],
-    ["payload inválido", (m: Record<string, unknown>) => ({ ...m, payload: { seconds: 999 } })],
+    [
+      "payload inválido",
+      (m: Record<string, unknown>) => ({ ...m, payload: { pauseTimeoutSeconds: 999 } }),
+    ],
   ])("descarta sin responder y registra sin datos: %s", async (_name, mutate) => {
     p.fromPanel(makeCommand("hello", { tabId: 5 }));
     await flush();
     const before = p.received.length;
     const secret = "https://secret.example/token=abc";
-    p.fromPanel({ ...mutate(makeCommand("setPauseTimeout", { seconds: 30 })), extra: secret });
+    p.fromPanel({
+      ...mutate(makeCommand("updateSettings", { pauseTimeoutSeconds: 30 })),
+      extra: secret,
+    });
     await flush();
     expect(p.received.length).toBe(before);
     expect(env.commands).toEqual([]);
@@ -117,7 +123,7 @@ describe("panel-port: mensajes", () => {
   it("cada comando válido recibe exactamente un ack o error con su correlationId", async () => {
     p.fromPanel(makeCommand("hello", { tabId: 5 }));
     await flush();
-    const cmd = makeCommand("setPauseTimeout", { seconds: 30 });
+    const cmd = makeCommand("updateSettings", { pauseTimeoutSeconds: 30 });
     p.fromPanel(cmd);
     await flush();
     const replies = (p.received as SwMessage[]).filter((m) => m.correlationId === cmd.id);
@@ -130,7 +136,7 @@ describe("panel-port: mensajes", () => {
     p = env.runtime.connect();
     p.fromPanel(makeCommand("hello", { tabId: 5 }));
     await flush();
-    const cmd = makeCommand("continue", { pausedId: "x" });
+    const cmd = makeCommand("resolvePaused", { pausedId: "x", action: "continueUnchanged" });
     p.fromPanel(cmd);
     await flush();
     expect(p.received.at(-1)).toMatchObject({
@@ -138,6 +144,44 @@ describe("panel-port: mensajes", () => {
       correlationId: cmd.id,
       payload: { code: "not_attached", messageKey: "error_not_attached" },
     });
+  });
+
+  it("un error con issues los incluye en la respuesta", async () => {
+    env = setup({
+      ok: false,
+      code: "rule_invalid",
+      issues: [{ path: "prefilter.pattern", messageKey: "rule_error_regex_invalid" }],
+    });
+    p = env.runtime.connect();
+    p.fromPanel(makeCommand("hello", { tabId: 5 }));
+    await flush();
+    const cmd = makeCommand("saveRule", { rule: { name: "x" } });
+    p.fromPanel(cmd);
+    await flush();
+    expect(p.received.at(-1)).toMatchObject({
+      type: "error",
+      correlationId: cmd.id,
+      payload: {
+        code: "rule_invalid",
+        issues: [{ path: "prefilter.pattern", messageKey: "rule_error_regex_invalid" }],
+      },
+    });
+  });
+
+  it("un mensaje de más de 6 MB se descarta sin parsear ni responder", async () => {
+    p.fromPanel(makeCommand("hello", { tabId: 5 }));
+    await flush();
+    const before = p.received.length;
+    const huge = makeCommand("resolvePaused", {
+      pausedId: "p",
+      action: "continue",
+      edit: { body: "x".repeat(6 * 1024 * 1024 + 1) },
+    });
+    p.fromPanel(huge);
+    await flush();
+    expect(p.received.length).toBe(before);
+    expect(env.commands).toEqual([]);
+    expect(env.logs.at(-1)).toContain("demasiado grande");
   });
 
   it("si onCommand lanza, responde error cdp_error y el puerto sigue abierto", async () => {
@@ -207,7 +251,7 @@ describe("panel-port: dueño del puerto por pestaña", () => {
     a.fromPanel(makeCommand("hello", { tabId: 1 }));
     b.fromPanel(makeCommand("hello", { tabId: 2 }));
     await flush();
-    env.port.send(2, { v: 1, id: crypto.randomUUID(), type: "ack", payload: {} });
+    env.port.send(2, { v: 2, id: crypto.randomUUID(), type: "ack", payload: {} });
     expect(types(a)).toEqual(["ack"]);
     expect(types(b)).toEqual(["ack", "ack"]);
   });

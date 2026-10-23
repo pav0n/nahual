@@ -14,5 +14,9 @@
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.3",
     "vitest": "5.0.3"
+  },
+  "dependencies": {
+    "json-p3": "3.0.0",
+    "zod": "4.6.5"
   }
 }

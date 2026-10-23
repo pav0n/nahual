@@ -12,6 +12,7 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
+    "@nahual/domain": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {
