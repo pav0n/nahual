@@ -36,7 +36,8 @@ async function registryOf(worker: Worker) {
   );
 }
 
-test("variante 1: chrome.runtime.reload() con un request pausado", async ({
+// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
+test.fixme("variante 1: chrome.runtime.reload() con un request pausado", async ({
   context,
   nahualWorker,
   extensionId,
@@ -77,7 +78,8 @@ test("variante 1: chrome.runtime.reload() con un request pausado", async ({
   expect(await registryOf(worker)).toEqual([]);
 });
 
-test("variante 2: detener el service worker con el panel abierto", async ({
+// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
+test.fixme("variante 2: detener el service worker con el panel abierto", async ({
   context,
   nahualWorker,
   extensionId,

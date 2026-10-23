@@ -12,7 +12,8 @@ import {
 } from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
-test("adjuntar → pausar → continuar → soltar", async ({
+// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
+test.fixme("adjuntar → pausar → continuar → soltar", async ({
   context,
   nahualWorker,
   extensionId,

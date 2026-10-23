@@ -1,5 +1,7 @@
 import type { SessionState } from "@nahual/protocol";
 import { t } from "../../shared/i18n.ts";
+import { command } from "../commands.ts";
+import { usePanelStore } from "../store/index.ts";
 import { SHORTCUT_TOGGLE_ATTACH } from "../use-shortcuts.ts";
 
 const ICONS: Record<SessionState["status"], string> = {
@@ -9,14 +11,9 @@ const ICONS: Record<SessionState["status"], string> = {
   conflict: "▲",
 };
 
-interface Props {
-  state: SessionState | null;
-  onAttach(): void;
-  onDetach(): void;
-  onReconnect(): void;
-}
-
-export function StatusBar({ state, onAttach, onDetach, onReconnect }: Props) {
+/** Indicador permanente del debugger (FR-028): estado con texto, sitio y acción. */
+export function StatusBar() {
+  const state = usePanelStore((s) => s.session);
   const status = state?.status ?? "detached";
   const hint = t("shortcut_hint", SHORTCUT_TOGGLE_ATTACH);
   // Hubo una sesión (o un conflicto) que terminó: se ofrece reconectar en lugar de adjuntar.
@@ -29,17 +26,28 @@ export function StatusBar({ state, onAttach, onDetach, onReconnect }: Props) {
           <span aria-hidden="true">{ICONS[status]} </span>
           {t(`status_${status}`)}
         </span>
+        {status === "attached" ? (
+          <span className="muted">
+            {" · "}
+            {state?.site ? t("site_label", state.site) : t("site_none")}
+          </span>
+        ) : null}
         {state?.cause ? <p className="muted">{t(`cause_${state.cause}`)}</p> : null}
       </div>
       {status === "attached" ? (
-        <button type="button" onClick={onDetach} aria-keyshortcuts="Alt+Shift+A" title={hint}>
+        <button
+          type="button"
+          onClick={() => void command("detach", {})}
+          aria-keyshortcuts="Alt+Shift+A"
+          title={hint}
+        >
           {t("action_detach")} <kbd>{SHORTCUT_TOGGLE_ATTACH}</kbd>
         </button>
       ) : canReconnect ? (
         <button
           type="button"
           className="primary"
-          onClick={onReconnect}
+          onClick={() => void command("reconnect", {})}
           aria-keyshortcuts="Alt+Shift+A"
           title={hint}
         >
@@ -49,7 +57,7 @@ export function StatusBar({ state, onAttach, onDetach, onReconnect }: Props) {
         <button
           type="button"
           className="primary"
-          onClick={onAttach}
+          onClick={() => void command("attach", {})}
           disabled={status === "attaching"}
           aria-keyshortcuts="Alt+Shift+A"
           title={hint}

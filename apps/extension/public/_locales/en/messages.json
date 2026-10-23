@@ -53,12 +53,6 @@
   "error_restricted_page": {
     "message": "Chrome does not allow debugging this page. Open another page."
   },
-  "error_pattern_invalid": {
-    "message": "Invalid pattern: use 1 to 2,048 characters, no spaces, with * and ? as wildcards (10 patterns at most)."
-  },
-  "error_timeout_out_of_range": {
-    "message": "The timeout must be between 5 and 120 seconds. The previous value is kept."
-  },
   "error_unknown_paused_id": {
     "message": "That pause was already resolved (continued, expired or abandoned)."
   },
@@ -74,30 +68,6 @@
   "action_reconnect": {
     "message": "Reconnect"
   },
-  "action_continue": {
-    "message": "Continue"
-  },
-  "action_continue_modified": {
-    "message": "Continue with changes"
-  },
-  "action_add_pattern": {
-    "message": "Add pattern"
-  },
-  "action_remove_pattern": {
-    "message": "Remove pattern $1"
-  },
-  "action_add_header": {
-    "message": "Add header"
-  },
-  "action_remove_header": {
-    "message": "Remove header $1"
-  },
-  "action_apply_timeout": {
-    "message": "Apply"
-  },
-  "label_url_pattern": {
-    "message": "URL pattern"
-  },
   "label_stage": {
     "message": "Stage"
   },
@@ -107,67 +77,85 @@
   "stage_response": {
     "message": "Response"
   },
-  "label_timeout_seconds": {
-    "message": "Pause timeout (seconds, 5–120)"
-  },
-  "label_header_name": {
-    "message": "Name"
-  },
-  "label_header_value": {
-    "message": "Value"
-  },
-  "section_patterns": {
-    "message": "Interception patterns"
-  },
-  "section_paused": {
-    "message": "Paused requests"
-  },
-  "section_headers": {
-    "message": "Headers"
-  },
-  "empty_no_patterns": {
-    "message": "No patterns: nothing is paused. Add a URL pattern to start."
-  },
-  "empty_no_paused": {
-    "message": "There are no paused requests."
-  },
   "empty_not_attached": {
     "message": "Attach the debugger to intercept this tab's traffic."
-  },
-  "paused_expires_in": {
-    "message": "Continues automatically in $1 s"
-  },
-  "paused_body_unavailable": {
-    "message": "Body not available"
-  },
-  "paused_body_size": {
-    "message": "Body: $1 bytes"
-  },
-  "paused_status": {
-    "message": "Status $1"
-  },
-  "outcome_continued": {
-    "message": "Continued unchanged"
-  },
-  "outcome_modified": {
-    "message": "Continued with changes"
-  },
-  "outcome_timed_out": {
-    "message": "Timed out: continued unchanged"
-  },
-  "outcome_failed": {
-    "message": "Failed: continued unchanged"
-  },
-  "outcome_abandoned": {
-    "message": "Abandoned (the page navigated, closed or the debugger detached)"
   },
   "shortcut_hint": {
     "message": "Shortcut: $1"
   },
-  "error_header_invalid": {
-    "message": "Invalid header: the name must be an HTTP token of 1 to 256 characters and the value cannot contain line breaks (8,192 characters at most, 50 changes)."
-  },
   "error_no_tab": {
     "message": "The inspected tab could not be identified. Close and reopen DevTools."
+  },
+  "tabs_label": {
+    "message": "Nahual sections"
+  },
+  "tab_traffic": {
+    "message": "Traffic"
+  },
+  "tab_rules": {
+    "message": "Rules"
+  },
+  "tab_queue": {
+    "message": "Queue"
+  },
+  "tab_queue_count": {
+    "message": "Queue ($1)"
+  },
+  "site_label": {
+    "message": "Site: $1"
+  },
+  "site_none": {
+    "message": "This page has no site (opaque origin): traffic is captured but no rules apply."
+  },
+  "toasts_label": {
+    "message": "Notifications"
+  },
+  "action_dismiss": {
+    "message": "Dismiss"
+  },
+  "empty_traffic_title": {
+    "message": "No traffic yet"
+  },
+  "empty_traffic_body": {
+    "message": "Attach the debugger and reload the page to capture its requests."
+  },
+  "empty_rules_title": {
+    "message": "No rules yet"
+  },
+  "empty_rules_body": {
+    "message": "A rule pauses, mocks or delays only the requests that match a condition."
+  },
+  "empty_queue_title": {
+    "message": "Nothing is paused"
+  },
+  "empty_queue_body": {
+    "message": "When a rule pauses a request, it shows up here so you can edit it."
+  },
+  "error_disconnected": {
+    "message": "The panel lost its connection to Nahual. It will reconnect in a few seconds."
+  },
+  "error_rule_invalid": {
+    "message": "The rule has errors. Check the highlighted fields."
+  },
+  "error_unknown_rule": {
+    "message": "That rule no longer exists. It may have been deleted in another tab."
+  },
+  "error_settings_invalid": {
+    "message": "That setting is not valid. Check the allowed range."
+  },
+  "error_storage_quota": {
+    "message": "Out of storage space. Delete rules or shrink mock bodies."
+  },
+  "error_edit_invalid": {
+    "message": "The edit has errors. Check the highlighted fields."
+  },
+  "error_body_unavailable": {
+    "message": "The body is no longer available: Chrome dropped it or it never existed."
+  },
+  "error_no_site": {
+    "message": "This page has no site, so rules cannot be assigned to it."
+  },
+  "notice_settings_reset": {
+    "message": "Some saved settings were invalid and were reset to their defaults."
   }
 }

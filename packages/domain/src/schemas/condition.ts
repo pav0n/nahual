@@ -6,7 +6,7 @@ import {
   uniqueArray,
   HTTP_METHODS,
 } from "./common.ts";
-import { LIMITS, RegexSchema, isCompilableRegex } from "./limits.ts";
+import { LIMITS, isCompilableRegex } from "./limits.ts";
 
 /** Operadores que no llevan `value`. */
 const VALUELESS = new Set(["exists", "notExists", "empty", "notEmpty"]);

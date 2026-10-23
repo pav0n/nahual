@@ -53,12 +53,6 @@
   "error_restricted_page": {
     "message": "Chrome no permite depurar esta página. Abre otra página."
   },
-  "error_pattern_invalid": {
-    "message": "Patrón inválido: usa de 1 a 2 048 caracteres, sin espacios, con * y ? como comodines (máximo 10 patrones)."
-  },
-  "error_timeout_out_of_range": {
-    "message": "El timeout debe estar entre 5 y 120 segundos. Se conserva el valor anterior."
-  },
   "error_unknown_paused_id": {
     "message": "Esa pausa ya se resolvió (continuó, venció o se abandonó)."
   },
@@ -74,30 +68,6 @@
   "action_reconnect": {
     "message": "Reconectar"
   },
-  "action_continue": {
-    "message": "Continuar"
-  },
-  "action_continue_modified": {
-    "message": "Continuar con cambios"
-  },
-  "action_add_pattern": {
-    "message": "Añadir patrón"
-  },
-  "action_remove_pattern": {
-    "message": "Quitar patrón $1"
-  },
-  "action_add_header": {
-    "message": "Añadir header"
-  },
-  "action_remove_header": {
-    "message": "Quitar header $1"
-  },
-  "action_apply_timeout": {
-    "message": "Aplicar"
-  },
-  "label_url_pattern": {
-    "message": "Patrón de URL"
-  },
   "label_stage": {
     "message": "Etapa"
   },
@@ -107,67 +77,85 @@
   "stage_response": {
     "message": "Response"
   },
-  "label_timeout_seconds": {
-    "message": "Timeout de pausa (segundos, 5–120)"
-  },
-  "label_header_name": {
-    "message": "Nombre"
-  },
-  "label_header_value": {
-    "message": "Valor"
-  },
-  "section_patterns": {
-    "message": "Patrones de intercepción"
-  },
-  "section_paused": {
-    "message": "Requests pausados"
-  },
-  "section_headers": {
-    "message": "Headers"
-  },
-  "empty_no_patterns": {
-    "message": "Sin patrones: no se pausa nada. Añade un patrón de URL para empezar."
-  },
-  "empty_no_paused": {
-    "message": "No hay requests pausados."
-  },
   "empty_not_attached": {
     "message": "Adjunta el debugger para interceptar el tráfico de esta pestaña."
-  },
-  "paused_expires_in": {
-    "message": "Continúa solo en $1 s"
-  },
-  "paused_body_unavailable": {
-    "message": "Body no disponible"
-  },
-  "paused_body_size": {
-    "message": "Body: $1 bytes"
-  },
-  "paused_status": {
-    "message": "Status $1"
-  },
-  "outcome_continued": {
-    "message": "Continuado sin cambios"
-  },
-  "outcome_modified": {
-    "message": "Continuado con cambios"
-  },
-  "outcome_timed_out": {
-    "message": "Venció el timeout: continuó sin cambios"
-  },
-  "outcome_failed": {
-    "message": "Falló: continuó sin cambios"
-  },
-  "outcome_abandoned": {
-    "message": "Abandonado (la página navegó, se cerró o el debugger se soltó)"
   },
   "shortcut_hint": {
     "message": "Atajo: $1"
   },
-  "error_header_invalid": {
-    "message": "Header inválido: el nombre debe ser un token HTTP de 1 a 256 caracteres y el valor no puede tener saltos de línea (máximo 8 192 caracteres, 50 cambios)."
-  },
   "error_no_tab": {
     "message": "No se pudo identificar la pestaña inspeccionada. Cierra y vuelve a abrir DevTools."
+  },
+  "tabs_label": {
+    "message": "Secciones de Nahual"
+  },
+  "tab_traffic": {
+    "message": "Tráfico"
+  },
+  "tab_rules": {
+    "message": "Reglas"
+  },
+  "tab_queue": {
+    "message": "Cola"
+  },
+  "tab_queue_count": {
+    "message": "Cola ($1)"
+  },
+  "site_label": {
+    "message": "Sitio: $1"
+  },
+  "site_none": {
+    "message": "Esta página no tiene sitio (origen opaco): solo se captura, no se aplican reglas."
+  },
+  "toasts_label": {
+    "message": "Avisos"
+  },
+  "action_dismiss": {
+    "message": "Cerrar aviso"
+  },
+  "empty_traffic_title": {
+    "message": "Todavía no hay tráfico"
+  },
+  "empty_traffic_body": {
+    "message": "Adjunta el debugger y recarga la página para capturar sus requests."
+  },
+  "empty_rules_title": {
+    "message": "No hay reglas"
+  },
+  "empty_rules_body": {
+    "message": "Una regla pausa, simula o retrasa solo los requests que cumplen una condición."
+  },
+  "empty_queue_title": {
+    "message": "No hay nada pausado"
+  },
+  "empty_queue_body": {
+    "message": "Cuando una regla pause un request, aparecerá aquí para editarlo."
+  },
+  "error_disconnected": {
+    "message": "El panel perdió la conexión con Nahual. Se reconectará solo en unos segundos."
+  },
+  "error_rule_invalid": {
+    "message": "La regla tiene errores. Revisa los campos marcados."
+  },
+  "error_unknown_rule": {
+    "message": "Esa regla ya no existe. Puede que se haya eliminado en otra pestaña."
+  },
+  "error_settings_invalid": {
+    "message": "Ese ajuste no es válido. Revisa el rango permitido."
+  },
+  "error_storage_quota": {
+    "message": "No queda espacio para guardar. Elimina reglas o reduce el body de los mocks."
+  },
+  "error_edit_invalid": {
+    "message": "La edición tiene errores. Revisa los campos marcados."
+  },
+  "error_body_unavailable": {
+    "message": "El body ya no está disponible: Chrome lo descartó o nunca existió."
+  },
+  "error_no_site": {
+    "message": "Esta página no tiene sitio, así que no se le pueden asignar reglas."
+  },
+  "notice_settings_reset": {
+    "message": "Algunos ajustes guardados no eran válidos y volvieron a su valor por defecto."
   }
 }

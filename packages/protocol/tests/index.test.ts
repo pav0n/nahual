@@ -8,7 +8,7 @@ describe("parsePanelMessage / parseSwMessage", () => {
     expect(result).toEqual({ ok: true, message: envelope("hello", { tabId: 7 }) });
   });
 
-  it.each([undefined, null, 42, "x", [], {}, { v: 1 }, envelope("hello", { tabId: "7" })])(
+  it.each([undefined, null, 42, "x", [], {}, { v: 2 }, envelope("hello", { tabId: "7" })])(
     "nunca lanzan con entrada inválida (%j)",
     (raw) => {
       expect(() => parsePanelMessage(raw)).not.toThrow();
@@ -21,14 +21,15 @@ describe("parsePanelMessage / parseSwMessage", () => {
   it("el error describe la ruta del problema sin incluir el valor recibido", () => {
     const secret = "Bearer super-secret-token";
     const result = parsePanelMessage(
-      envelope("continue", {
-        pausedId: "p",
-        headers: [{ name: "Authorization", value: `${secret}\n` }],
+      envelope("resolvePaused", {
+        pausedId: secret,
+        action: "continue",
+        extra: secret,
       }),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain("payload.headers.0.value");
+      expect(result.error).toContain("payload");
       expect(result.error).not.toContain(secret);
     }
   });
@@ -36,7 +37,7 @@ describe("parsePanelMessage / parseSwMessage", () => {
 
 describe("makeCommand / makeEvent", () => {
   it("makeCommand produce un comando válido con id UUID v4", () => {
-    const cmd = makeCommand("setPauseTimeout", { seconds: 30 });
+    const cmd = makeCommand("updateSettings", { pauseTimeoutSeconds: 30 });
     expect(parsePanelMessage(cmd).ok).toBe(true);
     expect(cmd.id).not.toBe(makeCommand("attach", {}).id);
   });

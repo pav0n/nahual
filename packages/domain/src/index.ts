@@ -11,3 +11,4 @@ export * from "./schemas/paused.ts";
 export * from "./schemas/rule.ts";
 export * from "./schemas/settings.ts";
 export * from "./sensitive.ts";
+export * from "./fetch-patterns.ts";

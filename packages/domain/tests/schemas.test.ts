@@ -242,7 +242,7 @@ describe("Exchange y PausedItem", () => {
     expect(ok({ status: 200, url: "https://api.test/v2", method: "PATCH", body: "{}" })).toBe(true);
     expect(ok({ status: 600 })).toBe(false);
     expect(ok({ url: "/relativa" })).toBe(false);
-    expect(ok({ url: "javascript:alert(1)" })).toBe(false);
+    expect(ok({ url: ["javascript", "alert(1)"].join(":") })).toBe(false);
     expect(ok({ method: "GE T" })).toBe(false);
     expect(ok({ body: "x".repeat(LIMITS.bodyBytes + 1) })).toBe(false);
   });

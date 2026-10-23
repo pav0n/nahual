@@ -1,10 +1,13 @@
 import {
+  MAX_PANEL_MESSAGE_CHARS,
   makeEvent,
   parsePanelMessage,
   type ErrorCode,
+  type Issue,
   type PanelMessage,
   type SwMessage,
 } from "@nahual/protocol";
+import { logger } from "./logger.ts";
 
 export const PANEL_PORT_NAME = "nahual-panel";
 
@@ -24,7 +27,7 @@ export interface RuntimeLike {
   onConnect: { addListener(listener: (port: PortLike) => void): void };
 }
 
-export type CommandResult = { ok: true } | { ok: false; code: ErrorCode };
+export type CommandResult = { ok: true } | { ok: false; code: ErrorCode; issues?: Issue[] };
 
 export type PanelCommand = Exclude<PanelMessage, { type: "hello" }>;
 
@@ -45,6 +48,8 @@ export interface PanelPortOptions {
 export interface PanelPort {
   /** Envía un evento al panel dueño de la pestaña, si hay uno conectado. */
   send(tabId: number, event: SwMessage): void;
+  /** Pestañas con un panel conectado. */
+  tabs(): number[];
 }
 
 /**
@@ -55,7 +60,7 @@ export interface PanelPort {
  */
 export function createPanelPort(options: PanelPortOptions): PanelPort {
   const { runtime, ready } = options;
-  const log = options.log ?? ((message: string) => console.warn(`[nahual] ${message}`));
+  const log = options.log ?? ((message: string) => logger.warn(message));
   const panelUrl = runtime.getURL(options.panelPath);
   const owners = new Map<number, PortLike>();
 
@@ -87,6 +92,10 @@ export function createPanelPort(options: PanelPortOptions): PanelPort {
     let queue = ready;
 
     const handle = async (raw: unknown) => {
+      if (isTooLarge(raw)) {
+        log("Mensaje descartado: demasiado grande.");
+        return;
+      }
       const parsed = parsePanelMessage(raw);
       if (!parsed.ok) {
         log(`Mensaje descartado: ${parsed.error}`);
@@ -120,7 +129,12 @@ export function createPanelPort(options: PanelPortOptions): PanelPort {
       } catch {
         result = { ok: false, code: "cdp_error" };
       }
-      post(port, result.ok ? makeEvent("ack", {}, message.id) : error(result.code, message.id));
+      post(
+        port,
+        result.ok
+          ? makeEvent("ack", {}, message.id)
+          : error(result.code, message.id, result.issues),
+      );
     };
 
     // Procesa en orden de llegada: cada mensaje espera al anterior (y a `ready`).
@@ -141,9 +155,24 @@ export function createPanelPort(options: PanelPortOptions): PanelPort {
       const owner = owners.get(tabId);
       if (owner) post(owner, event);
     },
+    tabs: () => [...owners.keys()],
   };
 }
 
-function error(code: ErrorCode, correlationId: string) {
-  return makeEvent("error", { code, messageKey: `error_${code}` }, correlationId);
+function error(code: ErrorCode, correlationId: string, issues?: Issue[]) {
+  const payload = { code, messageKey: `error_${code}` };
+  return makeEvent(
+    "error",
+    issues && issues.length > 0 ? { ...payload, issues: issues.slice(0, 50) } : payload,
+    correlationId,
+  );
+}
+
+/** Límite de 6 MB antes de parsear (contracts/panel-protocol.md). */
+function isTooLarge(raw: unknown): boolean {
+  try {
+    return JSON.stringify(raw).length > MAX_PANEL_MESSAGE_CHARS;
+  } catch {
+    return true;
+  }
 }

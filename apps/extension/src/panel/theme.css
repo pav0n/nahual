@@ -193,3 +193,78 @@ kbd {
   border-radius: 3px;
   padding: 0 3px;
 }
+
+/* Pestañas (APG). La pestaña activa se distingue por borde y peso, no solo por color. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+[role="tab"] {
+  border: 1px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+}
+
+[role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 4px;
+}
+
+.empty-title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toasts {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toast {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.switch {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.switch input {
+  width: auto;
+  min-height: 0;
+}

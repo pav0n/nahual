@@ -1,41 +1,36 @@
-import type { HeaderEdit } from "@nahual/protocol";
-import { useEffect, useId, useState } from "react";
+import { useEffect } from "react";
 import { t } from "../shared/i18n.ts";
-import { HeaderEditor } from "./components/HeaderEditor.tsx";
-import { PatternForm } from "./components/PatternForm.tsx";
-import { PausedList } from "./components/PausedList.tsx";
+import { command } from "./commands.ts";
+import { EmptyState } from "./components/common/EmptyState.tsx";
+import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
+import { ToastRegion } from "./components/common/Toast.tsx";
+import { Notices } from "./components/Notices.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
+import { usePanelStore } from "./store/index.ts";
+import type { PanelTab } from "./store/ui.ts";
 import "./theme.css";
 import { applyTheme } from "./theme.ts";
 import { useShortcuts } from "./use-shortcuts.ts";
 import { useSwConnection } from "./use-sw-connection.ts";
 
+const TABS = "nahual";
+
 export function App({ tabId }: { tabId: number | null }) {
-  const { state, paused, recent, error, send } = useSwConnection(tabId);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const pausedTitleId = useId();
-
+  useSwConnection(tabId);
   useEffect(applyTheme, []);
-
-  // Si la pausa seleccionada se resolvió, se selecciona la primera que quede.
-  const selected = paused.find((p) => p.pausedId === selectedId) ?? paused[0] ?? null;
-  const attached = state?.status === "attached";
-
-  const continueSelected = (headers?: HeaderEdit[]) => {
-    if (!selected) return;
-    send(
-      "continue",
-      headers ? { pausedId: selected.pausedId, headers } : { pausedId: selected.pausedId },
-    );
-  };
+  const tab = usePanelStore((s) => s.tab);
+  const setTab = usePanelStore((s) => s.setTab);
+  const session = usePanelStore((s) => s.session);
+  const queueSize = session?.queueSize ?? 0;
 
   useShortcuts({
     toggleAttach: () => {
+      const state = usePanelStore.getState().session;
       if (!state || state.status === "attaching") return;
-      if (state.status === "attached") send("detach", {});
-      else send(state.status === "conflict" || state.cause ? "reconnect" : "attach", {});
+      if (state.status === "attached") void command("detach", {});
+      else void command(state.status === "conflict" || state.cause ? "reconnect" : "attach", {});
     },
-    continueSelected: () => continueSelected(),
+    continueSelected: () => {},
   });
 
   if (tabId === null) {
@@ -49,60 +44,31 @@ export function App({ tabId }: { tabId: number | null }) {
     );
   }
 
+  const tabs: { id: PanelTab; label: string }[] = [
+    { id: "traffic", label: t("tab_traffic") },
+    { id: "rules", label: t("tab_rules") },
+    {
+      id: "queue",
+      label: queueSize > 0 ? t("tab_queue_count", String(queueSize)) : t("tab_queue"),
+    },
+  ];
+
   return (
     <main>
       <h1>{t("panelTitle")}</h1>
-      <StatusBar
-        state={state}
-        onAttach={() => send("attach", {})}
-        onDetach={() => send("detach", {})}
-        onReconnect={() => send("reconnect", {})}
-      />
-
-      {error ? (
-        <p role="alert" className="alert">
-          {t(error.messageKey)}
-        </p>
-      ) : null}
-
-      {!attached && state?.status !== "attaching" ? (
-        <p className="muted">{t("empty_not_attached")}</p>
-      ) : null}
-
-      <PatternForm
-        patterns={state?.patterns ?? []}
-        pauseTimeoutSeconds={state?.pauseTimeoutSeconds ?? 30}
-        disabled={!attached}
-        onPatternsChange={(patterns) => send("setPatterns", { patterns })}
-        onTimeoutChange={(seconds) => send("setPauseTimeout", { seconds })}
-      />
-
-      <section aria-labelledby={pausedTitleId}>
-        <h2 id={pausedTitleId}>{t("section_paused")}</h2>
-        <PausedList
-          paused={paused}
-          selectedId={selected?.pausedId ?? null}
-          onSelect={setSelectedId}
-          labelId={pausedTitleId}
-        />
-      </section>
-
-      {selected ? (
-        <HeaderEditor key={selected.pausedId} pause={selected} onContinue={continueSelected} />
-      ) : null}
-
-      {recent.length > 0 ? (
-        <section aria-live="polite">
-          <ul className="plain">
-            {recent.map((r) => (
-              <li key={r.pausedId} data-outcome={r.outcome}>
-                <span>{t(`outcome_${r.outcome}`)}</span> <span className="mono muted">{r.url}</span>
-                {r.errorKey ? <span className="muted"> — {t(r.errorKey)}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <StatusBar />
+      <Notices />
+      <Tabs idPrefix={TABS} label={t("tabs_label")} tabs={tabs} selected={tab} onSelect={setTab} />
+      <TabPanel idPrefix={TABS} id="traffic" hidden={tab !== "traffic"}>
+        <EmptyState title={t("empty_traffic_title")}>{t("empty_traffic_body")}</EmptyState>
+      </TabPanel>
+      <TabPanel idPrefix={TABS} id="rules" hidden={tab !== "rules"}>
+        <EmptyState title={t("empty_rules_title")}>{t("empty_rules_body")}</EmptyState>
+      </TabPanel>
+      <TabPanel idPrefix={TABS} id="queue" hidden={tab !== "queue"}>
+        <EmptyState title={t("empty_queue_title")}>{t("empty_queue_body")}</EmptyState>
+      </TabPanel>
+      <ToastRegion />
     </main>
   );
 }
