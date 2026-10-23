@@ -373,5 +373,431 @@
   },
   "unevaluable_not_graphql": {
     "message": "not GraphQL"
+  },
+  "action_abort": {
+    "message": "Abort"
+  },
+  "action_add_condition": {
+    "message": "Add condition"
+  },
+  "action_add_header": {
+    "message": "Add header"
+  },
+  "action_apply": {
+    "message": "Apply"
+  },
+  "action_cancel": {
+    "message": "Cancel"
+  },
+  "action_continue": {
+    "message": "Continue"
+  },
+  "action_continue_edited": {
+    "message": "Continue with changes"
+  },
+  "action_continue_all": {
+    "message": "Continue all"
+  },
+  "action_continue_unchanged": {
+    "message": "Continue unchanged"
+  },
+  "action_create_first_rule": {
+    "message": "Create your first rule"
+  },
+  "action_delete": {
+    "message": "Delete"
+  },
+  "action_delete_rule": {
+    "message": "Delete rule “$1”"
+  },
+  "action_duplicate": {
+    "message": "Duplicate"
+  },
+  "action_duplicate_rule": {
+    "message": "Duplicate rule “$1”"
+  },
+  "action_edit": {
+    "message": "Edit"
+  },
+  "action_edit_rule": {
+    "message": "Edit rule “$1”"
+  },
+  "action_format_json": {
+    "message": "Format"
+  },
+  "action_kind_pause": {
+    "message": "Pause"
+  },
+  "action_new_rule": {
+    "message": "New rule"
+  },
+  "action_remove": {
+    "message": "Remove"
+  },
+  "action_remove_condition": {
+    "message": "Remove condition $1"
+  },
+  "action_remove_header": {
+    "message": "Remove header $1"
+  },
+  "action_respond_mock": {
+    "message": "Respond with mock"
+  },
+  "action_save_rule": {
+    "message": "Save rule"
+  },
+  "action_send_mock": {
+    "message": "Send mock"
+  },
+  "action_validate_json": {
+    "message": "Validate JSON"
+  },
+  "body_json_invalid": {
+    "message": "The body is not valid JSON; you can still continue."
+  },
+  "body_json_valid": {
+    "message": "Valid JSON."
+  },
+  "condition_errors_no": {
+    "message": "No errors"
+  },
+  "condition_errors_present": {
+    "message": "GraphQL response"
+  },
+  "condition_errors_yes": {
+    "message": "Has errors"
+  },
+  "condition_kind": {
+    "message": "Type"
+  },
+  "condition_kind_method": {
+    "message": "Method"
+  },
+  "condition_kind_header": {
+    "message": "Header"
+  },
+  "condition_kind_query": {
+    "message": "Query param"
+  },
+  "condition_kind_jsonPath": {
+    "message": "Body JSONPath"
+  },
+  "condition_kind_graphqlOperation": {
+    "message": "GraphQL operationName"
+  },
+  "condition_kind_graphqlErrors": {
+    "message": "GraphQL errors"
+  },
+  "condition_kind_status": {
+    "message": "Status"
+  },
+  "condition_label": {
+    "message": "Condition $1"
+  },
+  "condition_header_name": {
+    "message": "Header name"
+  },
+  "condition_query_name": {
+    "message": "Parameter name"
+  },
+  "condition_list": {
+    "message": "Codes"
+  },
+  "condition_list_hint": {
+    "message": "Comma-separated, e.g. 500, 502, 503"
+  },
+  "condition_max": {
+    "message": "To"
+  },
+  "condition_min": {
+    "message": "From"
+  },
+  "condition_op": {
+    "message": "Operator"
+  },
+  "condition_path": {
+    "message": "JSONPath"
+  },
+  "condition_path_hint": {
+    "message": "For example $.items or $.data.user.id"
+  },
+  "condition_value": {
+    "message": "Value"
+  },
+  "op_exists": {
+    "message": "exists"
+  },
+  "op_notExists": {
+    "message": "does not exist"
+  },
+  "op_equals": {
+    "message": "equals"
+  },
+  "op_notEquals": {
+    "message": "does not equal"
+  },
+  "op_contains": {
+    "message": "contains"
+  },
+  "op_matches": {
+    "message": "matches regex"
+  },
+  "op_empty": {
+    "message": "is empty"
+  },
+  "op_notEmpty": {
+    "message": "is not empty"
+  },
+  "op_lt": {
+    "message": "<"
+  },
+  "op_lte": {
+    "message": "≤"
+  },
+  "op_gt": {
+    "message": ">"
+  },
+  "op_gte": {
+    "message": "≥"
+  },
+  "op_eq": {
+    "message": "="
+  },
+  "op_ne": {
+    "message": "≠"
+  },
+  "op_between": {
+    "message": "between (inclusive)"
+  },
+  "op_in": {
+    "message": "in list"
+  },
+  "confirm_continue_all_body": {
+    "message": "There are $1 unapplied edits. Continuing all will discard them."
+  },
+  "confirm_continue_all_title": {
+    "message": "Continue all unchanged?"
+  },
+  "header_name_n": {
+    "message": "Header name $1"
+  },
+  "header_value_of": {
+    "message": "Value of $1"
+  },
+  "mock_body": {
+    "message": "Mock body"
+  },
+  "mock_headers": {
+    "message": "Mock headers"
+  },
+  "mock_status": {
+    "message": "Mock status"
+  },
+  "paused_edited": {
+    "message": "edited"
+  },
+  "paused_expires_in": {
+    "message": "Continues automatically in $1 s"
+  },
+  "paused_editor_request": {
+    "message": "Paused request"
+  },
+  "paused_editor_response": {
+    "message": "Paused response"
+  },
+  "paused_method": {
+    "message": "Method"
+  },
+  "paused_rule": {
+    "message": "Rule: $1"
+  },
+  "paused_status": {
+    "message": "Status $1"
+  },
+  "paused_status_field": {
+    "message": "Status"
+  },
+  "paused_url": {
+    "message": "URL"
+  },
+  "queue_title": {
+    "message": "Paused ($1)"
+  },
+  "rule_action": {
+    "message": "Action"
+  },
+  "rule_conditions": {
+    "message": "Conditions (all must match)"
+  },
+  "rule_conditions_none": {
+    "message": "No conditions: the prefilter is enough."
+  },
+  "rule_editor_edit": {
+    "message": "Edit rule"
+  },
+  "rule_editor_new": {
+    "message": "New rule"
+  },
+  "rule_enabled": {
+    "message": "Rule “$1” enabled"
+  },
+  "rule_methods": {
+    "message": "Methods"
+  },
+  "rule_methods_all_hint": {
+    "message": "Methods (none = all)"
+  },
+  "rule_name": {
+    "message": "Name"
+  },
+  "rule_prefilter": {
+    "message": "URL prefilter"
+  },
+  "rule_prefilter_glob": {
+    "message": "Glob"
+  },
+  "rule_prefilter_glob_hint": {
+    "message": "* = any text, ? = one character. Example: *api/items*"
+  },
+  "rule_prefilter_kind": {
+    "message": "Prefilter type"
+  },
+  "rule_prefilter_regex": {
+    "message": "Regex"
+  },
+  "rule_prefilter_regex_hint": {
+    "message": "Regular expression over the full URL."
+  },
+  "rule_stage": {
+    "message": "Stage"
+  },
+  "rule_stage_request_hint": {
+    "message": "Before the request goes to the network."
+  },
+  "rule_stage_response_hint": {
+    "message": "When the response arrives, before the page gets it."
+  },
+  "rule_summary": {
+    "message": "$1 · $2 · $3 conditions"
+  },
+  "rule_types_all_hint": {
+    "message": "Resource types (none = all)"
+  },
+  "rules_for_site": {
+    "message": "Rules for $1"
+  },
+  "rules_other_sites": {
+    "message": "Rules for other sites ($1)"
+  },
+  "rules_priority_label": {
+    "message": "Rules in priority order"
+  },
+  "empty_rules_no_site": {
+    "message": "This page has no site: open your app to create rules for it."
+  },
+  "settings_timeout": {
+    "message": "Pause timeout (s)"
+  },
+  "settings_timeout_hint": {
+    "message": "Between 5 and 300 s. When it expires, the request continues unchanged."
+  },
+  "settings_timeout_range": {
+    "message": "The timeout must be a whole number between 5 and 300 s."
+  },
+  "settings_title": {
+    "message": "Settings"
+  },
+  "shortcut_continue_selected": {
+    "message": "Shortcut to continue the selected item: $1"
+  },
+  "toast_apply_failed": {
+    "message": "The change could not be applied: the request continued unchanged."
+  },
+  "toast_edit_not_applied": {
+    "message": "The edit was not applied: $1."
+  },
+  "toast_queue_released": {
+    "message": "The debugger was released: paused requests continued unchanged."
+  },
+  "toast_rule_deleted": {
+    "message": "Rule “$1” deleted."
+  },
+  "error_request_gone": {
+    "message": "The request no longer exists (the page navigated or closed)."
+  },
+  "notice_rules_invalid": {
+    "message": "$1 saved rules were invalid and were ignored."
+  },
+  "notice_rules_version": {
+    "message": "The saved rules are from an unknown version and will not be used."
+  },
+  "rule_error_required": {
+    "message": "This field is required."
+  },
+  "rule_error_too_long": {
+    "message": "It is too long."
+  },
+  "rule_error_regex_too_long": {
+    "message": "The regex cannot exceed 512 characters."
+  },
+  "rule_error_regex_invalid": {
+    "message": "The regex is not valid: check parentheses and brackets."
+  },
+  "rule_error_header_name": {
+    "message": "Invalid header name: no spaces or special characters."
+  },
+  "rule_error_header_value": {
+    "message": "The value cannot contain line breaks."
+  },
+  "rule_error_status": {
+    "message": "The status must be between 100 and 599."
+  },
+  "rule_error_duplicates": {
+    "message": "There are repeated values."
+  },
+  "rule_error_too_many": {
+    "message": "There are too many items."
+  },
+  "rule_error_number": {
+    "message": "It must be a number."
+  },
+  "rule_error_range": {
+    "message": "The minimum cannot be greater than the maximum."
+  },
+  "rule_error_condition_stage": {
+    "message": "This condition does not exist in this stage."
+  },
+  "rule_error_site": {
+    "message": "The site is not valid."
+  },
+  "rule_error_body_too_large": {
+    "message": "The body is too large (1 MB in a rule, 5 MB from the queue)."
+  },
+  "rule_error_delay": {
+    "message": "The delay must be a whole number between 1 and 60,000 ms."
+  },
+  "rule_error_jsonpath": {
+    "message": "The JSONPath is not valid. It must start with $."
+  },
+  "rule_error_invalid": {
+    "message": "Invalid value."
+  },
+  "rule_error_too_many_rules": {
+    "message": "There are already 500 rules: delete one to create another."
+  },
+  "rule_error_stage_field": {
+    "message": "This field cannot be edited in this stage."
+  },
+  "rule_error_method": {
+    "message": "Invalid method."
+  },
+  "rule_error_url": {
+    "message": "The URL must be absolute (http or https)."
+  },
+  "toast_paused": {
+    "message": "Request paused: $1"
+  },
+  "action_view_queue": {
+    "message": "View queue"
   }
 }

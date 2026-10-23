@@ -1,9 +1,10 @@
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 import {
-  addPattern,
   attach,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
   ownSessions,
   pausedOption,
   startFetch,
@@ -23,9 +24,10 @@ async function nextNahualWorker(context: BrowserContext, previous: Worker): Prom
 }
 
 async function pauseOne(page: Page, panel: Page, apiOrigin: string) {
-  await addPattern(panel, "*echo-headers*", "request");
+  await createRule(panel, { name: "Echo", pattern: "*echo-headers*", stage: "request" });
   const started = Date.now();
   const response = startFetch(page, `${apiOrigin}/echo-headers`);
+  await openQueue(panel);
   await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
   return { response, started };
 }
@@ -36,8 +38,7 @@ async function registryOf(worker: Worker) {
   );
 }
 
-// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
-test.fixme("variante 1: chrome.runtime.reload() con un request pausado", async ({
+test("variante 1: chrome.runtime.reload() con un request pausado", async ({
   context,
   nahualWorker,
   extensionId,
@@ -78,8 +79,7 @@ test.fixme("variante 1: chrome.runtime.reload() con un request pausado", async (
   expect(await registryOf(worker)).toEqual([]);
 });
 
-// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
-test.fixme("variante 2: detener el service worker con el panel abierto", async ({
+test("variante 2: detener el service worker con el panel abierto", async ({
   context,
   nahualWorker,
   extensionId,

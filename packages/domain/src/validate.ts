@@ -68,5 +68,7 @@ export function validatePausedEdit(input: unknown, stage: Stage): Validation<Pau
 /** Valida el mock que el dev crea desde la cola (body ≤ 5 MB, no se guarda). */
 export function validateQueueMock(input: unknown): Validation<MockAction> {
   const parsed = QueueMockActionSchema.safeParse(input);
-  return parsed.success ? { ok: true, value: parsed.data } : { ok: false, issues: toIssues(parsed.error) };
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : { ok: false, issues: toIssues(parsed.error) };
 }

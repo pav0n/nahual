@@ -1,8 +1,9 @@
 import {
-  addPattern,
   attach,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
   ownSessions,
   pausedOption,
   startFetch,
@@ -30,8 +31,7 @@ test("cerrar la pestaña objetivo ⇒ desconectado (target_closed) en < 1 s", as
   expect(await ownSessions(nahualWorker)).toEqual([]);
 });
 
-// Pendiente de T075: v2 reemplazó los patrones por reglas; se migra con la historia 2.
-test.fixme("con otra extensión ya adjunta, Nahual coexiste: adjunta, pausa y continúa (E3 d)", async ({
+test("con otra extensión ya adjunta, Nahual coexiste: adjunta, pausa y continúa (E3 d)", async ({
   context,
   nahualWorker,
   conflictWorker,
@@ -51,10 +51,11 @@ test.fixme("con otra extensión ya adjunta, Nahual coexiste: adjunta, pausa y co
   await attach(panel);
   expect(await ownSessions(nahualWorker)).toEqual([tabId]);
 
-  await addPattern(panel, "*echo-headers*", "request");
+  await createRule(panel, { name: "Echo", pattern: "*echo-headers*", stage: "request" });
   const response = startFetch(app, `${servers.apiOrigin}/echo-headers`);
+  await openQueue(panel);
   await expect(pausedOption(panel, "/echo-headers")).toBeVisible();
-  await panel.getByRole("button", { name: /^Continue Alt/ }).click();
+  await panel.keyboard.press("Alt+Shift+C");
   expect((await response).status).toBe(200);
 
   // Si el otro cliente se suelta, Nahual sigue adjunto.

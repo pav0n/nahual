@@ -126,9 +126,18 @@ describe("validatePausedEdit (edge case de valores editados inválidos)", () => 
 
 describe("validateQueueMock", () => {
   it("acepta un mock de hasta 5 MB y rechaza status inválidos", () => {
-    const mock = { kind: "mock", status: 200, headers: [], body: "x".repeat(2 * 1024 * 1024), bodyEncoding: "text" };
+    const mock = {
+      kind: "mock",
+      status: 200,
+      headers: [],
+      body: "x".repeat(2 * 1024 * 1024),
+      bodyEncoding: "text",
+    };
     expect(validateQueueMock(mock).ok).toBe(true);
     const bad = validateQueueMock({ ...mock, status: 99 });
-    expect(bad.ok ? [] : bad.issues).toContainEqual({ path: "status", messageKey: "rule_error_status" });
+    expect(bad.ok ? [] : bad.issues).toContainEqual({
+      path: "status",
+      messageKey: "rule_error_status",
+    });
   });
 });

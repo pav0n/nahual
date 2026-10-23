@@ -465,3 +465,112 @@ pre.body {
   border-radius: 4px;
   padding: 6px;
 }
+
+.settings > summary,
+.other-rules > summary {
+  cursor: pointer;
+  min-height: 24px;
+}
+
+.settings form {
+  align-items: flex-end;
+}
+
+.editor form,
+.paused-editor,
+.mock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.condition,
+.headers-editor {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin: 0;
+  padding: 4px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.condition .row > .field {
+  flex: 1 1 120px;
+}
+
+.header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
+  gap: 4px;
+  align-items: center;
+}
+
+.header-error {
+  grid-column: 1 / -1;
+}
+
+.field-warning {
+  color: var(--warn);
+}
+
+textarea {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  width: 100%;
+  resize: vertical;
+}
+
+.body-editor {
+  min-height: 140px;
+}
+
+.rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rule-item {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.queue [role="listbox"]:focus-visible {
+  outline: 2px solid var(--focus);
+}
+
+.cell-url-wrap {
+  overflow-wrap: anywhere;
+}
+
+.countdown[data-urgent="true"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+dialog {
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+}
+
+.actions {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}

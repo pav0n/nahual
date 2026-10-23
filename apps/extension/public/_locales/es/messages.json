@@ -373,5 +373,431 @@
   },
   "unevaluable_not_graphql": {
     "message": "no es GraphQL"
+  },
+  "action_abort": {
+    "message": "Abortar"
+  },
+  "action_add_condition": {
+    "message": "Añadir condición"
+  },
+  "action_add_header": {
+    "message": "Añadir header"
+  },
+  "action_apply": {
+    "message": "Aplicar"
+  },
+  "action_cancel": {
+    "message": "Cancelar"
+  },
+  "action_continue": {
+    "message": "Continuar"
+  },
+  "action_continue_edited": {
+    "message": "Continuar con cambios"
+  },
+  "action_continue_all": {
+    "message": "Continuar todos"
+  },
+  "action_continue_unchanged": {
+    "message": "Continuar sin cambios"
+  },
+  "action_create_first_rule": {
+    "message": "Crea tu primera regla"
+  },
+  "action_delete": {
+    "message": "Eliminar"
+  },
+  "action_delete_rule": {
+    "message": "Eliminar la regla «$1»"
+  },
+  "action_duplicate": {
+    "message": "Duplicar"
+  },
+  "action_duplicate_rule": {
+    "message": "Duplicar la regla «$1»"
+  },
+  "action_edit": {
+    "message": "Editar"
+  },
+  "action_edit_rule": {
+    "message": "Editar la regla «$1»"
+  },
+  "action_format_json": {
+    "message": "Formatear"
+  },
+  "action_kind_pause": {
+    "message": "Pausar"
+  },
+  "action_new_rule": {
+    "message": "Nueva regla"
+  },
+  "action_remove": {
+    "message": "Quitar"
+  },
+  "action_remove_condition": {
+    "message": "Quitar la condición $1"
+  },
+  "action_remove_header": {
+    "message": "Quitar el header $1"
+  },
+  "action_respond_mock": {
+    "message": "Responder con mock"
+  },
+  "action_save_rule": {
+    "message": "Guardar regla"
+  },
+  "action_send_mock": {
+    "message": "Enviar mock"
+  },
+  "action_validate_json": {
+    "message": "Validar JSON"
+  },
+  "body_json_invalid": {
+    "message": "El body no es JSON válido; puedes continuar igualmente."
+  },
+  "body_json_valid": {
+    "message": "JSON válido."
+  },
+  "condition_errors_no": {
+    "message": "No hay errors"
+  },
+  "condition_errors_present": {
+    "message": "Respuesta GraphQL"
+  },
+  "condition_errors_yes": {
+    "message": "Tiene errors"
+  },
+  "condition_kind": {
+    "message": "Tipo"
+  },
+  "condition_kind_method": {
+    "message": "Método"
+  },
+  "condition_kind_header": {
+    "message": "Header"
+  },
+  "condition_kind_query": {
+    "message": "Query param"
+  },
+  "condition_kind_jsonPath": {
+    "message": "JSONPath del body"
+  },
+  "condition_kind_graphqlOperation": {
+    "message": "operationName de GraphQL"
+  },
+  "condition_kind_graphqlErrors": {
+    "message": "errors de GraphQL"
+  },
+  "condition_kind_status": {
+    "message": "Status"
+  },
+  "condition_label": {
+    "message": "Condición $1"
+  },
+  "condition_header_name": {
+    "message": "Nombre del header"
+  },
+  "condition_query_name": {
+    "message": "Nombre del parámetro"
+  },
+  "condition_list": {
+    "message": "Códigos"
+  },
+  "condition_list_hint": {
+    "message": "Separados por comas, p. ej. 500, 502, 503"
+  },
+  "condition_max": {
+    "message": "Hasta"
+  },
+  "condition_min": {
+    "message": "Desde"
+  },
+  "condition_op": {
+    "message": "Operador"
+  },
+  "condition_path": {
+    "message": "Ruta JSONPath"
+  },
+  "condition_path_hint": {
+    "message": "Por ejemplo $.items o $.data.user.id"
+  },
+  "condition_value": {
+    "message": "Valor"
+  },
+  "op_exists": {
+    "message": "existe"
+  },
+  "op_notExists": {
+    "message": "no existe"
+  },
+  "op_equals": {
+    "message": "es igual a"
+  },
+  "op_notEquals": {
+    "message": "es distinto de"
+  },
+  "op_contains": {
+    "message": "contiene"
+  },
+  "op_matches": {
+    "message": "coincide con la regex"
+  },
+  "op_empty": {
+    "message": "está vacío"
+  },
+  "op_notEmpty": {
+    "message": "no está vacío"
+  },
+  "op_lt": {
+    "message": "<"
+  },
+  "op_lte": {
+    "message": "≤"
+  },
+  "op_gt": {
+    "message": ">"
+  },
+  "op_gte": {
+    "message": "≥"
+  },
+  "op_eq": {
+    "message": "="
+  },
+  "op_ne": {
+    "message": "≠"
+  },
+  "op_between": {
+    "message": "entre (inclusivo)"
+  },
+  "op_in": {
+    "message": "en la lista"
+  },
+  "confirm_continue_all_body": {
+    "message": "Hay $1 ediciones sin aplicar. Si continúas todos, se perderán."
+  },
+  "confirm_continue_all_title": {
+    "message": "¿Continuar todos sin cambios?"
+  },
+  "header_name_n": {
+    "message": "Nombre del header $1"
+  },
+  "header_value_of": {
+    "message": "Valor de $1"
+  },
+  "mock_body": {
+    "message": "Body del mock"
+  },
+  "mock_headers": {
+    "message": "Headers del mock"
+  },
+  "mock_status": {
+    "message": "Status del mock"
+  },
+  "paused_edited": {
+    "message": "editado"
+  },
+  "paused_expires_in": {
+    "message": "Continúa solo en $1 s"
+  },
+  "paused_editor_request": {
+    "message": "Request pausado"
+  },
+  "paused_editor_response": {
+    "message": "Response pausada"
+  },
+  "paused_method": {
+    "message": "Método"
+  },
+  "paused_rule": {
+    "message": "Regla: $1"
+  },
+  "paused_status": {
+    "message": "Status $1"
+  },
+  "paused_status_field": {
+    "message": "Status"
+  },
+  "paused_url": {
+    "message": "URL"
+  },
+  "queue_title": {
+    "message": "Pausados ($1)"
+  },
+  "rule_action": {
+    "message": "Acción"
+  },
+  "rule_conditions": {
+    "message": "Condiciones (todas deben cumplirse)"
+  },
+  "rule_conditions_none": {
+    "message": "Sin condiciones: basta con el prefiltro."
+  },
+  "rule_editor_edit": {
+    "message": "Editar regla"
+  },
+  "rule_editor_new": {
+    "message": "Nueva regla"
+  },
+  "rule_enabled": {
+    "message": "Regla «$1» activa"
+  },
+  "rule_methods": {
+    "message": "Métodos"
+  },
+  "rule_methods_all_hint": {
+    "message": "Métodos (ninguno = todos)"
+  },
+  "rule_name": {
+    "message": "Nombre"
+  },
+  "rule_prefilter": {
+    "message": "Prefiltro de URL"
+  },
+  "rule_prefilter_glob": {
+    "message": "Glob"
+  },
+  "rule_prefilter_glob_hint": {
+    "message": "* = cualquier texto, ? = un carácter. Ejemplo: *api/items*"
+  },
+  "rule_prefilter_kind": {
+    "message": "Tipo de prefiltro"
+  },
+  "rule_prefilter_regex": {
+    "message": "Regex"
+  },
+  "rule_prefilter_regex_hint": {
+    "message": "Expresión regular sobre la URL completa."
+  },
+  "rule_stage": {
+    "message": "Etapa"
+  },
+  "rule_stage_request_hint": {
+    "message": "Antes de que el request salga a la red."
+  },
+  "rule_stage_response_hint": {
+    "message": "Cuando llega la respuesta, antes de que la reciba la página."
+  },
+  "rule_summary": {
+    "message": "$1 · $2 · $3 condiciones"
+  },
+  "rule_types_all_hint": {
+    "message": "Tipos de recurso (ninguno = todos)"
+  },
+  "rules_for_site": {
+    "message": "Reglas de $1"
+  },
+  "rules_other_sites": {
+    "message": "Reglas de otros sitios ($1)"
+  },
+  "rules_priority_label": {
+    "message": "Reglas en orden de prioridad"
+  },
+  "empty_rules_no_site": {
+    "message": "Esta página no tiene sitio: abre tu app para crear reglas para ella."
+  },
+  "settings_timeout": {
+    "message": "Timeout de pausa (s)"
+  },
+  "settings_timeout_hint": {
+    "message": "Entre 5 y 300 s. Al vencer, el request continúa sin cambios."
+  },
+  "settings_timeout_range": {
+    "message": "El timeout debe ser un entero entre 5 y 300 s."
+  },
+  "settings_title": {
+    "message": "Ajustes"
+  },
+  "shortcut_continue_selected": {
+    "message": "Atajo para continuar el seleccionado: $1"
+  },
+  "toast_apply_failed": {
+    "message": "No se pudo aplicar el cambio: el request continuó sin cambios."
+  },
+  "toast_edit_not_applied": {
+    "message": "La edición no se aplicó: $1."
+  },
+  "toast_queue_released": {
+    "message": "El debugger se soltó: los requests pausados continuaron sin cambios."
+  },
+  "toast_rule_deleted": {
+    "message": "Regla «$1» eliminada."
+  },
+  "error_request_gone": {
+    "message": "El request ya no existe (la página navegó o se cerró)."
+  },
+  "notice_rules_invalid": {
+    "message": "Se descartaron $1 reglas guardadas que no eran válidas."
+  },
+  "notice_rules_version": {
+    "message": "Las reglas guardadas son de una versión desconocida y no se usarán."
+  },
+  "rule_error_required": {
+    "message": "Este campo es obligatorio."
+  },
+  "rule_error_too_long": {
+    "message": "Es demasiado largo."
+  },
+  "rule_error_regex_too_long": {
+    "message": "La regex no puede pasar de 512 caracteres."
+  },
+  "rule_error_regex_invalid": {
+    "message": "La regex no es válida: revisa paréntesis y corchetes."
+  },
+  "rule_error_header_name": {
+    "message": "Nombre de header inválido: sin espacios ni caracteres especiales."
+  },
+  "rule_error_header_value": {
+    "message": "El valor no puede tener saltos de línea."
+  },
+  "rule_error_status": {
+    "message": "El status debe estar entre 100 y 599."
+  },
+  "rule_error_duplicates": {
+    "message": "Hay valores repetidos."
+  },
+  "rule_error_too_many": {
+    "message": "Hay demasiados elementos."
+  },
+  "rule_error_number": {
+    "message": "Debe ser un número."
+  },
+  "rule_error_range": {
+    "message": "El mínimo no puede ser mayor que el máximo."
+  },
+  "rule_error_condition_stage": {
+    "message": "Esta condición no existe en esta etapa."
+  },
+  "rule_error_site": {
+    "message": "El sitio no es válido."
+  },
+  "rule_error_body_too_large": {
+    "message": "El body es demasiado grande (1 MB en una regla, 5 MB desde la cola)."
+  },
+  "rule_error_delay": {
+    "message": "El retraso debe ser un entero entre 1 y 60,000 ms."
+  },
+  "rule_error_jsonpath": {
+    "message": "La ruta JSONPath no es válida. Debe empezar con $."
+  },
+  "rule_error_invalid": {
+    "message": "Valor no válido."
+  },
+  "rule_error_too_many_rules": {
+    "message": "Ya hay 500 reglas: elimina alguna para crear otra."
+  },
+  "rule_error_stage_field": {
+    "message": "Este campo no se puede editar en esta etapa."
+  },
+  "rule_error_method": {
+    "message": "Método inválido."
+  },
+  "rule_error_url": {
+    "message": "La URL debe ser absoluta (http o https)."
+  },
+  "toast_paused": {
+    "message": "Request pausado: $1"
+  },
+  "action_view_queue": {
+    "message": "Ver la cola"
   }
 }

@@ -1,10 +1,13 @@
 import { useEffect } from "react";
 import { t } from "../shared/i18n.ts";
 import { command } from "./commands.ts";
-import { EmptyState } from "./components/common/EmptyState.tsx";
 import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
 import { Notices } from "./components/Notices.tsx";
+import { useContinueAll } from "./components/queue/PauseQueue.tsx";
+import { QueueView } from "./components/queue/QueueView.tsx";
+import { RulesView } from "./components/rules/RulesView.tsx";
+import { SettingsPanel } from "./components/SettingsPanel.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { SEARCH_INPUT_ID } from "./components/traffic/Filters.tsx";
 import { TrafficView } from "./components/traffic/TrafficView.tsx";
@@ -24,6 +27,7 @@ export function App({ tabId }: { tabId: number | null }) {
   const setTab = usePanelStore((s) => s.setTab);
   const session = usePanelStore((s) => s.session);
   const queueSize = session?.queueSize ?? 0;
+  const continueAll = useContinueAll();
 
   useShortcuts({
     toggleAttach: () => {
@@ -32,7 +36,14 @@ export function App({ tabId }: { tabId: number | null }) {
       if (state.status === "attached") void command("detach", {});
       else void command(state.status === "conflict" || state.cause ? "reconnect" : "attach", {});
     },
-    continueSelected: () => {},
+    continueSelected: () => {
+      const { paused, selectedPausedId } = usePanelStore.getState();
+      const item = paused.find((p) => p.pausedId === selectedPausedId) ?? paused[0];
+      if (item) void command("resolvePaused", { pausedId: item.pausedId, action: "continue" });
+    },
+    continueAll: () => {
+      if (usePanelStore.getState().paused.length > 0) continueAll.request();
+    },
     focusSearch: () => {
       usePanelStore.getState().setTab("traffic");
       // La pestaña se monta en el mismo ciclo: se enfoca en el siguiente.
@@ -64,17 +75,19 @@ export function App({ tabId }: { tabId: number | null }) {
     <main>
       <h1>{t("panelTitle")}</h1>
       <StatusBar />
+      <SettingsPanel />
       <Notices />
       <Tabs idPrefix={TABS} label={t("tabs_label")} tabs={tabs} selected={tab} onSelect={setTab} />
       <TabPanel idPrefix={TABS} id="traffic" hidden={tab !== "traffic"}>
         <TrafficView />
       </TabPanel>
       <TabPanel idPrefix={TABS} id="rules" hidden={tab !== "rules"}>
-        <EmptyState title={t("empty_rules_title")}>{t("empty_rules_body")}</EmptyState>
+        <RulesView />
       </TabPanel>
       <TabPanel idPrefix={TABS} id="queue" hidden={tab !== "queue"}>
-        <EmptyState title={t("empty_queue_title")}>{t("empty_queue_body")}</EmptyState>
+        <QueueView continueAll={continueAll} />
       </TabPanel>
+      {continueAll.dialog}
       <ToastRegion />
     </main>
   );

@@ -3,8 +3,12 @@ import type { Page } from "@playwright/test";
 import {
   attach,
   callApi,
+  createRule,
   openApp,
   openPanel,
+  openQueue,
+  pausedEditor,
+  pausedOption,
   statusOf,
   tabIdOf,
   trafficRow,
@@ -70,6 +74,35 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoHorizontalScroll(panel);
     await panel.getByRole("button", { name: "Clear" }).click();
     await expectNoSeriousViolations(panel, "limpiado con deshacer");
+
+    // Historia 2: lista de reglas, editor con errores, cola y editor de pausados.
+    await createRule(panel, {
+      name: "Errores",
+      pattern: "*/api/*",
+      stage: "response",
+      conditions: [{ kind: "Status", op: "≥", fields: { Value: "500" } }],
+    });
+    await expectNoSeriousViolations(panel, "reglas");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByRole("button", { name: "New rule" }).click();
+    await panel.locator(".editor").getByLabel("Prefilter type").selectOption("regex");
+    await panel.locator(".editor").getByLabel("URL prefilter").fill("([a-z");
+    await panel.locator(".editor").getByRole("button", { name: "Add condition" }).click();
+    await panel.locator(".editor").getByRole("button", { name: "Save rule" }).click();
+    await expect(panel.locator(".editor [aria-invalid=true]").first()).toBeVisible();
+    await expectNoSeriousViolations(panel, "editor con errores");
+    await expectNoHorizontalScroll(panel);
+    await panel.locator(".editor").getByRole("button", { name: "Cancel" }).click();
+
+    const error = callApi(app, "error");
+    await openQueue(panel);
+    await expect(pausedOption(panel, "/api/error")).toBeVisible();
+    await expectNoSeriousViolations(panel, "cola y editor de pausados");
+    await expectNoHorizontalScroll(panel);
+    await pausedEditor(panel).getByRole("button", { name: "Respond with mock" }).click();
+    await expectNoSeriousViolations(panel, "mock desde la cola");
+    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
+    expect((await error).status).toBe(500);
   });
 }
 

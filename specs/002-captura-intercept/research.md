@@ -119,9 +119,12 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
   conexión rechazada ⇒ `ConnectionRefused`, nombre no resuelto ⇒ `NameNotResolved`, acceso
   denegado ⇒ `AccessDenied`, sin conexión ⇒ `InternetDisconnected`. Abortar desde la cola usa
   `Aborted`.
-- **A verificar en implementación** (prueba de integración real en la E2E): que un cambio de URL
-  en `continueRequest` con otro esquema u origen se acepta o falla; si falla, se aplica FR-021
-  (continuar sin cambios y mostrar el error) y el editor lo advierte de antemano.
+- **Verificado en la E2E** (`conditional-pause.spec.ts`, "research R7"): Chrome **acepta** un
+  cambio de URL a otro origen en `continueRequest`. El request va al nuevo origen sin que la
+  página lo note, pero la respuesta sigue sujeta a CORS frente al origen de la página: en la
+  prueba, el 404 sin headers CORS del otro origen llegó como `TypeError: Failed to fetch`. La
+  página no queda colgada. El editor no necesita advertirlo de antemano; FR-021 cubre los
+  fallos de aplicación.
 - **Fallo seguro**: igual que en 001 — si el comando falla, un reintento sin cambios y error al
   panel con `messageKey` (FR-021).
 
@@ -267,10 +270,20 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
   regla de Response con condición JSONPath que no se cumple (incluye pedir el body). Presupuesto:
   p95 del overhead < 20 ms en las corridas 3 y 4. Se registra en este archivo durante la
   implementación.
+- **Resultado** (`e2e/experiments/e4-overhead-rules.spec.ts`, fixture local, HeadlessChrome 156,
+  Debian 13, 500 fetch secuenciales por corrida tras 10 de calentamiento, 2026-10-22):
+
+  | Corrida | p50 (ms) | p95 (ms) | Overhead p95 (ms) |
+  |---|---|---|---|
+  | 1. Sin debugger | 1,9 | 4,1 | — |
+  | 2. Adjunto, sin reglas (solo Network) | 1,5 | 2,6 | — |
+  | 3. Regla Request: prefiltro coincide, condición de header no | 2,6 | 6,6 | **2,5** |
+  | 4. Regla Response: prefiltro coincide, JSONPath no (pide el body) | 2,5 | 6,7 | **2,6** |
+
+  Dentro del presupuesto de 20 ms (SC-002). La corrida 2 sale por debajo de la 1 por ruido del
+  fixture local; el overhead de la captura pasiva no es medible a esta escala.
 
 ## Resultados por registrar en implementación
 
-- R7: comportamiento de un cambio de URL a otro origen en `continueRequest`.
 - R13/R14: tamaño final del bundle del panel antes y después de 002.
-- R20: tabla de overhead.
 - SC-001: resultados de la prueba moderada con 5 devs (quickstart).

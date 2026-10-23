@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 
 export const SHORTCUT_TOGGLE_ATTACH = "Alt+Shift+A";
 export const SHORTCUT_CONTINUE = "Alt+Shift+C";
+export const SHORTCUT_CONTINUE_ALL = "Alt+Shift+K";
+export const SHORTCUT_PAUSE_NAHUAL = "Alt+Shift+P";
 
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -14,6 +16,7 @@ const isEditable = (target: EventTarget | null) =>
 export function useShortcuts(handlers: {
   toggleAttach(): void;
   continueSelected(): void;
+  continueAll(): void;
   focusSearch(): void;
 }) {
   const ref = useRef(handlers);
@@ -38,6 +41,9 @@ export function useShortcuts(handlers: {
       } else if (event.code === "KeyC") {
         event.preventDefault();
         ref.current.continueSelected();
+      } else if (event.code === "KeyK") {
+        event.preventDefault();
+        ref.current.continueAll();
       } else if (event.code === "KeyF") {
         event.preventDefault();
         ref.current.focusSearch();
