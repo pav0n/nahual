@@ -136,19 +136,19 @@ intercambios se pausan, se editan y llegan editados; el resto pasa sin retraso (
 
 ### Dominio (pruebas primero)
 
-- [ ] T048 [P] [US2] Escribir `packages/domain/tests/status.test.ts` (debe fallar): `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` inclusivo, `in` con lista
-- [ ] T049 [P] [US2] Escribir `packages/domain/tests/headers-query.test.ts` (debe fallar): `exists`, `notExists`, `equals`, `contains`, `matches` por nombre sin distinguir mayúsculas; headers repetidos; query params repetidos y codificados; texto evaluado acotado a 8 KB (research R19)
-- [ ] T050 [P] [US2] Escribir `packages/domain/tests/jsonpath.test.ts` (debe fallar) con la semántica de research R5: `exists`/`notExists` por nodelist; "algún nodo" para `equals`, `notEquals`, `contains`, `matches` y numéricos; `empty` exige todos vacíos (`[]`, `{}`, `""`, `null`) y al menos uno; `equals` con JSON canónico y texto si el valor no es JSON; valores > 64 KB truncados; ruta inválida rechazada al compilar
-- [ ] T051 [P] [US2] Escribir `packages/domain/tests/graphql.test.ts` (debe fallar): detección por `query` en body JSON o en `GET`; `operationName` del campo o de la primera definición `query|mutation|subscription <Nombre>`; batch ⇒ alguna operación; `errors` presente solo con arreglo no vacío; no GraphQL ⇒ no evaluable (research R6)
-- [ ] T052 [P] [US2] Escribir `packages/domain/tests/evaluate.test.ts` (debe fallar): `evaluateRule` respeta método, tipo, prefiltro glob/regex, condiciones con Y; orden barato ⇒ caro; `needsBody` indica si hace falta pedir el body; condición no evaluable (sin body, binario, > 5 MB, JSON inválido, no GraphQL) ⇒ `false` con `unevaluable: reason`; `selectRule` devuelve la primera regla activa del sitio por `order` y etapa, ignora inactivas y otros sitios, y nada con `globalPaused` (FR-012, FR-014a, FR-016)
-- [ ] T053 [P] [US2] Escribir `packages/domain/tests/fetch-patterns.test.ts` (debe fallar) con research R3: sin reglas activas ⇒ `[]`; glob ⇒ `urlPattern` igual; regex ⇒ `*`; un patrón por tipo; `*` sin tipo absorbe la etapa; duplicados eliminados; > 50 patrones ⇒ etapa reducida a `*`; solo reglas del sitio y nada con `globalPaused`
-- [ ] T054 [P] [US2] Escribir `packages/domain/tests/validate.test.ts` (debe fallar): `validateRule` devuelve `issues` con `path` y `messageKey` para regex no compilable, JSONPath inválido, status fuera de 100–599, `min > max`, `value` ausente, condición de otra etapa, prefiltro vacío, regex > 512 caracteres y body de mock > 1 MB (FR-013, SC-005)
-- [ ] T055 [P] [US2] Implementar `packages/domain/src/match/status.ts`, `packages/domain/src/match/headers.ts` y `packages/domain/src/match/query.ts` hasta que pasen T048 y T049
-- [ ] T056 [P] [US2] Implementar `packages/domain/src/jsonpath.ts` sobre `json-p3` hasta que pase T050
-- [ ] T057 [P] [US2] Implementar `packages/domain/src/graphql.ts` hasta que pase T051
-- [ ] T058 [US2] Implementar `packages/domain/src/match/prefilter.ts` y `packages/domain/src/evaluate.ts` (regex compiladas una vez y cacheadas por regla) hasta que pase T052
-- [ ] T059 [P] [US2] Implementar `packages/domain/src/fetch-patterns.ts` hasta que pase T053
-- [ ] T060 [P] [US2] Implementar `packages/domain/src/validate.ts` hasta que pase T054; cobertura de `packages/domain` ≥ 85%
+- [X] T048 [P] [US2] Escribir `packages/domain/tests/status.test.ts` (debe fallar): `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` inclusivo, `in` con lista
+- [X] T049 [P] [US2] Escribir `packages/domain/tests/headers-query.test.ts` (debe fallar): `exists`, `notExists`, `equals`, `contains`, `matches` por nombre sin distinguir mayúsculas; headers repetidos; query params repetidos y codificados; texto evaluado acotado a 8 KB (research R19)
+- [X] T050 [P] [US2] Escribir `packages/domain/tests/jsonpath.test.ts` (debe fallar) con la semántica de research R5: `exists`/`notExists` por nodelist; "algún nodo" para `equals`, `notEquals`, `contains`, `matches` y numéricos; `empty` exige todos vacíos (`[]`, `{}`, `""`, `null`) y al menos uno; `equals` con JSON canónico y texto si el valor no es JSON; valores > 64 KB truncados; ruta inválida rechazada al compilar
+- [X] T051 [P] [US2] Escribir `packages/domain/tests/graphql.test.ts` (debe fallar): detección por `query` en body JSON o en `GET`; `operationName` del campo o de la primera definición `query|mutation|subscription <Nombre>`; batch ⇒ alguna operación; `errors` presente solo con arreglo no vacío; no GraphQL ⇒ no evaluable (research R6)
+- [X] T052 [P] [US2] Escribir `packages/domain/tests/evaluate.test.ts` (debe fallar): `evaluateRule` respeta método, tipo, prefiltro glob/regex, condiciones con Y; orden barato ⇒ caro; `needsBody` indica si hace falta pedir el body; condición no evaluable (sin body, binario, > 5 MB, JSON inválido, no GraphQL) ⇒ `false` con `unevaluable: reason`; `selectRule` devuelve la primera regla activa del sitio por `order` y etapa, ignora inactivas y otros sitios, y nada con `globalPaused` (FR-012, FR-014a, FR-016)
+- [X] T053 [P] [US2] Escribir `packages/domain/tests/fetch-patterns.test.ts` (debe fallar) con research R3: sin reglas activas ⇒ `[]`; glob ⇒ `urlPattern` igual; regex ⇒ `*`; un patrón por tipo; `*` sin tipo absorbe la etapa; duplicados eliminados; > 50 patrones ⇒ etapa reducida a `*`; solo reglas del sitio y nada con `globalPaused`
+- [X] T054 [P] [US2] Escribir `packages/domain/tests/validate.test.ts` (debe fallar): `validateRule` devuelve `issues` con `path` y `messageKey` para regex no compilable, JSONPath inválido, status fuera de 100–599, `min > max`, `value` ausente, condición de otra etapa, prefiltro vacío, regex > 512 caracteres y body de mock > 1 MB (FR-013, SC-005)
+- [X] T055 [P] [US2] Implementar `packages/domain/src/match/status.ts`, `packages/domain/src/match/headers.ts` y `packages/domain/src/match/query.ts` hasta que pasen T048 y T049
+- [X] T056 [P] [US2] Implementar `packages/domain/src/jsonpath.ts` sobre `json-p3` hasta que pase T050
+- [X] T057 [P] [US2] Implementar `packages/domain/src/graphql.ts` hasta que pase T051
+- [X] T058 [US2] Implementar `packages/domain/src/match/prefilter.ts` y `packages/domain/src/evaluate.ts` (regex compiladas una vez y cacheadas por regla) hasta que pase T052
+- [X] T059 [P] [US2] Implementar `packages/domain/src/fetch-patterns.ts` hasta que pase T053
+- [X] T060 [P] [US2] Implementar `packages/domain/src/validate.ts` hasta que pase T054; cobertura de `packages/domain` ≥ 85%
 
 ### Service worker (pruebas primero)
 
