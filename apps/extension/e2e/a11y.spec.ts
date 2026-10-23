@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import {
+  addProductionOrigin,
   attach,
   callApi,
   corsCall,
@@ -8,9 +9,12 @@ import {
   openApp,
   openCorsDetail,
   openPanel,
+  openRelaxedDetail,
   openQueue,
   pausedEditor,
   pausedOption,
+  relaxExtraOrigins,
+  relaxIndicator,
   requestRow,
   statusOf,
   tabIdOf,
@@ -221,5 +225,81 @@ for (const colorScheme of ["light", "dark"] as const) {
     await openCorsDetail(panel, "/cors/preflight-401");
     await expectNoSeriousViolations(panel, "detalle CORS con preflight");
     await expectNoHorizontalScroll(panel);
+  });
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`axe del indicador CORS y la confirmación (003, T060), tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.reload();
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await corsCall(app, "cors-none");
+
+    // Confirmación en línea.
+    const section = await openCorsDetail(panel, "/cors/none");
+    await section.getByRole("button", { name: "Allow CORS for development" }).click();
+    await expectNoSeriousViolations(panel, "confirmación en línea");
+    await expectNoHorizontalScroll(panel);
+    await section.getByRole("button", { name: "Allow", exact: true }).click();
+
+    // Indicador activo con 1 origen y detalle relajado.
+    const indicator = relaxIndicator(panel);
+    await expect(indicator).toContainText("active");
+    await expectNoSeriousViolations(panel, "indicador activo");
+    await expectNoHorizontalScroll(panel);
+    await corsCall(app, "cors-none");
+    await openRelaxedDetail(panel, "/cors/none");
+    await expectNoSeriousViolations(panel, "detalle relajado");
+    await expectNoHorizontalScroll(panel);
+
+    // Suspendida y sin efecto.
+    await panel.locator("h1").click();
+    await panel.keyboard.press("Alt+Shift+P");
+    await expect(indicator).toContainText("suspended");
+    await expectNoSeriousViolations(panel, "indicador suspendido");
+    await panel.keyboard.press("Alt+Shift+P");
+    await app.getByTestId("nav-third").click();
+    await expect(indicator).toContainText("no effect");
+    await expectNoSeriousViolations(panel, "indicador sin efecto");
+    await app.getByTestId("nav-back").click();
+    await expect(indicator).not.toContainText("no effect");
+
+    // Con 10 orígenes.
+    expect(await relaxExtraOrigins(panel, tabId, servers.appOrigin, 9)).toEqual(
+      Array.from({ length: 9 }, () => true),
+    );
+    await expect(indicator.locator(".relax-item")).toHaveCount(10, { timeout: 5_000 });
+    await expectNoSeriousViolations(panel, "indicador con 10 orígenes");
+    await expectNoHorizontalScroll(panel);
+
+    // Solo con teclado: "Turn off" de un origen y "Turn all off".
+    await indicator
+      .getByRole("button", { name: "Turn off the relaxation for https://extra0.test" })
+      .focus();
+    await panel.keyboard.press("Enter");
+    await expect(indicator.locator(".relax-item")).toHaveCount(9);
+    await indicator.getByRole("button", { name: /^Turn all off/ }).focus();
+    await panel.keyboard.press("Enter");
+    await expect(indicator).toHaveCount(0);
+
+    // Ajustes de producción.
+    await addProductionOrigin(panel, "https://*.empresa.com");
+    await expectNoSeriousViolations(panel, "ajustes de producción");
+    await expectNoHorizontalScroll(panel);
+    const settings = panel.locator("details.settings");
+    await settings.getByLabel(/^Add origin or pattern/).fill("no es un origen");
+    await settings.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(settings).toContainText("Invalid entry");
+    await expectNoSeriousViolations(panel, "ajustes de producción con error");
   });
 }

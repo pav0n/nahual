@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { t } from "../shared/i18n.ts";
 import { toggleAttach } from "./attach-control.ts";
 import { command } from "./commands.ts";
+import { endRelaxation } from "./cors-commands.ts";
+import { RelaxIndicator } from "./components/cors/RelaxIndicator.tsx";
 import { updateSettings } from "./settings-commands.ts";
 import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
@@ -46,6 +48,9 @@ export function App({ tabId }: { tabId: number | null }) {
     continueAll: () => {
       if (usePanelStore.getState().paused.length > 0) continueAll.request();
     },
+    endRelaxations: () => {
+      if (usePanelStore.getState().relaxations.length > 0) void endRelaxation();
+    },
     focusSearch: () => {
       usePanelStore.getState().setTab("traffic");
       // La pestaña se monta en el mismo ciclo: se enfoca en el siguiente.
@@ -77,6 +82,7 @@ export function App({ tabId }: { tabId: number | null }) {
     <main>
       <h1>{t("panelTitle")}</h1>
       <StatusBar />
+      <RelaxIndicator />
       <SettingsPanel />
       <Notices />
       <Tabs idPrefix={TABS} label={t("tabs_label")} tabs={tabs} selected={tab} onSelect={setTab} />

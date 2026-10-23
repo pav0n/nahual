@@ -5,7 +5,7 @@ import { matchValues } from "./text.ts";
 type HeaderCondition = Extract<Condition, { kind: "header" }>;
 
 /** Valores de un header por nombre, sin distinguir mayúsculas. */
-export const headerValues = (headers: Header[], name: string) => {
+export const headerValues = (headers: readonly Header[], name: string) => {
   const key = name.toLowerCase();
   return headers.filter((h) => h.name.toLowerCase() === key).map((h) => h.value);
 };

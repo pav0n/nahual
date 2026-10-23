@@ -153,6 +153,12 @@ export function TrafficGrid({ exchanges, selectedId, onOpen }: Props) {
                     {t("traffic_cors_blocked")}
                   </span>
                 ) : null}
+                {exchange.cors?.relaxed && !exchange.cors.relaxed.errorKey ? (
+                  <span className="tag tag-relaxed">
+                    <span aria-hidden="true">⇄ </span>
+                    {t("traffic_cors_relaxed")}
+                  </span>
+                ) : null}
                 {exchange.isPreflight ? (
                   <span className="tag">{t("traffic_preflight")}</span>
                 ) : null}

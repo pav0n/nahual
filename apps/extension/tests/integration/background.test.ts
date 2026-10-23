@@ -44,7 +44,13 @@ beforeEach(async () => {
 describe("background: arranque y hello", () => {
   it("hello responde ack, settings, rules y state", async () => {
     const port = await openPanel();
-    expect(received(port).map((m) => m.type)).toEqual(["ack", "settings", "rules", "state"]);
+    expect(received(port).map((m) => m.type)).toEqual([
+      "ack",
+      "settings",
+      "rules",
+      "relaxations",
+      "state",
+    ]);
     expect(last(port, "state")?.payload).toMatchObject({
       status: "detached",
       site: null,
@@ -109,5 +115,131 @@ describe("background: arranque y hello", () => {
     port.closeFromPanel();
     await flush();
     expect(cdp.attached.has(1)).toBe(false);
+  });
+});
+
+describe("background: comandos CORS (003, contracts/panel-protocol.md)", () => {
+  const APP = "http://localhost:3000";
+  const API = "https://api-dev.test";
+  const relax = (overrides = {}) =>
+    makeCommand("relaxCors", {
+      appOrigin: APP,
+      apiOrigin: API,
+      durationMinutes: 480,
+      exposeHeaders: [],
+      credentials: false,
+      ...overrides,
+    });
+  const fetchPatterns = (tabId: number) =>
+    cdp
+      .calls<{ patterns?: { urlPattern: string; requestStage: string }[] }>("Fetch.enable", tabId)
+      .at(-1)?.patterns;
+
+  async function attached(tabId = 1) {
+    cdp.respond("Page.getFrameTree", () => ({
+      frameTree: { frame: { id: "main", url: `${APP}/`, securityOrigin: APP } },
+    }));
+    const port = await openPanel(tabId);
+    port.fromPanel(makeCommand("attach", {}));
+    await flush();
+    return port;
+  }
+
+  it("relaxCors válido ⇒ ack, relaxations, Fetch.enable en Response y relaxationCount", async () => {
+    const port = await attached();
+    port.fromPanel(relax());
+    await flush();
+    expect(last(port, "ack")).toBeDefined();
+    expect(last(port, "relaxations")?.payload.items).toEqual([
+      expect.objectContaining({ appOrigin: APP, apiOrigin: API, state: "active" }),
+    ]);
+    expect(fetchPatterns(1)).toEqual([{ urlPattern: `${API}/*`, requestStage: "Response" }]);
+    expect(last(port, "state")?.payload.relaxationCount).toBe(1);
+  });
+
+  it.each([
+    ["producción", { apiOrigin: "https://api.empresa.com" }, "cors_issue_production_origin"],
+    ["origen null", { appOrigin: "null" }, "cors_issue_app_origin_null"],
+    ["igual al de la app", { apiOrigin: APP }, "cors_issue_same_origin"],
+  ])("relaxCors con %s ⇒ error y ninguna llamada a Fetch.enable", async (_name, overrides, key) => {
+    const port = await attached();
+    port.fromPanel(makeCommand("updateSettings", { productionOrigins: ["https://*.empresa.com"] }));
+    await flush();
+    port.fromPanel(relax(overrides));
+    await flush();
+    expect(last(port, "error")?.payload).toMatchObject({
+      code: "relaxation_invalid",
+      issues: [expect.objectContaining({ messageKey: key })],
+    });
+    expect(cdp.calls("Fetch.enable", 1)).toEqual([]);
+  });
+
+  it("sin debugger adjunto ⇒ not_attached", async () => {
+    const port = await openPanel();
+    port.fromPanel(relax());
+    await flush();
+    expect(last(port, "error")?.payload.code).toBe("not_attached");
+  });
+
+  it("desde la pestaña A nunca relaja la B", async () => {
+    const a = await attached(1);
+    const b = await attached(2);
+    a.fromPanel(relax());
+    await flush();
+    expect(last(b, "relaxations")?.payload.items ?? []).toEqual([]);
+    expect(cdp.calls("Fetch.enable", 2)).toEqual([]);
+  });
+
+  it("endRelaxation sin id termina todas; con un id ya terminado responde ack", async () => {
+    const port = await attached();
+    port.fromPanel(relax());
+    port.fromPanel(relax({ apiOrigin: "https://b.test" }));
+    await flush();
+    const firstId = last(port, "relaxations")?.payload.items[0]?.id ?? "";
+    port.fromPanel(makeCommand("endRelaxation", { relaxationId: firstId }));
+    await flush();
+    expect(last(port, "relaxations")?.payload.items).toHaveLength(1);
+    port.fromPanel(makeCommand("endRelaxation", {}));
+    await flush();
+    expect(last(port, "relaxations")?.payload.items).toEqual([]);
+    expect(cdp.calls<{ patterns?: unknown }>("Fetch.disable", 1)).not.toHaveLength(0);
+    const before = received(port).length;
+    port.fromPanel(makeCommand("endRelaxation", { relaxationId: firstId }));
+    await flush();
+    expect(
+      received(port)
+        .slice(before)
+        .map((m) => m.type),
+    ).toContain("ack");
+  });
+
+  it("soltar el debugger termina la relajación con aviso", async () => {
+    const port = await attached();
+    port.fromPanel(relax());
+    await flush();
+    port.fromPanel(makeCommand("detach", {}));
+    await flush();
+    expect(last(port, "relaxations")?.payload.items).toEqual([]);
+    expect(last(port, "notice")?.payload.messageKey).toBe("cors_ended_detached");
+  });
+
+  it("guardar un origen de producción que coincide la termina", async () => {
+    const port = await attached();
+    port.fromPanel(relax());
+    await flush();
+    port.fromPanel(makeCommand("updateSettings", { productionOrigins: [API] }));
+    await flush();
+    expect(last(port, "relaxations")?.payload.items).toEqual([]);
+    expect(last(port, "notice")?.payload.messageKey).toBe("cors_ended_production");
+  });
+
+  it("pausar Nahual la suspende y quita sus patrones", async () => {
+    const port = await attached();
+    port.fromPanel(relax());
+    await flush();
+    port.fromPanel(makeCommand("updateSettings", { globalPaused: true }));
+    await flush();
+    expect(last(port, "relaxations")?.payload.items[0]?.state).toBe("suspended");
+    expect(cdp.sentMethods(1).at(-1)).not.toBe("Fetch.enable");
   });
 });

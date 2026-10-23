@@ -1120,5 +1120,182 @@
   },
   "cors_production_list_invalid": {
     "message": "The list of production origins has damaged entries. Review and save it in Settings: until then CORS cannot be relaxed."
+  },
+  "traffic_cors_relaxed": {
+    "message": "CORS relaxed"
+  },
+  "filter_cors_relaxed": {
+    "message": "Relaxed by Nahual"
+  },
+  "cors_relax_action": {
+    "message": "Allow CORS for development"
+  },
+  "cors_relax_scope": {
+    "message": "Scope:"
+  },
+  "cors_relax_scope_value": {
+    "message": "this tab · $1 → $2"
+  },
+  "cors_relax_duration": {
+    "message": "Duration"
+  },
+  "cors_duration_15": {
+    "message": "15 min"
+  },
+  "cors_duration_60": {
+    "message": "1 h"
+  },
+  "cors_duration_240": {
+    "message": "4 h"
+  },
+  "cors_duration_480": {
+    "message": "8 h"
+  },
+  "cors_relax_credentials": {
+    "message": "The app sends credentials (cookies or HTTP authentication)"
+  },
+  "cors_relax_expose": {
+    "message": "Headers the app can read (Access-Control-Expose-Headers)"
+  },
+  "cors_relax_expose_none_seen": {
+    "message": "This origin has not returned headers to expose yet."
+  },
+  "cors_relax_expose_extra": {
+    "message": "Others, comma-separated"
+  },
+  "cors_relax_warning": {
+    "message": "The relaxation only exists in this browser and this tab: in staging and production it will fail until the server is fixed."
+  },
+  "cors_relax_confirm": {
+    "message": "Allow"
+  },
+  "cors_relax_active": {
+    "message": "CORS relaxed for $1 in this tab. Repeat the request."
+  },
+  "cors_relaxed_title": {
+    "message": "CORS relaxed by Nahual"
+  },
+  "cors_relaxed_failed": {
+    "message": "This response could not be relaxed; it continued unchanged. Cause: $1"
+  },
+  "cors_relaxed_preflight": {
+    "message": "The server's preflight responded $1 and Nahual replaced it with a local 204."
+  },
+  "cors_relaxed_preflight_local": {
+    "message": "Nahual answered the preflight locally (the server redirects OPTIONS)."
+  },
+  "cors_relaxed_already_valid": {
+    "message": "The server already responds correctly to this request: you can turn the relaxation off."
+  },
+  "cors_relaxed_added": {
+    "message": "Headers added by Nahual"
+  },
+  "cors_relaxed_removed": {
+    "message": "Server headers replaced"
+  },
+  "cors_indicator_title": {
+    "message": "CORS relaxed"
+  },
+  "cors_indicator_end_all": {
+    "message": "Turn all off"
+  },
+  "cors_indicator_end": {
+    "message": "Turn off"
+  },
+  "cors_indicator_end_one": {
+    "message": "Turn off the relaxation for $1"
+  },
+  "cors_state_active": {
+    "message": "active"
+  },
+  "cors_state_suspended": {
+    "message": "suspended: Nahual is paused"
+  },
+  "cors_state_idle": {
+    "message": "no effect: the page is on another origin"
+  },
+  "cors_expires_in": {
+    "message": "expires in $1"
+  },
+  "cors_report_action_short": {
+    "message": "Report"
+  },
+  "cors_ended_expired": {
+    "message": "A CORS relaxation expired and no longer applies."
+  },
+  "cors_ended_detached": {
+    "message": "The CORS relaxation ended because the debugger was detached."
+  },
+  "cors_ended_production": {
+    "message": "The CORS relaxation ended because its origin was marked as production."
+  },
+  "cors_ended_restart": {
+    "message": "The CORS relaxation ended because Nahual restarted."
+  },
+  "cors_credentials_learned": {
+    "message": "The request uses credentials: the relaxation now allows them. Repeat the request."
+  },
+  "cors_issue_app_origin_invalid": {
+    "message": "The app origin is not valid."
+  },
+  "cors_issue_app_origin_null": {
+    "message": "The app has no exact origin (null): it cannot be relaxed."
+  },
+  "cors_issue_api_origin_invalid": {
+    "message": "The API origin is not valid."
+  },
+  "cors_issue_same_origin": {
+    "message": "The app and the API share the same origin: there is no CORS to relax."
+  },
+  "cors_issue_production_origin": {
+    "message": "That origin is in your production list."
+  },
+  "cors_issue_production_list_invalid": {
+    "message": "The list of production origins has damaged entries: review and save it in Settings."
+  },
+  "cors_issue_duration_invalid": {
+    "message": "Invalid duration: choose 15 min, 1 h, 4 h or 8 h."
+  },
+  "cors_issue_limit_reached": {
+    "message": "There are already 10 relaxed API origins in this tab: turn one off."
+  },
+  "cors_issue_already_relaxed": {
+    "message": "That API origin is already relaxed: turn it off to create another relaxation."
+  },
+  "cors_issue_expose_header_invalid": {
+    "message": "Some Expose-Headers entry is invalid (no spaces, no * and at most 30)."
+  },
+  "error_relaxation_invalid": {
+    "message": "CORS could not be relaxed. Check the reasons below the button."
+  },
+  "settings_cors_title": {
+    "message": "Development CORS"
+  },
+  "settings_cors_duration": {
+    "message": "Default relaxation duration"
+  },
+  "settings_production_title": {
+    "message": "Production origins"
+  },
+  "settings_production_hint": {
+    "message": "Nahual never relaxes CORS on these origins, neither as app nor as API."
+  },
+  "settings_production_empty": {
+    "message": "The list is empty: Nahual does not guess what production is."
+  },
+  "settings_production_remove": {
+    "message": "Remove $1"
+  },
+  "settings_production_add_label": {
+    "message": "Add origin or pattern"
+  },
+  "settings_production_add_hint": {
+    "message": "Exact origin (https://app.company.com) or subdomain pattern (https://*.company.com, does not include the root domain)."
+  },
+  "toast_production_removed": {
+    "message": "$1 was removed from production."
+  },
+  "action_add": {
+    "message": "Add"
   }
 }

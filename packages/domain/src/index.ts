@@ -28,3 +28,5 @@ export * from "./cors/schemas.ts";
 export * from "./cors/classify.ts";
 export * from "./cors/request-headers.ts";
 export * from "./cors/link-preflight.ts";
+export * from "./cors/headers.ts";
+export * from "./cors/relaxation.ts";

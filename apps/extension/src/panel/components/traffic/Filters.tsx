@@ -25,7 +25,7 @@ interface Props {
 }
 
 const EMPTY: FilterInput = { text: "", regex: "", status: "", types: [], cors: "all" };
-const CORS_FILTERS = ["all", "blocked"] as const;
+const CORS_FILTERS = ["all", "blocked", "relaxed"] as const;
 
 /**
  * Filtros de la lista (FR-003). Una regex o un status inválidos se marcan en su campo y la lista

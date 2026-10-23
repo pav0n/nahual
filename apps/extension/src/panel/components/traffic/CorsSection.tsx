@@ -1,8 +1,12 @@
 import { matchProductionOrigin, type CapturedExchange, type CorsDiagnosis } from "@nahual/domain";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { HeaderList } from "./HeaderList.tsx";
+import { RelaxForm } from "./RelaxForm.tsx";
+
+/** Referencia estable: un `[]` nuevo en el selector haría renderizar en bucle. */
+const NO_ORIGINS: readonly string[] = [];
 
 interface Props {
   exchange: CapturedExchange;
@@ -85,8 +89,26 @@ export function notRelaxableReason(
  * y qué respondió el servidor, y el preflight relacionado. Todo como texto.
  */
 export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
-  const productionOrigins = usePanelStore((s) => s.settings?.productionOrigins ?? []);
+  const productionOrigins = usePanelStore((s) => s.settings?.productionOrigins ?? NO_ORIGINS);
   const diagnosis = exchange.cors?.diagnosis;
+  const relaxed = exchange.cors?.relaxed;
+  const active = usePanelStore((s) =>
+    diagnosis
+      ? s.relaxations.find(
+          (r) => r.apiOrigin === diagnosis.apiOrigin && r.appOrigin === diagnosis.appOrigin,
+        )
+      : undefined,
+  );
+  const [relaxing, setRelaxing] = useState(false);
+  const relaxButton = useRef<HTMLButtonElement>(null);
+  const activeText = useRef<HTMLParagraphElement>(null);
+  const focusAfter = useRef<"button" | "active" | null>(null);
+
+  useEffect(() => {
+    if (focusAfter.current === "button") relaxButton.current?.focus();
+    if (focusAfter.current === "active") activeText.current?.focus();
+    focusAfter.current = null;
+  });
   const related = relatedId ? (
     <p>
       <button type="button" className="link" onClick={() => onOpen(relatedId)}>
@@ -94,7 +116,7 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
       </button>
     </p>
   ) : null;
-  if (!diagnosis && !exchange.cors?.relaxed && !children) {
+  if (!diagnosis && !relaxed && !children) {
     return related ? (
       <section className="cors" aria-labelledby="cors-title">
         <h3 id="cors-title">{t("cors_section_title")}</h3>
@@ -189,8 +211,66 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
               <HeaderList headers={diagnosis.serverCorsHeaders} emptyKey="cors_no_cors_headers" />
             </div>
           </div>
-          {blocked ? <p className="muted">{t(blocked.key, blocked.params)}</p> : null}
+          {blocked ? (
+            <p className="muted">{t(blocked.key, blocked.params)}</p>
+          ) : active ? (
+            <p ref={activeText} tabIndex={-1} className="relax-active">
+              {t("cors_relax_active", [active.apiOrigin])}
+            </p>
+          ) : relaxing ? (
+            <RelaxForm
+              diagnosis={diagnosis}
+              onDone={(created) => {
+                setRelaxing(false);
+                focusAfter.current = created ? "active" : "button";
+              }}
+            />
+          ) : (
+            <p>
+              <button
+                ref={relaxButton}
+                type="button"
+                aria-expanded={false}
+                onClick={() => setRelaxing(true)}
+              >
+                {t("cors_relax_action")}
+              </button>
+            </p>
+          )}
         </>
+      ) : null}
+      {relaxed ? (
+        <div className="cors-relaxed">
+          {relaxed.errorKey ? (
+            <p role="alert" className="field-error">
+              {t("cors_relaxed_failed", [t(relaxed.errorKey)])}
+            </p>
+          ) : (
+            <p>
+              <strong>{t("cors_relaxed_title")}</strong>
+            </p>
+          )}
+          {relaxed.preflightReplaced ? (
+            <p>
+              {relaxed.serverStatus === 0
+                ? t("cors_relaxed_preflight_local")
+                : t("cors_relaxed_preflight", [String(relaxed.serverStatus)])}
+            </p>
+          ) : null}
+          {relaxed.alreadyValid ? <p>{t("cors_relaxed_already_valid")}</p> : null}
+          {relaxed.added.length > 0 ? (
+            <>
+              <h4>{t("cors_relaxed_added")}</h4>
+              <HeaderList headers={relaxed.added} emptyKey="cors_none" />
+            </>
+          ) : null}
+          {relaxed.removed.length > 0 ? (
+            <>
+              <h4>{t("cors_relaxed_removed")}</h4>
+              <HeaderList headers={relaxed.removed} emptyKey="cors_none" />
+            </>
+          ) : null}
+        </div>
       ) : null}
       {related}
       {children}

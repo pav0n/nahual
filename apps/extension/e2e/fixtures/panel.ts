@@ -220,3 +220,80 @@ export async function openCorsDetail(panel: Page, path: string) {
   await expect(panel.locator(".detail h2")).toContainText(path);
   return panel.locator(".detail .cors");
 }
+
+export const relaxIndicator = (panel: Page) => panel.locator(".relax-indicator");
+
+/**
+ * Relaja CORS desde el detalle de un request bloqueado: "Allow CORS for development" y
+ * "Allow" (2 clics, SC-001). `configure` toca la confirmación antes de permitir.
+ */
+export async function relaxFrom(
+  panel: Page,
+  path: string,
+  configure?: (form: ReturnType<Page["locator"]>) => Promise<void>,
+) {
+  const section = await openCorsDetail(panel, path);
+  await section.getByRole("button", { name: "Allow CORS for development" }).click();
+  const form = section.locator(".relax-form");
+  if (configure) await configure(form);
+  await form.getByRole("button", { name: "Allow", exact: true }).click();
+  await expect(relaxIndicator(panel)).toBeVisible();
+  return section;
+}
+
+/** Añade una entrada a la lista de orígenes de producción desde los ajustes. */
+export async function addProductionOrigin(panel: Page, entry: string) {
+  const settings = panel.locator("details.settings");
+  if (!(await settings.getAttribute("open"))) await settings.locator("summary").click();
+  await settings.getByLabel(/^Add origin or pattern/).fill(entry);
+  await settings.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(settings.locator(".production-list")).toContainText(entry);
+}
+
+/** Abre el detalle del último request relajado con esa ruta, esperando a que llegue su fila. */
+export async function openRelaxedDetail(panel: Page, path: string) {
+  const row = requestRow(panel, path).filter({ hasText: "CORS relaxed" }).last();
+  await expect(row).toBeVisible();
+  await row.click();
+  await expect(panel.locator(".detail h2")).toContainText(path);
+  return panel.locator(".detail .cors");
+}
+
+/**
+ * Crea relajaciones extra desde un puerto auxiliar de la página del panel (solo pruebas): el
+ * `hello` desplaza al panel, que se reconecta solo y vuelve a ser el dueño sin soltar el
+ * debugger. Sirve para tener 10 orígenes relajados sin 10 servidores.
+ */
+export function relaxExtraOrigins(panel: Page, tabId: number, appOrigin: string, count: number) {
+  return panel.evaluate(
+    async ({ tab, app, n }) => {
+      const port = chrome.runtime.connect({ name: "nahual-panel" });
+      const replies = new Map<string, (ok: boolean) => void>();
+      port.onMessage.addListener((m: { type: string; correlationId?: string }) => {
+        if (m.correlationId && replies.has(m.correlationId))
+          replies.get(m.correlationId)?.(m.type === "ack");
+      });
+      const send = (type: string, payload: object) =>
+        new Promise<boolean>((resolve) => {
+          const id = crypto.randomUUID();
+          replies.set(id, resolve);
+          port.postMessage({ v: 3, id, type, payload });
+        });
+      await send("hello", { tabId: tab });
+      const results: boolean[] = [];
+      for (let i = 0; i < n; i++) {
+        results.push(
+          await send("relaxCors", {
+            appOrigin: app,
+            apiOrigin: `https://extra${i}.test`,
+            durationMinutes: 480,
+            exposeHeaders: [],
+            credentials: false,
+          }),
+        );
+      }
+      return results;
+    },
+    { tab: tabId, app: appOrigin, n: count },
+  );
+}

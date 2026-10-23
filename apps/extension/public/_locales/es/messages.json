@@ -1120,5 +1120,182 @@
   },
   "cors_production_list_invalid": {
     "message": "La lista de orígenes de producción tiene entradas dañadas. Revísala y guárdala en Ajustes: hasta entonces no se puede relajar CORS."
+  },
+  "traffic_cors_relaxed": {
+    "message": "CORS relajado"
+  },
+  "filter_cors_relaxed": {
+    "message": "Relajados por Nahual"
+  },
+  "cors_relax_action": {
+    "message": "Permitir CORS para desarrollo"
+  },
+  "cors_relax_scope": {
+    "message": "Alcance:"
+  },
+  "cors_relax_scope_value": {
+    "message": "esta pestaña · $1 → $2"
+  },
+  "cors_relax_duration": {
+    "message": "Duración"
+  },
+  "cors_duration_15": {
+    "message": "15 min"
+  },
+  "cors_duration_60": {
+    "message": "1 h"
+  },
+  "cors_duration_240": {
+    "message": "4 h"
+  },
+  "cors_duration_480": {
+    "message": "8 h"
+  },
+  "cors_relax_credentials": {
+    "message": "La app envía credenciales (cookies o autenticación HTTP)"
+  },
+  "cors_relax_expose": {
+    "message": "Headers que la app puede leer (Access-Control-Expose-Headers)"
+  },
+  "cors_relax_expose_none_seen": {
+    "message": "Este origen aún no devolvió headers que exponer."
+  },
+  "cors_relax_expose_extra": {
+    "message": "Otros, separados por comas"
+  },
+  "cors_relax_warning": {
+    "message": "La relajación solo existe en este navegador y en esta pestaña: en staging y producción fallará hasta que el servidor se corrija."
+  },
+  "cors_relax_confirm": {
+    "message": "Permitir"
+  },
+  "cors_relax_active": {
+    "message": "CORS relajado para $1 en esta pestaña. Repite el request."
+  },
+  "cors_relaxed_title": {
+    "message": "CORS relajado por Nahual"
+  },
+  "cors_relaxed_failed": {
+    "message": "No se pudo relajar esta respuesta; continuó sin cambios. Causa: $1"
+  },
+  "cors_relaxed_preflight": {
+    "message": "El preflight del servidor respondió $1 y Nahual lo reemplazó por un 204 local."
+  },
+  "cors_relaxed_preflight_local": {
+    "message": "Nahual respondió el preflight localmente (el servidor redirige los OPTIONS)."
+  },
+  "cors_relaxed_already_valid": {
+    "message": "El servidor ya responde bien a este request: puedes apagar la relajación."
+  },
+  "cors_relaxed_added": {
+    "message": "Headers que añadió Nahual"
+  },
+  "cors_relaxed_removed": {
+    "message": "Headers del servidor reemplazados"
+  },
+  "cors_indicator_title": {
+    "message": "CORS relajado"
+  },
+  "cors_indicator_end_all": {
+    "message": "Apagar todas"
+  },
+  "cors_indicator_end": {
+    "message": "Apagar"
+  },
+  "cors_indicator_end_one": {
+    "message": "Apagar la relajación de $1"
+  },
+  "cors_state_active": {
+    "message": "activa"
+  },
+  "cors_state_suspended": {
+    "message": "suspendida: Nahual está en pausa"
+  },
+  "cors_state_idle": {
+    "message": "sin efecto: la página está en otro origen"
+  },
+  "cors_expires_in": {
+    "message": "vence en $1"
+  },
+  "cors_report_action_short": {
+    "message": "Reporte"
+  },
+  "cors_ended_expired": {
+    "message": "Una relajación de CORS venció y dejó de aplicarse."
+  },
+  "cors_ended_detached": {
+    "message": "La relajación de CORS terminó porque se soltó el debugger."
+  },
+  "cors_ended_production": {
+    "message": "La relajación de CORS terminó porque su origen se marcó como producción."
+  },
+  "cors_ended_restart": {
+    "message": "La relajación de CORS terminó porque Nahual se reinició."
+  },
+  "cors_credentials_learned": {
+    "message": "El request usa credenciales: la relajación ya las permite. Repite el request."
+  },
+  "cors_issue_app_origin_invalid": {
+    "message": "El origen de la app no es válido."
+  },
+  "cors_issue_app_origin_null": {
+    "message": "La app no tiene un origen exacto (null): no se puede relajar."
+  },
+  "cors_issue_api_origin_invalid": {
+    "message": "El origen de la API no es válido."
+  },
+  "cors_issue_same_origin": {
+    "message": "La app y la API tienen el mismo origen: no hay CORS que relajar."
+  },
+  "cors_issue_production_origin": {
+    "message": "Ese origen está en tu lista de producción."
+  },
+  "cors_issue_production_list_invalid": {
+    "message": "La lista de orígenes de producción tiene entradas dañadas: revísala y guárdala en Ajustes."
+  },
+  "cors_issue_duration_invalid": {
+    "message": "Duración inválida: elige 15 min, 1 h, 4 h u 8 h."
+  },
+  "cors_issue_limit_reached": {
+    "message": "Ya hay 10 orígenes de API relajados en esta pestaña: apaga alguno."
+  },
+  "cors_issue_already_relaxed": {
+    "message": "Ese origen de API ya está relajado: apágalo para crear otra relajación."
+  },
+  "cors_issue_expose_header_invalid": {
+    "message": "Algún header de Expose-Headers no es válido (sin espacios, sin * y como mucho 30)."
+  },
+  "error_relaxation_invalid": {
+    "message": "No se pudo relajar CORS. Revisa los motivos debajo del botón."
+  },
+  "settings_cors_title": {
+    "message": "CORS de desarrollo"
+  },
+  "settings_cors_duration": {
+    "message": "Duración por defecto de una relajación"
+  },
+  "settings_production_title": {
+    "message": "Orígenes de producción"
+  },
+  "settings_production_hint": {
+    "message": "Nahual nunca relaja CORS en estos orígenes, ni como app ni como API."
+  },
+  "settings_production_empty": {
+    "message": "La lista está vacía: Nahual no adivina qué es producción."
+  },
+  "settings_production_remove": {
+    "message": "Quitar $1"
+  },
+  "settings_production_add_label": {
+    "message": "Añadir origen o patrón"
+  },
+  "settings_production_add_hint": {
+    "message": "Origen exacto (https://app.empresa.com) o patrón de subdominio (https://*.empresa.com, no incluye el dominio raíz)."
+  },
+  "toast_production_removed": {
+    "message": "Se quitó $1 de producción."
+  },
+  "action_add": {
+    "message": "Añadir"
   }
 }

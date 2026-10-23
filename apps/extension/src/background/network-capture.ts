@@ -5,6 +5,7 @@ import {
   decodeBody,
   parseOrigin,
   type CorsDiagnosis,
+  type CorsRelaxedInfo,
   isTextualContentType,
   utf8ByteLength,
   type BodyInfo,
@@ -30,7 +31,7 @@ export interface NetworkCaptureOptions {
   /** Origen del frame que hizo el request (003, research R4). */
   frameOriginOf?(tabId: number, frameId: string | undefined): string | null;
   /** Un request se bloqueó por CORS (003): el CorsRelaxer aprende credenciales (research R5). */
-  onCorsFailure?(tabId: number, exchangeId: string, diagnosis: CorsDiagnosis): void;
+  onCorsFailure?(tabId: number, exchangeId: string, diagnosis: CorsDiagnosis, url: string): void;
 }
 
 export interface NetworkCapture {
@@ -38,6 +39,8 @@ export interface NetworkCapture {
   exchangeIdOf(tabId: number, networkId: string): string | null;
   /** Marca que una regla actuó sobre el intercambio (FR-002). */
   effect(tabId: number, exchangeId: string, effect: RuleEffect): void;
+  /** Lo que la relajación CORS cambió en el intercambio (FR-026). */
+  relaxed(tabId: number, exchangeId: string, info: CorsRelaxedInfo): void;
   /** Body bajo demanda: nunca viaja con la captura (research R1). */
   getBody(tabId: number, exchangeId: string, side: "request" | "response"): Promise<BodyResult>;
   /** Envía lo pendiente y olvida la pestaña. */
@@ -338,7 +341,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         : null,
     });
     push(tabId, { id: entry.id, kind: "cors", fields: {}, cors: { diagnosis } });
-    options.onCorsFailure?.(tabId, entry.id, diagnosis);
+    options.onCorsFailure?.(tabId, entry.id, diagnosis, entry.url ?? "");
   };
 
   cdp.onEvent((tabId, method, params) => {
@@ -466,6 +469,10 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
 
     effect(tabId, exchangeId, effect) {
       push(tabId, { id: exchangeId, kind: "effect", fields: {}, effect });
+    },
+
+    relaxed(tabId, exchangeId, info) {
+      push(tabId, { id: exchangeId, kind: "cors", fields: {}, cors: { relaxed: info } });
     },
 
     async getBody(tabId, exchangeId, side) {
