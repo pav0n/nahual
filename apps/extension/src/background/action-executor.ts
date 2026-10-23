@@ -20,6 +20,11 @@ export interface PausedTarget {
   /** Headers originales: base de una edición y de un reintento. */
   requestHeaders: Header[];
   responseHeaders: Header[];
+  // 003: contexto para la relajación CORS (research R9).
+  url?: string;
+  method?: string;
+  frameId?: string | undefined;
+  exchangeId?: string;
 }
 
 export type ExecResult =
@@ -34,6 +39,14 @@ export interface ActionExecutor {
   continueEdited(tabId: number, target: PausedTarget, edit: PausedEdit): Promise<ExecResult>;
   mock(tabId: number, target: PausedTarget, mock: MockAction): Promise<ExecResult>;
   fail(tabId: number, target: PausedTarget, reason: FailReason): Promise<ExecResult>;
+  /** Respuesta local con estos headers (preflight 204 de la relajación CORS). */
+  respond(
+    tabId: number,
+    target: PausedTarget,
+    status: number,
+    headers: Header[],
+    base64Body: string,
+  ): Promise<ExecResult>;
 }
 
 /** Errores de red de FR-019 ⇒ `Network.ErrorReason` de CDP (research R7). */
@@ -146,6 +159,10 @@ export function createActionExecutor(options: { debugger: DebuggerPort }): Actio
     mock(tabId, target, mock) {
       const body = mock.bodyEncoding === "base64" ? mock.body : textToBase64(mock.body);
       return run(tabId, target, () => fulfill(tabId, target, mock.status, mock.headers, body));
+    },
+
+    respond(tabId, target, status, headers, base64Body) {
+      return run(tabId, target, () => fulfill(tabId, target, status, headers, base64Body));
     },
 
     fail(tabId, target, reason) {

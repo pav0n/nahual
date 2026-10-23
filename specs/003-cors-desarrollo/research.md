@@ -23,10 +23,13 @@ implementación y el diseño funciona con cualquiera de sus resultados.
 - **Cambio respecto a D5 de 001**: D5 respondía el preflight en la etapa Request, sin llegar al
   servidor. Ahora llega y solo se reemplaza si fallaría. Costo: el servidor recibe el `OPTIONS`
   (aceptable en desarrollo) y el preflight tarda lo que tarde el servidor.
-- **Experimento X5**: ¿Chrome pausa en etapa Response un preflight con 401 y con 302, y acepta
-  `fulfillRequest` sobre él? E1 solo observó un preflight 204. Si el 302 no se pausa, la
-  redirección del preflight se reemplaza desde la etapa Request cuando el preflight de esa URL ya
-  falló una vez con `PreflightDisallowedRedirect` (decisión de respaldo), y se documenta.
+- **Experimento X5** (resultado: ver abajo): un preflight 401 se reemplaza en etapa Response; uno
+  con **redirección** no se puede corregir ahí. **Respaldo adoptado**: la relajación guarda las
+  URLs (sin query) cuyo preflight redirige, sembradas con el diagnóstico desde el que se crea
+  (`preflight_redirect`) y aprendidas cuando un preflight en el alcance llega a Response con 3xx;
+  mientras haya alguna, se añade un patrón de etapa Request para el origen de la API (R11) y los
+  `OPTIONS` a esas URLs se responden con 204 local en Request, sin llegar al servidor. El resto de
+  requests de esa etapa continúan de inmediato.
 - **Alternatives considered**:
   - *Reglas de sesión de `declarativeNetRequest`* (respaldo de la entrada): innecesario porque E1
     fue positivo. Además exige `declarativeNetRequestWithHostAccess` + permisos de host, no
@@ -101,7 +104,7 @@ implementación y el diseño funciona con cualquiera de sus resultados.
 CORS distingue el modo de credenciales (`include`), que CDP no expone directamente.
 
 - **Decision**: señal por request, en este orden:
-  1. el request crudo (`requestWillBeSentExtraInfo`, por `networkId`) lleva `Cookie`;
+  1. los headers del request en `Fetch.requestPaused` llevan `Cookie` (X1);
   2. el diagnóstico del bloqueo lo implica (`wildcard_with_credentials`,
      `missing_allow_credentials`);
   3. la relajación ya **aprendió** que ese origen de API usa credenciales: si una respuesta
@@ -111,10 +114,9 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
   crearse, la relajación toma `credentials` de la casilla "La app envía credenciales" de la
   confirmación, premarcada con la señal del diagnóstico; el aprendizaje (3) queda como respaldo si
   el dev la dejó sin marcar.
-- **Experimento X1**: ¿los headers de `Fetch.requestPaused` en etapa Response incluyen `Cookie`?
-  ¿Llega `requestWillBeSentExtraInfo` antes de la etapa Response? Si `Cookie` está en Fetch, la
-  señal 1 se toma de ahí. Prueba: `e2e/experiments/x1-cors-credentials.spec.ts` con
-  `credentials: "include"` con y sin cookie.
+- **Experimento X1** (resultado: sí): los headers de `Fetch.requestPaused` en etapa Response
+  incluyen `Cookie` cuando el navegador la envía. En el diagnóstico (sin Fetch) la señal sale de
+  `requestWillBeSentExtraInfo`.
 - **Riesgo residual**: un request con `credentials: "include"` pero sin cookies ni diagnóstico
   previo necesita un reintento (señal 3), mitigado por la casilla de la confirmación. Se documenta
   en el detalle; no rompe el aislamiento.
@@ -127,16 +129,11 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
   repite con el `NetworkCapture` de 002 (que ya marca `isPreflight`) en Chrome estable y en el
   Chromium de Playwright: ¿llega el preflight por Network?, ¿con `initiator.type ===
   "preflight"` e `initiator.requestId`? Prueba: `e2e/experiments/x2-preflight-network.spec.ts`.
-- **Decision**:
-  - Si Network lo emite: se relaciona por `initiator.requestId` (exacto).
-  - Si no: el preflight solo se ve cuando `Fetch` lo pausa (relajación activa o regla de 002).
-    El SW emite entonces un intercambio sintético de preflight (`kind: "start"` con
-    `isPreflight: true`) desde el `requestPaused`, y la relación la calcula la función pura
-    `linkPreflights` (misma URL, `Access-Control-Request-Method` igual al método, el preflight
-    empieza ≤ 5 s después del request y es el más cercano).
-  - Sin preflight observado, el detalle muestra "status del preflight: no observado" y explica
-    que Nahual lo ve cuando hay una relajación activa para ese origen; la causa sale igual de
-    `corsError` (R3).
+- **Decision** (X2 positivo): Network emite el preflight; se relaciona por `initiator.requestId`
+  (exacto). `linkPreflights` usa ese id y, solo si falta, la heurística (misma URL,
+  `Access-Control-Request-Method` igual al método, preflight ≤ 5 s después, el más cercano). No
+  se emiten intercambios sintéticos. Si el preflight no se observó (p. ej. adjunto a mitad de
+  la secuencia), el detalle lo indica; la causa sale igual de `corsError` (R3).
 - **Rationale**: FR-005/FR-006 piden status del preflight "si los hubo"; la clasificación no
   depende de verlo.
 
@@ -220,11 +217,11 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
 
 - **Decision**: `computeFetchPatterns(rules, { site, globalPaused, relaxedApiOrigins })` añade
   `{ urlPattern: "<origen de API>/*", requestStage: "Response" }` por relajación activa (no
-  suspendida). Se combina con la reducción de R3 de 002: un `*` en Response los absorbe. Los
+  suspendida), y `{ …, requestStage: "Request" }` solo si esa relajación tiene URLs con preflight
+  que redirige (respaldo de X5, R1). Se combina con la reducción de R3 de 002: un `*` en Response los absorbe. Los
   orígenes validados no contienen `*`, `?` ni `\`, así que no hace falta escaparlos.
-- **Si X5 obliga al respaldo** (R1): se suma `{ urlPattern: "<origen de API>/*", requestStage:
-  "Request" }` solo mientras haya una relajación activa de ese origen, y en esa etapa solo se actúa
-  sobre los `OPTIONS` (el resto continúa de inmediato).
+- **Respaldo de X5** (R1): en la etapa Request solo se actúa sobre los `OPTIONS` a URLs con
+  preflight que redirige; el resto continúa de inmediato.
 - **Rationale**: principio VI: sin relajación ni reglas, sigue solo la captura pasiva.
 
 ## R12. Orígenes de producción
@@ -304,7 +301,78 @@ CORS distingue el modo de credenciales (`include`), que CDP no expone directamen
 
 ## Resultados por registrar
 
-- X1 (credenciales en Fetch), X2 (preflight en Network), X3 (`Max-Age: 0`), X4 (headers en
-  Network tras modificar), X5 (preflight 401/302 en etapa Response): _pendientes, al inicio de la
-  implementación_.
-- Overhead de R17: _pendiente_.
+Experimentos corridos el 2026-10-23 en el Chromium de Playwright 1.64 (HeadlessChrome 156), con
+`EXPERIMENTS=1 pnpm --filter @nahual/extension e2e` (T006–T009). Resultados en
+`apps/extension/test-results/experiments/*.json`.
+
+> **Hallazgo del laboratorio**: desde 002, el `FetchInterceptor` de Nahual responde todo
+> `Fetch.requestPaused` de la extensión, también los de la sesión del laboratorio, y los
+> experimentos de 001 (E2) daban "Invalid state for continueInterceptedRequest". El build de
+> pruebas añade `__nahualLabTabs` (`test-hooks.ts`, ausente en producción, verificado en
+> `tests/dist/manifest.test.ts`) para que el interceptor ignore las pestañas del laboratorio. Con
+> eso, E2 reproduce los resultados de 001 (A, B y D funcionan; C falla con
+> `PreflightInvalidStatus`).
+
+- **X1 (credenciales)**: `Fetch.requestPaused` en etapa Response **sí** trae `Cookie` (y `Origin`)
+  en `request.headers`; sin cookie, no la trae. `requestWillBeSentExtraInfo` llega antes que la
+  etapa Response. ⇒ R5: la señal 1 se toma de los headers de Fetch.
+- **X2 (preflight en Network)**: **sí** llega. `Network.requestWillBeSent` del `OPTIONS` con
+  `initiator: { type: "preflight", requestId: <id del request real> }`, y su `responseReceived`
+  con `type: "Preflight"` y el status (401, 204). ⇒ R6: relación exacta por
+  `initiator.requestId`; no hace falta el intercambio sintético. Además, un preflight 401 **sin**
+  headers CORS da `PreflightMissingAllowOriginHeader` (no `PreflightInvalidStatus`) ⇒ R3: si se
+  observó el preflight con status no 2xx, la causa es `preflight_status`.
+- **X3 (`Max-Age: 0`)**: **sí basta**. En `cors-relax.spec.ts` (T057), tras relajar
+  `/cors/preflight-401` y repetir con éxito, `Alt+Shift+R` y repetir **de inmediato** vuelve a
+  fallar: el navegador no reutilizó el permiso del preflight local (FR-013).
+- **X4 (headers en Network)**: tras `continueResponse` con headers cambiados,
+  `Network.responseReceived` reporta los headers **modificados** y `responseReceivedExtraInfo` los
+  **originales** del servidor. La captura de 002 ya usa los de ExtraInfo; el detalle muestra
+  además lo que guardó el SW (R7), sin cambios de diseño.
+- **X5 (preflight en etapa Response)**: un preflight 401 se pausa en Response y
+  `fulfillRequest` 204 funciona (el servidor vio `OPTIONS` y `PUT`; la página recibió 200). Un
+  preflight **302** también se pausa en Response, pero ni `fulfillRequest` ni `continueResponse`
+  lo corrigen (`ERR_INVALID_REDIRECT`, `PreflightDisallowedRedirect`). `fulfillRequest` en etapa
+  **Request** sí lo resuelve (como D5). ⇒ R1: se usa el respaldo para redirecciones.
+- **Overhead de R17 (SC-007)** (`e2e/experiments/e4-overhead-cors.spec.ts`, 500 fetch
+  secuenciales por corrida tras 10 de calentamiento, fixture local, HeadlessChrome 156):
+
+  | Corrida | p50 | p95 |
+  |---|---|---|
+  | 1 sin debugger (`/cors/ok`, CORS correcto) | 0,9 ms | 1,2 ms |
+  | 2 relajada, el servidor sin CORS (`/cors/none`, `continueResponse` con headers) | 1,5 ms | 2,0 ms |
+  | 3 relajada, el servidor ya responde bien (`/cors/ok`, sin cambios) | 1,5 ms | 2,3 ms |
+
+  Overhead p95: **0,8 ms** (corrida 2) y **1,1 ms** (corrida 3), muy por debajo de 20 ms.
+
+## Tamaño de los bundles
+
+Build de producción (`pnpm build`), JS sin comprimir y total con `gzip -9`, 2026-10-23; 002
+medido de nuevo desde `main` (`fe94756`) con el mismo método:
+
+| Bundle | 002 | 003 | Diferencia |
+|---|---|---|---|
+| Service worker (`index.ts-*.js`) | 27,6 KB | 36,9 KB | +9,3 KB |
+| Compartido: Zod, protocolo y dominio (`src-*.js`) | 173,2 KB | 189,0 KB | +15,7 KB |
+| Panel (`panel-*.js`) | 300,8 KB | 316,7 KB | +15,9 KB |
+| **Total** | **501,6 KB** (146,8 KB gzip) | **542,6 KB** (158,1 KB gzip) | **+40,9 KB** (+11,2 KB gzip) |
+
+Sin dependencias nuevas: el crecimiento es el dominio CORS, el `CorsRelaxer` y las vistas.
+
+## Estabilidad de la E2E (T073, SC-003)
+
+Suite completa (`pnpm e2e`, 84 pruebas, Chromium de Playwright 1.64), 2026-10-23:
+
+- **Primera tanda, 10 corridas**: 8 en verde; 2 con un fallo en `cors-diagnosis.spec.ts`
+  (US1-6, preflight relacionado). Causa: Network no ordena los eventos de un request y de su
+  preflight. A veces el `loadingFailed` del request llega antes que la respuesta del preflight,
+  o antes que el propio `requestWillBeSent` del preflight, y a veces el preflight llega antes que
+  su request. El diagnóstico salía sin el status del preflight.
+- **Corrección** (`network-capture.ts`, con pruebas de integración para cada orden): los
+  preflights que llegan antes que su request se relacionan cuando llega (≤ 200 en espera por
+  pestaña), y un bloqueo de preflight espera hasta 500 ms a que el preflight y su respuesta
+  aparezcan antes de diagnosticar (luego diagnostica igual). `cors-diagnosis.spec.ts` con
+  `--repeat-each=30`: 150/150.
+- **Segunda tanda, 10 corridas**: **10/10 en verde** (84/84 en cada una, 3,5 min por corrida).
+  No reapareció el fallo intermitente sin identificar de 002.
+

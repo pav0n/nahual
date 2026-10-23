@@ -1,4 +1,10 @@
-import { SettingsPatchSchema, SiteSchema } from "@nahual/domain";
+import {
+  CorsHeaderNameSchema,
+  LIMITS,
+  RelaxationDurationSchema,
+  SettingsPatchSchema,
+  SiteSchema,
+} from "@nahual/domain";
 import { z } from "zod";
 import { message } from "./envelope.ts";
 
@@ -30,12 +36,34 @@ const ResolvePausedSchema = z
   .refine((p) => p.edit === undefined || p.action === "continue", { path: ["edit"] })
   .refine((p) => (p.action === "mock") === (p.mock !== undefined), { path: ["mock"] });
 
+/**
+ * `productionOrigins` llega sin validar entrada por entrada: el SW la normaliza y responde
+ * `issues` con el índice de la inválida (contracts/panel-protocol.md).
+ */
+const UpdateSettingsSchema = SettingsPatchSchema.omit({ productionOrigins: true })
+  .extend({
+    productionOrigins: z
+      .array(z.string().max(LIMITS.originMax))
+      .max(LIMITS.productionOriginsMax)
+      .optional(),
+  })
+  .strict();
+
+/** Los orígenes los valida el SW con sus propios ajustes (`validateRelaxation`). */
+const RelaxCorsSchema = z.strictObject({
+  appOrigin: z.string().min(1).max(LIMITS.originMax),
+  apiOrigin: z.string().min(1).max(LIMITS.originMax),
+  durationMinutes: RelaxationDurationSchema,
+  exposeHeaders: z.array(CorsHeaderNameSchema).max(LIMITS.exposeHeadersMax),
+  credentials: z.boolean(),
+});
+
 export const PanelMessageSchema = z.discriminatedUnion("type", [
   message("hello", z.strictObject({ tabId: z.int().min(0) })),
   message("attach", z.strictObject({ consent: z.literal(true).optional() })),
   message("detach", Empty),
   message("reconnect", Empty),
-  message("updateSettings", SettingsPatchSchema.strict()),
+  message("updateSettings", UpdateSettingsSchema),
   message("saveRule", z.strictObject({ rule: Unvalidated })),
   message("deleteRule", z.strictObject({ ruleId: RuleId })),
   message("restoreRule", z.strictObject({ ruleId: RuleId })),
@@ -52,6 +80,8 @@ export const PanelMessageSchema = z.discriminatedUnion("type", [
   message("setRuleEnabled", z.strictObject({ ruleId: RuleId, enabled: z.boolean() })),
   message("resolvePaused", ResolvePausedSchema),
   message("continueAll", Empty),
+  message("relaxCors", RelaxCorsSchema),
+  message("endRelaxation", z.strictObject({ relaxationId: z.uuid().optional() })),
   message(
     "getBody",
     z.strictObject({

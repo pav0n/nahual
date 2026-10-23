@@ -15,6 +15,7 @@ const detached: SessionState = {
   activeRuleCount: 0,
   queueSize: 0,
   globalPaused: false,
+  relaxationCount: 0,
 };
 
 beforeEach(() => {

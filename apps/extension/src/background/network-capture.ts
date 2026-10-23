@@ -1,7 +1,11 @@
 import {
   LIMITS,
   MAX_BODY_BYTES,
+  classifyCorsFailure,
   decodeBody,
+  parseOrigin,
+  type CorsDiagnosis,
+  type CorsRelaxedInfo,
   isTextualContentType,
   utf8ByteLength,
   type BodyInfo,
@@ -24,6 +28,10 @@ export interface NetworkCaptureOptions {
   /** Agrupación de updates (research R11). */
   batchMs?: number;
   maxBatch?: number;
+  /** Origen del frame que hizo el request (003, research R4). */
+  frameOriginOf?(tabId: number, frameId: string | undefined): string | null;
+  /** Un request se bloqueó por CORS (003): el CorsRelaxer aprende credenciales (research R5). */
+  onCorsFailure?(tabId: number, exchangeId: string, diagnosis: CorsDiagnosis, url: string): void;
 }
 
 export interface NetworkCapture {
@@ -31,6 +39,8 @@ export interface NetworkCapture {
   exchangeIdOf(tabId: number, networkId: string): string | null;
   /** Marca que una regla actuó sobre el intercambio (FR-002). */
   effect(tabId: number, exchangeId: string, effect: RuleEffect): void;
+  /** Lo que la relajación CORS cambió en el intercambio (FR-026). */
+  relaxed(tabId: number, exchangeId: string, info: CorsRelaxedInfo): void;
   /** Body bajo demanda: nunca viaja con la captura (research R1). */
   getBody(tabId: number, exchangeId: string, side: "request" | "response"): Promise<BodyResult>;
   /** Envía lo pendiente y olvida la pestaña. */
@@ -38,6 +48,11 @@ export interface NetworkCapture {
 }
 
 const MAX_HEADERS = 500;
+/** Espera máxima de la respuesta del preflight para el diagnóstico CORS (003). */
+const PREFLIGHT_WAIT_MS = 500;
+const PREFLIGHT_POLL_MS = 25;
+/** Preflights a la espera de su request, por pestaña. */
+const MAX_ORPHAN_PREFLIGHTS = 200;
 const MAX_HEADER_VALUE = 65_536;
 /** Entradas recordadas por pestaña para pedir bodies y marcar efectos (como el historial). */
 const MAX_ENTRIES = LIMITS.historyMax;
@@ -55,6 +70,15 @@ interface Entry {
   hasRequestBody: boolean;
   extraRequestHeaders: Header[] | null;
   extraResponseHeaders: Header[] | null;
+  // 003: datos para el diagnóstico CORS.
+  method?: string;
+  url?: string;
+  requestHeaders?: Header[];
+  responseHeaders?: Header[];
+  appOrigin?: string | null;
+  /** En un request: su preflight observado. En un preflight: `Access-Control-Request-Headers`. */
+  preflightId?: string;
+  requestedHeaders?: string | undefined;
 }
 
 interface Tab {
@@ -64,6 +88,8 @@ interface Tab {
   /** Id actual de cada `requestId` de Network. */
   current: Map<string, string>;
   redirects: Map<string, number>;
+  /** Preflights que llegaron antes que su request: `requestId` del request ⇒ id del preflight. */
+  orphanPreflights: Map<string, string>;
   pending: ExchangeUpdate[];
   timer: ReturnType<typeof setTimeout> | null;
 }
@@ -135,6 +161,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         entries: new Map(),
         current: new Map(),
         redirects: new Map(),
+        orphanPreflights: new Map(),
         pending: [],
         timer: null,
       };
@@ -180,10 +207,11 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     entry.status = response.status;
     entry.mimeType = response.mimeType ?? null;
     entry.contentType = headerValue(response.headers, "content-type");
+    entry.responseHeaders = entry.extraResponseHeaders ?? toHeaderList(response.headers);
     const fields: Partial<ExchangeFields> = {
       status: response.status,
       mimeType: entry.mimeType,
-      responseHeaders: entry.extraResponseHeaders ?? toHeaderList(response.headers),
+      responseHeaders: entry.responseHeaders,
     };
     push(tabId, { id: entry.id, kind: "response", fields });
   };
@@ -197,6 +225,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       wallTime?: number;
       request: CdpRequest;
       redirectResponse?: CdpResponse;
+      frameId?: string;
+      initiator?: { type?: string; requestId?: string };
     },
   ) => {
     const tab = tabOf(tabId);
@@ -238,10 +268,38 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     tab.entries.delete(`extra:${event.requestId}`);
     tab.current.set(event.requestId, id);
     remember(tab, entry);
+    const orphan = tab.orphanPreflights.get(event.requestId);
+    if (orphan !== undefined) {
+      tab.orphanPreflights.delete(event.requestId);
+      entry.preflightId = orphan;
+      push(tabId, { id: orphan, kind: "headers", fields: { preflightFor: id } });
+    }
     const method = request.method || "GET";
     const isPreflight =
       method.toUpperCase() === "OPTIONS" &&
       headerValue(request.headers, "access-control-request-method") !== null;
+    entry.method = method;
+    entry.url = request.url;
+    entry.requestHeaders = toHeaderList(request.headers);
+    entry.appOrigin = options.frameOriginOf?.(tabId, event.frameId) ?? null;
+    // El preflight llega por Network con el request real como iniciador (research R6, X2).
+    let preflightFor: string | undefined;
+    if (isPreflight && event.initiator?.type === "preflight" && event.initiator.requestId) {
+      const owner = currentEntry(tabId, event.initiator.requestId);
+      if (owner) {
+        owner.preflightId = id;
+        preflightFor = owner.id;
+      } else {
+        // Puede llegar antes que su request: se relacionan cuando llegue (research R6).
+        tab.orphanPreflights.set(event.initiator.requestId, id);
+        if (tab.orphanPreflights.size > MAX_ORPHAN_PREFLIGHTS) {
+          const oldest = tab.orphanPreflights.keys().next().value;
+          if (oldest !== undefined) tab.orphanPreflights.delete(oldest);
+        }
+      }
+      entry.requestedHeaders =
+        headerValue(request.headers, "access-control-request-headers") ?? undefined;
+    }
     push(tabId, {
       id,
       kind: "start",
@@ -251,6 +309,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         ...truncateUrl(request.url),
         resourceType: (event.type ?? "Other").slice(0, 64),
         isPreflight,
+        ...(preflightFor !== undefined ? { preflightFor } : {}),
+        appOrigin: entry.appOrigin,
         requestHeaders: entry.extraRequestHeaders ?? toHeaderList(request.headers),
         responseHeaders: [],
         status: null,
@@ -269,6 +329,67 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         responseBody: { available: false, size: null, reason: "pending" },
       },
     });
+  };
+
+  const diagnose = (
+    tabId: number,
+    entry: Entry,
+    status: { corsError: string; failedParameter?: string },
+  ) => {
+    const requestHeaders = entry.extraRequestHeaders ?? entry.requestHeaders ?? [];
+    const originHeader = requestHeaders.find((h) => h.name.toLowerCase() === "origin")?.value;
+    const preflight = entry.preflightId
+      ? tabs.get(tabId)?.entries.get(entry.preflightId)
+      : undefined;
+    const diagnosis = classifyCorsFailure({
+      corsError: status.corsError,
+      failedParameter: status.failedParameter ?? "",
+      method: entry.method ?? "GET",
+      url: entry.url ?? "",
+      appOrigin: entry.appOrigin ?? (originHeader ? parseOrigin(originHeader) : null),
+      requestHeaders,
+      responseStatus: entry.status,
+      responseHeaders: entry.responseHeaders ?? [],
+      preflight: preflight
+        ? {
+            exchangeId: preflight.id,
+            status: preflight.status,
+            headers: preflight.responseHeaders ?? [],
+            ...(preflight.requestedHeaders !== undefined
+              ? { requestedHeaders: preflight.requestedHeaders }
+              : {}),
+          }
+        : null,
+    });
+    push(tabId, { id: entry.id, kind: "cors", fields: {}, cors: { diagnosis } });
+    options.onCorsFailure?.(tabId, entry.id, diagnosis, entry.url ?? "");
+  };
+
+  /**
+   * El bloqueo puede llegar antes que la respuesta de su preflight: se espera hasta
+   * `PREFLIGHT_WAIT_MS` para diagnosticar con su status (research R6) y luego se diagnostica igual.
+   */
+  const diagnoseWhenReady = (
+    tabId: number,
+    entry: Entry,
+    status: { corsError: string; failedParameter?: string },
+    waited = 0,
+  ) => {
+    const preflight = entry.preflightId
+      ? tabs.get(tabId)?.entries.get(entry.preflightId)
+      : undefined;
+    // Un error de preflight sin preflight visto todavía también espera: Network no ordena los
+    // eventos del request y de su preflight.
+    const pending = preflight
+      ? preflight.status === null
+      : /^Preflight|PreflightResponse$/.test(status.corsError);
+    if (pending && waited < PREFLIGHT_WAIT_MS) {
+      setTimeout(() => {
+        if (tabs.has(tabId)) diagnoseWhenReady(tabId, entry, status, waited + PREFLIGHT_POLL_MS);
+      }, PREFLIGHT_POLL_MS);
+      return;
+    }
+    diagnose(tabId, entry, status);
   };
 
   cdp.onEvent((tabId, method, params) => {
@@ -320,10 +441,18 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         return;
       }
       case "Network.responseReceivedExtraInfo": {
-        const event = params as { requestId: string; headers: Record<string, string> };
+        const event = params as {
+          requestId: string;
+          headers: Record<string, string>;
+          statusCode?: number;
+        };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
         entry.extraResponseHeaders = toHeaderList(event.headers);
+        // Una respuesta bloqueada por CORS no emite responseReceived: el diagnóstico sale de aquí.
+        entry.responseHeaders = entry.extraResponseHeaders;
+        if (entry.status === null && typeof event.statusCode === "number")
+          entry.status = event.statusCode;
         entry.contentType ??= headerValue(event.headers, "content-type");
         push(tabId, {
           id: entry.id,
@@ -356,7 +485,12 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         return;
       }
       case "Network.loadingFailed": {
-        const event = params as { requestId: string; timestamp: number; errorText: string };
+        const event = params as {
+          requestId: string;
+          timestamp: number;
+          errorText: string;
+          corsErrorStatus?: { corsError: string; failedParameter?: string };
+        };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
         push(tabId, {
@@ -369,6 +503,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
             responseBody: { available: false, size: null, reason: "none" },
           },
         });
+        // Solo `corsErrorStatus` dice que es CORS; `blockedReason` es otra cosa (research R3).
+        if (event.corsErrorStatus) diagnoseWhenReady(tabId, entry, event.corsErrorStatus);
         return;
       }
       default:
@@ -381,6 +517,10 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
 
     effect(tabId, exchangeId, effect) {
       push(tabId, { id: exchangeId, kind: "effect", fields: {}, effect });
+    },
+
+    relaxed(tabId, exchangeId, info) {
+      push(tabId, { id: exchangeId, kind: "cors", fields: {}, cors: { relaxed: info } });
     },
 
     async getBody(tabId, exchangeId, side) {

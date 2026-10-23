@@ -5,6 +5,7 @@ import { command } from "../commands.ts";
 import { updateSettings } from "../settings-commands.ts";
 import { usePanelStore } from "../store/index.ts";
 import { Field } from "./common/Field.tsx";
+import { CorsSettings } from "./cors/CorsSettings.tsx";
 import { Switch } from "./common/Switch.tsx";
 
 /** Ajustes del panel (FR-022 y, con la historia 3, FR-027a). */
@@ -70,6 +71,7 @@ export function SettingsPanel({ children }: { children?: ReactNode }) {
       <p className="muted">
         {t(consent ? "settings_auto_attach_hint" : "settings_auto_attach_no_consent")}
       </p>
+      <CorsSettings />
       {children}
     </details>
   );

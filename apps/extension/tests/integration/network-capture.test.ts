@@ -2,9 +2,11 @@ import type { ExchangeUpdate } from "@nahual/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createNetworkCapture, type NetworkCapture } from "../../src/background/network-capture.ts";
 import {
+  corsFailed,
   loadingFailed,
   loadingFinished,
   requestWillBeSent,
+  requestWillBeSentExtraInfo,
   responseReceived,
 } from "../fakes/cdp-events.ts";
 import { FakeDebugger } from "../fakes/fake-debugger.ts";
@@ -305,5 +307,271 @@ describe("NetworkCapture: getBody bajo demanda", () => {
       requestWillBeSent("r1", { redirectResponse: { url: "x", status: 301, headers: {} } }),
     );
     expect(await capture.getBody(1, "r1", "response")).toEqual({ ok: false, reason: "redirect" });
+  });
+});
+
+describe("NetworkCapture: diagnóstico CORS (003, research R3, R6)", () => {
+  const APP = "http://localhost:3000";
+  const API = "https://api.test";
+  let frameOrigins: Map<string, string>;
+  let corsFailures: { tabId: number; exchangeId: string; cause: string }[];
+
+  beforeEach(async () => {
+    // CDP propio: el de la suite ya tiene otra captura escuchando.
+    cdp = new FakeDebugger();
+    await cdp.attach(1);
+    frameOrigins = new Map([["main", APP]]);
+    corsFailures = [];
+    capture = createNetworkCapture({
+      debugger: cdp,
+      onUpdates: (tabId, updates) => {
+        if (tabId === 1) batches.push(updates);
+      },
+      frameOriginOf: (_tabId, frameId) => (frameId ? (frameOrigins.get(frameId) ?? null) : null),
+      onCorsFailure: (tabId, exchangeId, diagnosis) =>
+        corsFailures.push({ tabId, exchangeId, cause: diagnosis.cause }),
+    });
+  });
+
+  const corsOf = (id: string) => of(id).find((u) => u.kind === "cors")?.cors;
+
+  it("start lleva el origen de la app del frame", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { frameId: "main" }));
+    vi.runAllTimers();
+    expect(of("r1")[0]?.fields.appOrigin).toBe(APP);
+  });
+
+  it("loadingFailed con corsErrorStatus ⇒ update cors con el diagnóstico", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { url: `${API}/items?token=secret`, frameId: "main" }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSentExtraInfo",
+      requestWillBeSentExtraInfo("r1", {
+        Cookie: "session=secret",
+        Authorization: "Bearer secret",
+        "X-Custom": "1",
+      }),
+    );
+    cdp.emit(
+      1,
+      "Network.responseReceived",
+      responseReceived("r1", {
+        status: 200,
+        headers: { "access-control-allow-origin": "https://otro.test" },
+      }),
+    );
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "AllowOriginMismatch"));
+    vi.runAllTimers();
+    const diagnosis = corsOf("r1")?.diagnosis;
+    expect(diagnosis).toMatchObject({
+      cause: "origin_mismatch",
+      appOrigin: APP,
+      apiOrigin: API,
+      method: "GET",
+      requestedHeaders: ["authorization", "x-custom"],
+      credentials: "yes",
+      responseStatus: 200,
+      serverCorsHeaders: [{ name: "access-control-allow-origin", value: "https://otro.test" }],
+      relaxable: true,
+    });
+    expect(JSON.stringify(diagnosis)).not.toMatch(/secret/);
+    expect(corsFailures).toEqual([{ tabId: 1, exchangeId: "r1", cause: "origin_mismatch" }]);
+  });
+
+  it("respuesta bloqueada sin responseReceived: status y headers salen de ExtraInfo", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { frameId: "main" }));
+    cdp.emit(1, "Network.responseReceivedExtraInfo", {
+      requestId: "r1",
+      statusCode: 200,
+      headers: { "Access-Control-Allow-Origin": "https://otro.example" },
+    });
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "AllowOriginMismatch"));
+    vi.runAllTimers();
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      responseStatus: 200,
+      serverCorsHeaders: [{ name: "Access-Control-Allow-Origin", value: "https://otro.example" }],
+    });
+  });
+
+  it("si la respuesta del preflight llega después del bloqueo, el diagnóstico la espera", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { method: "PUT", url: `${API}/items`, frameId: "main" }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("p1", {
+        method: "OPTIONS",
+        url: `${API}/items`,
+        frameId: "main",
+        headers: { "Access-Control-Request-Method": "PUT" },
+        initiator: { type: "preflight", requestId: "r1" },
+      }),
+    );
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "PreflightMissingAllowOriginHeader"));
+    vi.advanceTimersByTime(20);
+    cdp.emit(1, "Network.responseReceived", responseReceived("p1", { status: 401, headers: {} }));
+    vi.runAllTimers();
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      cause: "preflight_status",
+      preflightStatus: 401,
+    });
+  });
+
+  it("el preflight puede llegar antes que su request: se relacionan igual", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("p1", {
+        method: "OPTIONS",
+        url: `${API}/items`,
+        headers: { "Access-Control-Request-Method": "PUT" },
+        initiator: { type: "preflight", requestId: "r1" },
+      }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { method: "PUT", url: `${API}/items`, frameId: "main" }),
+    );
+    cdp.emit(1, "Network.responseReceived", responseReceived("p1", { status: 401, headers: {} }));
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "PreflightMissingAllowOriginHeader"));
+    vi.runAllTimers();
+    expect(of("p1").some((u) => u.fields.preflightFor === "r1")).toBe(true);
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      cause: "preflight_status",
+      preflightExchangeId: "p1",
+    });
+  });
+
+  it("el bloqueo de preflight puede llegar antes que el propio preflight: lo espera", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { method: "PUT", url: `${API}/items`, frameId: "main" }),
+    );
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "PreflightMissingAllowOriginHeader"));
+    vi.advanceTimersByTime(30);
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("p1", {
+        method: "OPTIONS",
+        url: `${API}/items`,
+        headers: { "Access-Control-Request-Method": "PUT" },
+        initiator: { type: "preflight", requestId: "r1" },
+      }),
+    );
+    cdp.emit(1, "Network.responseReceived", responseReceived("p1", { status: 401, headers: {} }));
+    vi.runAllTimers();
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      cause: "preflight_status",
+      preflightStatus: 401,
+    });
+  });
+
+  it("un bloqueo que no es de preflight no espera", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { frameId: "main" }));
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "MissingAllowOriginHeader"));
+    vi.advanceTimersByTime(60);
+    expect(corsOf("r1")?.diagnosis?.cause).toBe("missing_allow_origin");
+  });
+
+  it("si la respuesta del preflight no llega, diagnostica igual tras la espera", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { method: "PUT", url: `${API}/items`, frameId: "main" }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("p1", {
+        method: "OPTIONS",
+        url: `${API}/items`,
+        headers: { "Access-Control-Request-Method": "PUT" },
+        initiator: { type: "preflight", requestId: "r1" },
+      }),
+    );
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "PreflightMissingAllowOriginHeader"));
+    vi.runAllTimers();
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      cause: "missing_allow_origin",
+      preflightStatus: null,
+    });
+  });
+
+  it("loadingFailed sin corsErrorStatus o solo con blockedReason ⇒ sin cors", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { frameId: "main" }));
+    cdp.emit(1, "Network.loadingFailed", loadingFailed("r1"));
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r2", { frameId: "main" }));
+    cdp.emit(
+      1,
+      "Network.loadingFailed",
+      loadingFailed("r2", "net::ERR_BLOCKED_BY_CLIENT", 3, { blockedReason: "inspector" }),
+    );
+    vi.runAllTimers();
+    expect(corsOf("r1")).toBeUndefined();
+    expect(corsOf("r2")).toBeUndefined();
+    expect(corsFailures).toEqual([]);
+  });
+
+  it("sin frame conocido usa el header Origin crudo; sin él, null y no relajable", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { frameId: "unknown" }));
+    cdp.emit(
+      1,
+      "Network.requestWillBeSentExtraInfo",
+      requestWillBeSentExtraInfo("r1", { Origin: "http://localhost:3000" }),
+    );
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "MissingAllowOriginHeader"));
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r2"));
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r2", "MissingAllowOriginHeader"));
+    vi.runAllTimers();
+    expect(corsOf("r1")?.diagnosis?.appOrigin).toBe(APP);
+    expect(corsOf("r2")?.diagnosis).toMatchObject({
+      appOrigin: null,
+      relaxable: false,
+      notRelaxableReason: "null_origin",
+    });
+  });
+
+  it("preflight por Network: se relaciona por initiator y aporta su status (X2)", () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", { method: "PUT", url: `${API}/items`, frameId: "main" }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("p1", {
+        method: "OPTIONS",
+        url: `${API}/items`,
+        type: "Other",
+        frameId: "main",
+        headers: {
+          "Access-Control-Request-Method": "PUT",
+          "Access-Control-Request-Headers": "x-custom",
+        },
+        initiator: { type: "preflight", requestId: "r1" },
+      }),
+    );
+    cdp.emit(1, "Network.responseReceived", responseReceived("p1", { status: 401, headers: {} }));
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r1", "PreflightMissingAllowOriginHeader"));
+    vi.runAllTimers();
+    expect(of("p1")[0]?.fields).toMatchObject({ isPreflight: true, preflightFor: "r1" });
+    expect(corsOf("r1")?.diagnosis).toMatchObject({
+      cause: "preflight_status",
+      preflightStatus: 401,
+      preflightExchangeId: "p1",
+      requestedHeaders: ["x-custom"],
+      atPreflight: true,
+    });
   });
 });

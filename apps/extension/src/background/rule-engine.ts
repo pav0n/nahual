@@ -292,17 +292,21 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     const stage: Stage = event.responseStatusCode === undefined ? "request" : "response";
     const requestHeaders = toHeaderList(event.request.headers);
     const responseHeaders = event.responseHeaders ?? [];
+    const exchangeId =
+      (event.networkId ? capture.exchangeIdOf(tabId, event.networkId) : null) ??
+      event.networkId ??
+      event.requestId;
     const target: PausedTarget = {
       requestId: event.requestId,
       stage,
       status: event.responseStatusCode ?? null,
       requestHeaders,
       responseHeaders,
+      url: event.request.url,
+      method: event.request.method,
+      frameId: event.frameId,
+      exchangeId,
     };
-    const exchangeId =
-      (event.networkId ? capture.exchangeIdOf(tabId, event.networkId) : null) ??
-      event.networkId ??
-      event.requestId;
     const bodies: Bodies = {
       request:
         event.request.postData !== undefined || event.request.hasPostData

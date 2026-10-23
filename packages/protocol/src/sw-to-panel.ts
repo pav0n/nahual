@@ -1,5 +1,7 @@
 import {
   ExchangeUpdateSchema,
+  LIMITS,
+  RelaxationViewSchema,
   PausedItemViewSchema,
   RuleResultSchema,
   RuleSchema,
@@ -22,6 +24,7 @@ export const ERROR_CODES = [
   "edit_invalid",
   "body_unavailable",
   "no_site",
+  "relaxation_invalid",
 ] as const;
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
@@ -57,6 +60,8 @@ export const SessionStateSchema = z.strictObject({
   activeRuleCount: z.int().min(0),
   queueSize: z.int().min(0),
   globalPaused: z.boolean(),
+  /** Relajaciones CORS de la pestaña (003). */
+  relaxationCount: z.int().min(0),
 });
 export type SessionState = z.infer<typeof SessionStateSchema>;
 
@@ -88,6 +93,10 @@ export const SwMessageSchema = z.discriminatedUnion("type", [
   message(
     "exchanges",
     z.strictObject({ updates: z.array(ExchangeUpdateSchema).max(MAX_EXCHANGE_UPDATES) }),
+  ),
+  message(
+    "relaxations",
+    z.strictObject({ items: z.array(RelaxationViewSchema).max(LIMITS.relaxationsPerTab) }),
   ),
   message("navigated", z.strictObject({ site: z.string().nullable(), url: z.string() })),
   message("paused", PausedItemViewSchema),

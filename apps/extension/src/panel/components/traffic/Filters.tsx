@@ -24,7 +24,8 @@ interface Props {
   onChange(filter: ValidFilter): void;
 }
 
-const EMPTY: FilterInput = { text: "", regex: "", status: "", types: [] };
+const EMPTY: FilterInput = { text: "", regex: "", status: "", types: [], cors: "all" };
+const CORS_FILTERS = ["all", "blocked", "relaxed"] as const;
 
 /**
  * Filtros de la lista (FR-003). Una regex o un status inválidos se marcan en su campo y la lista
@@ -95,6 +96,19 @@ export function Filters({ shown, total, onChange }: Props) {
             {t("filter_status_invalid")}
           </span>
         ) : null}
+      </label>
+      <label className="field">
+        <span>{t("filter_cors")}</span>
+        <select
+          value={input.cors ?? "all"}
+          onChange={(e) => update({ cors: e.target.value as FilterInput["cors"] })}
+        >
+          {CORS_FILTERS.map((value) => (
+            <option key={value} value={value}>
+              {t(`filter_cors_${value}`)}
+            </option>
+          ))}
+        </select>
       </label>
       <fieldset className="types">
         <legend>{t("filter_types")}</legend>

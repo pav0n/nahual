@@ -1,4 +1,4 @@
-import { compileFilter } from "@nahual/domain";
+import { compileFilter, linkPreflights } from "@nahual/domain";
 import { useMemo, useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { usePanelStore } from "../../store/index.ts";
@@ -24,6 +24,13 @@ export function TrafficView() {
   const shown = useMemo(() => exchanges.filter((e) => filter.matches(e)), [exchanges, filter]);
   const selected =
     selectedId === null ? null : (exchanges.find((e) => e.id === selectedId) ?? null);
+  // Request ⇒ preflight y su inverso, para ir y volver desde el detalle (FR-006).
+  const links = useMemo(() => {
+    const forward = linkPreflights(exchanges);
+    const both = new Map(forward);
+    for (const [request, preflight] of forward) both.set(preflight, request);
+    return both;
+  }, [exchanges]);
 
   const onClear = () => {
     clear();
@@ -55,7 +62,13 @@ export function TrafficView() {
         <TrafficGrid exchanges={shown} selectedId={selectedId} onOpen={setSelectedId} />
       )}
       {selected ? (
-        <ExchangeDetail key={selected.id} exchange={selected} onClose={() => setSelectedId(null)} />
+        <ExchangeDetail
+          key={selected.id}
+          exchange={selected}
+          relatedId={links.get(selected.id) ?? null}
+          onOpen={setSelectedId}
+          onClose={() => setSelectedId(null)}
+        />
       ) : null}
     </>
   );

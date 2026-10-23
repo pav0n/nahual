@@ -964,5 +964,440 @@
   },
   "action_pause_nahual": {
     "message": "Pause Nahual"
+  },
+  "traffic_cors_blocked": {
+    "message": "Blocked by CORS"
+  },
+  "filter_cors": {
+    "message": "CORS"
+  },
+  "filter_cors_all": {
+    "message": "All"
+  },
+  "filter_cors_blocked": {
+    "message": "Blocked by CORS"
+  },
+  "cors_section_title": {
+    "message": "CORS"
+  },
+  "cors_open_request": {
+    "message": "Go to this preflight's request"
+  },
+  "cors_open_preflight": {
+    "message": "Go to this request's preflight"
+  },
+  "cors_missing": {
+    "message": "(missing)"
+  },
+  "cors_none": {
+    "message": "none"
+  },
+  "cors_not_observed": {
+    "message": "not observed"
+  },
+  "cors_preflight_status": {
+    "message": "Preflight status"
+  },
+  "cors_cause_missing_allow_origin": {
+    "message": "The server did not send Access-Control-Allow-Origin, so the browser does not let $1 read the response."
+  },
+  "cors_fix_missing_allow_origin": {
+    "message": "On the server: respond with Access-Control-Allow-Origin: $1 (also on the preflight, if any)."
+  },
+  "cors_cause_origin_mismatch": {
+    "message": "The server allows a different origin (or several values) in Access-Control-Allow-Origin, not $1."
+  },
+  "cors_fix_origin_mismatch": {
+    "message": "On the server: return exactly Access-Control-Allow-Origin: $1, a single value."
+  },
+  "cors_cause_method_not_allowed": {
+    "message": "The preflight does not allow the $3 method."
+  },
+  "cors_fix_method_not_allowed": {
+    "message": "On the server: add $3 to Access-Control-Allow-Methods (* does not work with credentials)."
+  },
+  "cors_cause_header_not_allowed": {
+    "message": "The preflight does not allow the $2 header."
+  },
+  "cors_fix_header_not_allowed": {
+    "message": "On the server: add the headers the app requests to Access-Control-Allow-Headers (* does not work with credentials)."
+  },
+  "cors_cause_preflight_status": {
+    "message": "The preflight (OPTIONS) responded with a non-2xx status."
+  },
+  "cors_fix_preflight_status": {
+    "message": "On the server: answer OPTIONS with 204 without requiring authentication, before any filter that returns 401 or 404."
+  },
+  "cors_cause_wildcard_with_credentials": {
+    "message": "The server responded Access-Control-Allow-Origin: * and the request carries credentials; credentials require the exact origin."
+  },
+  "cors_fix_wildcard_with_credentials": {
+    "message": "On the server: return Access-Control-Allow-Origin: $1 and Access-Control-Allow-Credentials: true."
+  },
+  "cors_cause_missing_allow_credentials": {
+    "message": "The request carries credentials and the server did not send Access-Control-Allow-Credentials: true."
+  },
+  "cors_fix_missing_allow_credentials": {
+    "message": "On the server: add Access-Control-Allow-Credentials: true along with Access-Control-Allow-Origin: $1."
+  },
+  "cors_cause_preflight_redirect": {
+    "message": "The preflight (OPTIONS) responded with a redirect; the browser does not follow it."
+  },
+  "cors_fix_preflight_redirect": {
+    "message": "On the server: answer OPTIONS directly with 204, without redirecting (e.g. to https or another path)."
+  },
+  "cors_cause_unrecognized": {
+    "message": "Unrecognized cause. The browser reports: $1."
+  },
+  "cors_diff": {
+    "message": "Difference in $1: expected \"$2\", received \"$3\"."
+  },
+  "cors_requested_title": {
+    "message": "What the app requested"
+  },
+  "cors_responded_title": {
+    "message": "What the server responded"
+  },
+  "cors_app_origin": {
+    "message": "App origin"
+  },
+  "cors_api_origin": {
+    "message": "API origin"
+  },
+  "cors_method": {
+    "message": "Method"
+  },
+  "cors_requested_headers": {
+    "message": "Requested headers"
+  },
+  "cors_credentials": {
+    "message": "Credentials"
+  },
+  "cors_credentials_yes": {
+    "message": "yes"
+  },
+  "cors_credentials_no": {
+    "message": "no"
+  },
+  "cors_credentials_unknown": {
+    "message": "not detected"
+  },
+  "cors_request_status": {
+    "message": "Request status"
+  },
+  "cors_no_response": {
+    "message": "no readable response"
+  },
+  "cors_preflight_not_observed_help": {
+    "message": "Nahual did not see the preflight (for example, if it attached mid-request). Repeat the request with the panel open to see it."
+  },
+  "cors_no_cors_headers": {
+    "message": "No Access-Control-* headers."
+  },
+  "cors_not_relaxable_null_origin": {
+    "message": "Cannot be relaxed: the app has no exact origin (null origin, local file or sandboxed iframe)."
+  },
+  "cors_not_relaxable_same_origin": {
+    "message": "Cannot be relaxed: the app and the API share the same origin."
+  },
+  "cors_not_relaxable_unrecognized": {
+    "message": "Nahual cannot fix this cause from the browser; it requires a server change."
+  },
+  "cors_not_relaxable_production": {
+    "message": "Cannot be relaxed: $1 is in your list of production origins."
+  },
+  "cors_error_origin": {
+    "message": "Invalid origin: use scheme://host[:port], without a path."
+  },
+  "cors_error_production_entry": {
+    "message": "Invalid entry: use an exact origin (https://app.company.com) or a subdomain pattern (https://*.company.com)."
+  },
+  "cors_error_duration": {
+    "message": "Invalid duration: choose 15 min, 1 h, 4 h or 8 h."
+  },
+  "cors_error_header_name": {
+    "message": "Invalid header name (no spaces or *)."
+  },
+  "cors_production_list_invalid": {
+    "message": "The list of production origins has damaged entries. Review and save it in Settings: until then CORS cannot be relaxed."
+  },
+  "traffic_cors_relaxed": {
+    "message": "CORS relaxed"
+  },
+  "filter_cors_relaxed": {
+    "message": "Relaxed by Nahual"
+  },
+  "cors_relax_action": {
+    "message": "Allow CORS for development"
+  },
+  "cors_relax_scope": {
+    "message": "Scope:"
+  },
+  "cors_relax_scope_value": {
+    "message": "this tab · $1 → $2"
+  },
+  "cors_relax_duration": {
+    "message": "Duration"
+  },
+  "cors_duration_15": {
+    "message": "15 min"
+  },
+  "cors_duration_60": {
+    "message": "1 h"
+  },
+  "cors_duration_240": {
+    "message": "4 h"
+  },
+  "cors_duration_480": {
+    "message": "8 h"
+  },
+  "cors_relax_credentials": {
+    "message": "The app sends credentials (cookies or HTTP authentication)"
+  },
+  "cors_relax_expose": {
+    "message": "Headers the app can read (Access-Control-Expose-Headers)"
+  },
+  "cors_relax_expose_none_seen": {
+    "message": "This origin has not returned headers to expose yet."
+  },
+  "cors_relax_expose_extra": {
+    "message": "Others, comma-separated"
+  },
+  "cors_relax_warning": {
+    "message": "The relaxation only exists in this browser and this tab: in staging and production it will fail until the server is fixed."
+  },
+  "cors_relax_confirm": {
+    "message": "Allow"
+  },
+  "cors_relax_active": {
+    "message": "CORS relaxed for $1 in this tab. Repeat the request."
+  },
+  "cors_relaxed_title": {
+    "message": "CORS relaxed by Nahual"
+  },
+  "cors_relaxed_failed": {
+    "message": "This response could not be relaxed; it continued unchanged. Cause: $1"
+  },
+  "cors_relaxed_preflight": {
+    "message": "The server's preflight responded $1 and Nahual replaced it with a local 204."
+  },
+  "cors_relaxed_preflight_local": {
+    "message": "Nahual answered the preflight locally (the server redirects OPTIONS)."
+  },
+  "cors_relaxed_already_valid": {
+    "message": "The server already responds correctly to this request: you can turn the relaxation off."
+  },
+  "cors_relaxed_added": {
+    "message": "Headers added by Nahual"
+  },
+  "cors_relaxed_removed": {
+    "message": "Server headers replaced"
+  },
+  "cors_indicator_title": {
+    "message": "CORS relaxed"
+  },
+  "cors_indicator_end_all": {
+    "message": "Turn all off"
+  },
+  "cors_indicator_end": {
+    "message": "Turn off"
+  },
+  "cors_indicator_end_one": {
+    "message": "Turn off the relaxation for $1"
+  },
+  "cors_state_active": {
+    "message": "active"
+  },
+  "cors_state_suspended": {
+    "message": "suspended: Nahual is paused"
+  },
+  "cors_state_idle": {
+    "message": "no effect: the page is on another origin"
+  },
+  "cors_expires_in": {
+    "message": "expires in $1"
+  },
+  "cors_report_action_short": {
+    "message": "Report"
+  },
+  "cors_ended_expired": {
+    "message": "A CORS relaxation expired and no longer applies."
+  },
+  "cors_ended_detached": {
+    "message": "The CORS relaxation ended because the debugger was detached."
+  },
+  "cors_ended_production": {
+    "message": "The CORS relaxation ended because its origin was marked as production."
+  },
+  "cors_ended_restart": {
+    "message": "The CORS relaxation ended because Nahual restarted."
+  },
+  "cors_credentials_learned": {
+    "message": "The request uses credentials: the relaxation now allows them. Repeat the request."
+  },
+  "cors_issue_app_origin_invalid": {
+    "message": "The app origin is not valid."
+  },
+  "cors_issue_app_origin_null": {
+    "message": "The app has no exact origin (null): it cannot be relaxed."
+  },
+  "cors_issue_api_origin_invalid": {
+    "message": "The API origin is not valid."
+  },
+  "cors_issue_same_origin": {
+    "message": "The app and the API share the same origin: there is no CORS to relax."
+  },
+  "cors_issue_production_origin": {
+    "message": "That origin is in your production list."
+  },
+  "cors_issue_production_list_invalid": {
+    "message": "The list of production origins has damaged entries: review and save it in Settings."
+  },
+  "cors_issue_duration_invalid": {
+    "message": "Invalid duration: choose 15 min, 1 h, 4 h or 8 h."
+  },
+  "cors_issue_limit_reached": {
+    "message": "There are already 10 relaxed API origins in this tab: turn one off."
+  },
+  "cors_issue_already_relaxed": {
+    "message": "That API origin is already relaxed: turn it off to create another relaxation."
+  },
+  "cors_issue_expose_header_invalid": {
+    "message": "Some Expose-Headers entry is invalid (no spaces, no * and at most 30)."
+  },
+  "error_relaxation_invalid": {
+    "message": "CORS could not be relaxed. Check the reasons below the button."
+  },
+  "settings_cors_title": {
+    "message": "Development CORS"
+  },
+  "settings_cors_duration": {
+    "message": "Default relaxation duration"
+  },
+  "settings_production_title": {
+    "message": "Production origins"
+  },
+  "settings_production_hint": {
+    "message": "Nahual never relaxes CORS on these origins, neither as app nor as API."
+  },
+  "settings_production_empty": {
+    "message": "The list is empty: Nahual does not guess what production is."
+  },
+  "settings_production_remove": {
+    "message": "Remove $1"
+  },
+  "settings_production_add_label": {
+    "message": "Add origin or pattern"
+  },
+  "settings_production_add_hint": {
+    "message": "Exact origin (https://app.company.com) or subdomain pattern (https://*.company.com, does not include the root domain)."
+  },
+  "toast_production_removed": {
+    "message": "$1 was removed from production."
+  },
+  "action_add": {
+    "message": "Add"
+  },
+  "cors_report_action": {
+    "message": "Generate report for backend"
+  },
+  "cors_report_dialog_title": {
+    "message": "Report for backend: $1"
+  },
+  "cors_report_title": {
+    "message": "CORS configuration needed by $1"
+  },
+  "cors_report_warning": {
+    "message": "Note: Nahual only relaxes CORS in the debugging developer's browser. In staging and production these requests will fail until the server is configured like this."
+  },
+  "cors_report_origins": {
+    "message": "Origins to allow (Access-Control-Allow-Origin, one exact origin per response):"
+  },
+  "cors_report_methods": {
+    "message": "Methods (Access-Control-Allow-Methods):"
+  },
+  "cors_report_headers": {
+    "message": "Headers the app requests (Access-Control-Allow-Headers):"
+  },
+  "cors_report_credentials_yes": {
+    "message": "Credentials: yes. Access-Control-Allow-Credentials: true is required, and never *."
+  },
+  "cors_report_credentials_no": {
+    "message": "Credentials: not detected."
+  },
+  "cors_report_max_age": {
+    "message": "Suggested Access-Control-Max-Age: $1 s (a suggestion)."
+  },
+  "cors_report_causes": {
+    "message": "Detected causes:"
+  },
+  "cors_report_endpoints": {
+    "message": "Affected endpoints:"
+  },
+  "cors_report_example": {
+    "message": "Example for $1:"
+  },
+  "cors_report_framework": {
+    "message": "Configuration example"
+  },
+  "cors_report_framework_none": {
+    "message": "No example"
+  },
+  "cors_report_text": {
+    "message": "Report text"
+  },
+  "cors_report_copy": {
+    "message": "Copy"
+  },
+  "cors_report_copied": {
+    "message": "Report copied to the clipboard."
+  },
+  "cors_report_copy_manual": {
+    "message": "Could not copy automatically: the text is selected, copy it with Ctrl+C."
+  },
+  "cors_report_empty_title": {
+    "message": "No blocked requests for this origin"
+  },
+  "cors_report_empty_body": {
+    "message": "The report is built from requests blocked by CORS or relaxed by Nahual. With the panel open, repeat the failing action in the app and open it again."
+  },
+  "cors_framework_express": {
+    "message": "Express"
+  },
+  "cors_framework_nestjs": {
+    "message": "NestJS"
+  },
+  "cors_framework_aws_api_gateway": {
+    "message": "AWS API Gateway"
+  },
+  "cors_framework_cloud_run": {
+    "message": "Google Cloud Run"
+  },
+  "cors_cause_name_missing_allow_origin": {
+    "message": "missing Access-Control-Allow-Origin"
+  },
+  "cors_cause_name_origin_mismatch": {
+    "message": "different allowed origin"
+  },
+  "cors_cause_name_method_not_allowed": {
+    "message": "method not allowed"
+  },
+  "cors_cause_name_header_not_allowed": {
+    "message": "header not allowed"
+  },
+  "cors_cause_name_preflight_status": {
+    "message": "preflight with non-2xx status"
+  },
+  "cors_cause_name_wildcard_with_credentials": {
+    "message": "* wildcard with credentials"
+  },
+  "cors_cause_name_missing_allow_credentials": {
+    "message": "missing Access-Control-Allow-Credentials"
+  },
+  "cors_cause_name_preflight_redirect": {
+    "message": "redirect in preflight"
+  },
+  "cors_cause_name_unrecognized": {
+    "message": "unrecognized cause"
   }
 }

@@ -105,3 +105,86 @@ describe("historial del panel (FR-005, FR-006)", () => {
     expect(store().exchanges).toEqual([]);
   });
 });
+
+describe("traffic: información CORS (003)", () => {
+  beforeEach(() => store().resetTraffic());
+
+  const diagnosis = {
+    cause: "missing_allow_origin" as const,
+    browserCode: "MissingAllowOriginHeader",
+    failedParameter: null,
+    atPreflight: false,
+    appOrigin: "http://localhost:3000",
+    apiOrigin: "https://api.test",
+    method: "GET",
+    requestedHeaders: [],
+    credentials: "unknown" as const,
+    responseStatus: 200,
+    preflightStatus: null,
+    serverCorsHeaders: [],
+    preflightExchangeId: null,
+    relaxable: true,
+  };
+
+  it("un update cors guarda el diagnóstico y luego lo relajado, sin perder lo anterior", () => {
+    store().applyUpdates([start("a", 0)]);
+    store().applyUpdates([{ id: "a", kind: "cors", fields: {}, cors: { diagnosis } }]);
+    const relaxed = {
+      relaxationId: "3f1c2b4a-8d9e-4f60-a1b2-c3d4e5f60718",
+      added: [],
+      removed: [],
+      preflightReplaced: false,
+      serverStatus: 200,
+      alreadyValid: true,
+    };
+    store().applyUpdates([{ id: "a", kind: "cors", fields: {}, cors: { relaxed } }]);
+    expect(store().exchanges[0]?.cors).toEqual({ diagnosis, relaxed });
+  });
+
+  it("un update cors de un intercambio desconocido se ignora", () => {
+    store().applyUpdates([{ id: "zz", kind: "cors", fields: {}, cors: { diagnosis } }]);
+    expect(store().exchanges).toEqual([]);
+  });
+});
+
+describe("cors: relajaciones y aviso de reinicio del SW (003, research R10)", () => {
+  const view = {
+    id: "3f1c2b4a-8d9e-4f60-a1b2-c3d4e5f60718",
+    appOrigin: "http://localhost:3000",
+    apiOrigin: "https://api.test",
+    exposeHeaders: [],
+    credentials: false,
+    createdAt: 1,
+    expiresAt: 2,
+    state: "active" as const,
+  };
+
+  beforeEach(() => {
+    store().setRelaxations([]);
+    for (const n of store().notices) store().dismissNotice(n.id);
+  });
+
+  it("guarda la lista recibida", () => {
+    store().setRelaxations([view]);
+    expect(store().relaxations).toEqual([view]);
+  });
+
+  it("tras reconectar, si había relajaciones y llega una lista vacía ⇒ aviso de reinicio", () => {
+    store().setRelaxations([view]);
+    store().beginReconnect();
+    store().setRelaxations([]);
+    expect(store().notices.map((n) => n.messageKey)).toContain("cors_ended_restart");
+  });
+
+  it("sin reconexión, una lista vacía no avisa de reinicio", () => {
+    store().setRelaxations([view]);
+    store().setRelaxations([]);
+    expect(store().notices.map((n) => n.messageKey)).not.toContain("cors_ended_restart");
+  });
+
+  it("tras reconectar sin relajaciones previas no avisa", () => {
+    store().beginReconnect();
+    store().setRelaxations([]);
+    expect(store().notices.map((n) => n.messageKey)).not.toContain("cors_ended_restart");
+  });
+});

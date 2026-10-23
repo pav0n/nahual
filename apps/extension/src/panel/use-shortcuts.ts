@@ -4,6 +4,8 @@ export const SHORTCUT_TOGGLE_ATTACH = "Alt+Shift+A";
 export const SHORTCUT_CONTINUE = "Alt+Shift+C";
 export const SHORTCUT_CONTINUE_ALL = "Alt+Shift+K";
 export const SHORTCUT_PAUSE_NAHUAL = "Alt+Shift+P";
+/** Apaga todas las relajaciones CORS de la pestaña (003, FR-020). */
+export const SHORTCUT_END_RELAXATIONS = "Alt+Shift+R";
 
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -19,6 +21,7 @@ export function useShortcuts(handlers: {
   continueAll(): void;
   togglePauseNahual(): void;
   focusSearch(): void;
+  endRelaxations(): void;
 }) {
   const ref = useRef(handlers);
   useEffect(() => {
@@ -51,6 +54,9 @@ export function useShortcuts(handlers: {
       } else if (event.code === "KeyF") {
         event.preventDefault();
         ref.current.focusSearch();
+      } else if (event.code === "KeyR") {
+        event.preventDefault();
+        ref.current.endRelaxations();
       }
     };
     window.addEventListener("keydown", onKeyDown);

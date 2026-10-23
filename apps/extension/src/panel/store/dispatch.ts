@@ -44,6 +44,9 @@ export function dispatchSwEvent(message: SwMessage): void {
     case "exchanges":
       store.applyUpdates(message.payload.updates);
       break;
+    case "relaxations":
+      store.setRelaxations(message.payload.items);
+      break;
     case "navigated":
       break;
     case "notice":

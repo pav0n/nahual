@@ -44,9 +44,10 @@ const state = {
   activeRuleCount: 1,
   queueSize: 0,
   globalPaused: false,
+  relaxationCount: 0,
 };
 
-describe("SwMessageSchema v2", () => {
+describe("SwMessageSchema (eventos de 002)", () => {
   it("ack {} con correlationId", () => {
     ok("ack", {}, { correlationId: UUID2 });
   });
@@ -66,6 +67,7 @@ describe("SwMessageSchema v2", () => {
       "edit_invalid",
       "body_unavailable",
       "no_site",
+      "relaxation_invalid",
     ]);
     for (const code of ERROR_CODES) ok("error", { code, messageKey: `error_${code}` });
     ok("error", {
@@ -90,6 +92,8 @@ describe("SwMessageSchema v2", () => {
       onboardingSeen: true,
       attachConsent: true,
       autoAttach: true,
+      corsDefaultDurationMinutes: 480,
+      productionOrigins: ["https://*.empresa.com"],
     });
     bad("settings", { pauseTimeoutSeconds: 60 });
   });
@@ -133,5 +137,59 @@ describe("SwMessageSchema v2", () => {
 
   it("rechaza type desconocido", () => {
     bad("hello", { tabId: 1 });
+  });
+});
+
+describe("SwMessageSchema v3 (003)", () => {
+  const view = {
+    id: UUID,
+    appOrigin: "http://localhost:3000",
+    apiOrigin: "https://api.test",
+    exposeHeaders: [],
+    credentials: false,
+    createdAt: 1,
+    expiresAt: 2,
+    state: "active",
+  };
+
+  it("relaxations con RelaxationView", () => {
+    ok("relaxations", { items: [] });
+    ok("relaxations", { items: [view] });
+    bad("relaxations", { items: [{ ...view, tabId: 1 }] });
+    bad("relaxations", { items: Array.from({ length: 11 }, () => view) });
+  });
+
+  it("state con relaxationCount", () => {
+    bad("state", { ...state, relaxationCount: -1 });
+  });
+
+  it("error relaxation_invalid con issues", () => {
+    ok("error", {
+      code: "relaxation_invalid",
+      messageKey: "cors_error_relaxation",
+      issues: [{ path: "apiOrigin", messageKey: "cors_issue_production_origin" }],
+    });
+  });
+
+  it("exchanges con kind cors", () => {
+    ok("exchanges", {
+      updates: [
+        {
+          id: "e1",
+          kind: "cors",
+          fields: {},
+          cors: {
+            relaxed: {
+              relaxationId: UUID,
+              added: [],
+              removed: [],
+              preflightReplaced: true,
+              serverStatus: 401,
+              alreadyValid: false,
+            },
+          },
+        },
+      ],
+    });
   });
 });

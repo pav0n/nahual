@@ -1,5 +1,6 @@
 import {
   DEFAULT_SETTINGS,
+  type CorsRelaxedInfo,
   type PausedItemView,
   type Rule,
   type RuleEffect,
@@ -7,6 +8,11 @@ import {
 } from "@nahual/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createActionExecutor } from "../../src/background/action-executor.ts";
+import {
+  createCorsRelaxer,
+  createRelaxingExecutor,
+  type CorsRelaxer,
+} from "../../src/background/cors-relaxer.ts";
 import { createFetchInterceptor } from "../../src/background/fetch-interceptor.ts";
 import { createRuleEngine, type RuleEngine } from "../../src/background/rule-engine.ts";
 import { requestPaused } from "../fakes/cdp-events.ts";
@@ -389,5 +395,277 @@ describe("RuleEngine: acciones automáticas (historia 4)", () => {
       result: "logged",
       ruleName: "Errores de la API",
     });
+  });
+});
+
+describe("RuleEngine + relajación CORS como último paso (003, research R9)", () => {
+  const APP = SITE;
+  const API = "https://api-dev.test";
+  let relaxer: CorsRelaxer;
+  let relaxed: { tabId: number; exchangeId: string; info: Omit<CorsRelaxedInfo, never> }[];
+  let relaxationId: string;
+
+  const paused = (
+    id: string,
+    overrides: {
+      url?: string;
+      method?: string;
+      frameId?: string;
+      status?: number;
+      headers?: { name: string; value: string }[];
+      requestHeaders?: Record<string, string>;
+    } = {},
+  ) =>
+    requestPaused(id, {
+      networkId: id.replace("fetch", "net"),
+      frameId: overrides.frameId ?? "main",
+      request: {
+        url: overrides.url ?? `${API}/items`,
+        method: overrides.method ?? "GET",
+        headers: overrides.requestHeaders ?? { accept: "*/*", origin: APP },
+      },
+      ...(overrides.status !== undefined
+        ? { responseStatusCode: overrides.status, responseHeaders: overrides.headers ?? [] }
+        : {}),
+    });
+
+  const preflight = (
+    id: string,
+    status: number | undefined,
+    headers: { name: string; value: string }[] = [],
+  ) =>
+    paused(id, {
+      method: "OPTIONS",
+      ...(status !== undefined ? { status, headers } : {}),
+      requestHeaders: {
+        origin: APP,
+        "access-control-request-method": "PUT",
+        "access-control-request-headers": "x-custom",
+      },
+    });
+
+  const setup = (relaxRules: Rule[] = []) => {
+    rules = relaxRules;
+    relaxer = createCorsRelaxer({
+      settings: () => settings,
+      productionListReadable: () => true,
+      isAttached: () => true,
+      hasFrameOrigin: () => true,
+      onChange: () => {},
+      onNotice: () => {},
+    });
+    const created = relaxer.create(1, {
+      appOrigin: APP,
+      apiOrigin: API,
+      durationMinutes: 480,
+      exposeHeaders: [],
+      credentials: false,
+    });
+    relaxationId = created.ok ? created.id : "";
+    relaxed = [];
+    engine = createRuleEngine({
+      debugger: cdp,
+      rules: () => rules,
+      settings: () => settings,
+      siteOf: () => SITE,
+      capture: {
+        exchangeIdOf: (_tab, networkId) => networkId,
+        effect: (_tab, exchangeId, effect) => void effects.push({ exchangeId, effect }),
+      },
+      executor: createRelaxingExecutor({
+        base: createActionExecutor({ debugger: cdp }),
+        relaxer,
+        frameOriginOf: (_tab, frameId) =>
+          frameId === "main" ? APP : frameId === "f3" ? "https://third.test" : null,
+        onRelaxed: (tabId, exchangeId, info) => void relaxed.push({ tabId, exchangeId, info }),
+      }),
+      onPaused: () => {},
+      onResolved: (_tab, result) => void resolved.push(result),
+      onQueueChange: () => {},
+    });
+  };
+
+  const acao = (headers: { name: string; value: string }[] | undefined) =>
+    (headers ?? []).filter((h) => h.name.toLowerCase() === "access-control-allow-origin");
+
+  it("respuesta en el alcance sin regla ⇒ continueResponse con headers relajados y responseCode", async () => {
+    setup();
+    await engine.handle(
+      1,
+      paused("fetch-1", {
+        status: 200,
+        headers: [{ name: "content-type", value: "application/json" }],
+      }),
+    );
+    const [call] = cdp.calls<{
+      responseCode: number;
+      responseHeaders: { name: string; value: string }[];
+    }>("Fetch.continueResponse");
+    expect(call?.responseCode).toBe(200);
+    expect(acao(call?.responseHeaders)).toEqual([
+      { name: "Access-Control-Allow-Origin", value: APP },
+    ]);
+    expect(relaxed[0]).toMatchObject({
+      exchangeId: "net-1",
+      info: { relaxationId, preflightReplaced: false, serverStatus: 200, alreadyValid: false },
+    });
+  });
+
+  it("preflight 401 ⇒ fulfillRequest 204 con los headers pedidos", async () => {
+    setup();
+    await engine.handle(1, preflight("fetch-2", 401));
+    const [call] = cdp.calls<{
+      responseCode: number;
+      responseHeaders: { name: string; value: string }[];
+    }>("Fetch.fulfillRequest");
+    expect(call?.responseCode).toBe(204);
+    expect(call?.responseHeaders).toEqual(
+      expect.arrayContaining([
+        { name: "Access-Control-Allow-Origin", value: APP },
+        { name: "Access-Control-Allow-Methods", value: "PUT" },
+        { name: "Access-Control-Allow-Headers", value: "x-custom" },
+        { name: "Access-Control-Max-Age", value: "0" },
+      ]),
+    );
+    expect(relaxed[0]?.info).toMatchObject({ preflightReplaced: true, serverStatus: 401 });
+  });
+
+  it("preflight que ya pasa ⇒ continúa sin cambios y marca alreadyValid", async () => {
+    setup();
+    await engine.handle(
+      1,
+      preflight("fetch-3", 204, [
+        { name: "Access-Control-Allow-Origin", value: APP },
+        { name: "Access-Control-Allow-Methods", value: "PUT" },
+        { name: "Access-Control-Allow-Headers", value: "x-custom" },
+      ]),
+    );
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-3" }]);
+    expect(relaxed[0]?.info).toMatchObject({ alreadyValid: true, added: [] });
+  });
+
+  it("preflight con 3xx ⇒ aprende la URL; el siguiente OPTIONS se responde en etapa Request (X5)", async () => {
+    setup();
+    await engine.handle(1, preflight("fetch-4", 302));
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-4" }]);
+    expect(relaxer.patterns(1)).toEqual([{ origin: API, requestStage: true }]);
+    await engine.handle(1, preflight("fetch-5", undefined));
+    const [call] = cdp.calls<{ responseCode: number }>("Fetch.fulfillRequest");
+    expect(call?.responseCode).toBe(204);
+    // Los demás requests de la etapa Request continúan sin cambios.
+    await engine.handle(1, paused("fetch-6"));
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([{ requestId: "fetch-6" }]);
+  });
+
+  it("otra pestaña, otro frame u otro origen de API ⇒ sin cambios", async () => {
+    setup();
+    await cdp.attach(2);
+    await engine.handle(2, paused("fetch-7", { status: 200 }));
+    await engine.handle(
+      1,
+      paused("fetch-8", {
+        status: 200,
+        frameId: "f3",
+        requestHeaders: { origin: "https://third.test" },
+      }),
+    );
+    await engine.handle(1, paused("fetch-9", { status: 200, url: "https://tercero.test/items" }));
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([
+      { requestId: "fetch-7" },
+      { requestId: "fetch-8" },
+      { requestId: "fetch-9" },
+    ]);
+    expect(relaxed).toEqual([]);
+  });
+
+  it("sin frame conocido usa el header Origin del request", async () => {
+    setup();
+    await engine.handle(1, paused("fetch-10", { status: 200, frameId: "?" }));
+    expect(
+      acao(cdp.calls<{ responseHeaders: never }>("Fetch.continueResponse")[0]?.responseHeaders),
+    ).toHaveLength(1);
+  });
+
+  it("pausa editada con Access-Control-Allow-Origin propio ⇒ se respeta (FR-024)", async () => {
+    setup([rule({ prefilter: { kind: "glob", pattern: "*/items" }, conditions: [] })]);
+    await engine.handle(1, paused("fetch-11", { status: 200 }));
+    await engine.resolve(1, {
+      pausedId: "fetch-11",
+      action: "continue",
+      edit: { headers: [{ name: "Access-Control-Allow-Origin", value: "http://dev.test" }] },
+    });
+    const [call] = cdp.calls<{ responseHeaders: { name: string; value: string }[] }>(
+      "Fetch.continueResponse",
+    );
+    expect(acao(call?.responseHeaders)).toEqual([
+      { name: "Access-Control-Allow-Origin", value: "http://dev.test" },
+    ]);
+  });
+
+  it("mock ⇒ headers relajados respetando los del dev", async () => {
+    setup([
+      rule({
+        stage: "request",
+        prefilter: { kind: "glob", pattern: "*/items" },
+        conditions: [],
+        action: {
+          kind: "mock",
+          status: 200,
+          headers: [{ name: "x-mock", value: "1" }],
+          body: "{}",
+          bodyEncoding: "text",
+        },
+      }),
+    ]);
+    await engine.handle(1, paused("fetch-12"));
+    const [call] = cdp.calls<{ responseHeaders: { name: string; value: string }[] }>(
+      "Fetch.fulfillRequest",
+    );
+    expect(acao(call?.responseHeaders)).toHaveLength(1);
+    expect(call?.responseHeaders).toContainEqual({ name: "x-mock", value: "1" });
+  });
+
+  it("retraso que termina después de que la relajación terminó ⇒ sin relajar", async () => {
+    setup([
+      rule({
+        prefilter: { kind: "glob", pattern: "*/items" },
+        conditions: [],
+        action: { kind: "delay", ms: 1000 },
+      }),
+    ]);
+    await engine.handle(1, paused("fetch-13", { status: 200 }));
+    relaxer.end(1, null, "user");
+    vi.advanceTimersByTime(1000);
+    await flush();
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-13" }]);
+  });
+
+  it("suspendida con pausar Nahual ⇒ sin relajar", async () => {
+    setup();
+    settings = { ...settings, globalPaused: true };
+    relaxer.settingsChanged();
+    await engine.handle(1, paused("fetch-14", { status: 200 }));
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-14" }]);
+  });
+
+  it("si aplicar falla ⇒ continúa sin modificar y CorsRelaxedInfo con errorKey (FR-027)", async () => {
+    setup();
+    cdp.failSend("Fetch.continueResponse", "cdp_error");
+    await engine.handle(1, paused("fetch-15", { status: 200 }));
+    expect(cdp.calls("Fetch.continueResponse").at(-1)).toEqual({ requestId: "fetch-15" });
+    expect(relaxed[0]?.info).toMatchObject({ added: [], errorKey: "error_cdp_error" });
+  });
+
+  it("CorsRelaxedInfo sin valores sensibles", async () => {
+    setup();
+    await engine.handle(
+      1,
+      paused("fetch-16", {
+        status: 200,
+        headers: [{ name: "Set-Cookie", value: "secret" }],
+        requestHeaders: { origin: APP, cookie: "secret", authorization: "Bearer secret" },
+      }),
+    );
+    expect(JSON.stringify(relaxed)).not.toContain("secret");
   });
 });

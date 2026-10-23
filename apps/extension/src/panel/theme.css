@@ -396,6 +396,50 @@ kbd {
   font-size: 11px;
 }
 
+.tag-cors {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.tag-relaxed {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.cors {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cors h3,
+.cors h4 {
+  margin: 0;
+}
+
+.cors p {
+  margin: 0;
+}
+
+.cors-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cors-columns > div {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.cors-diff {
+  font-family: var(--mono, monospace);
+  overflow-wrap: anywhere;
+}
+
 .detail {
   display: flex;
   flex-direction: column;
@@ -618,4 +662,79 @@ dialog::backdrop {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+/* CORS de desarrollo (003) */
+.relax-indicator {
+  border: 2px solid var(--warn);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 6px 0;
+}
+
+.relax-indicator h2 {
+  font-size: 13px;
+  margin: 0;
+  color: var(--warn);
+}
+
+.relax-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.relax-state-suspended,
+.relax-state-idle {
+  color: var(--fg-muted);
+}
+
+.relax-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 3px solid var(--warn);
+  padding-left: 8px;
+}
+
+.warning {
+  color: var(--warn);
+}
+
+.cors-relaxed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cors-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.cors-settings h3 {
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.production-list li {
+  overflow-wrap: anywhere;
+}
+
+dialog.report {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.report-text {
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
 }

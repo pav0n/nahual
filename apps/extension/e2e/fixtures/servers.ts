@@ -16,6 +16,8 @@ export interface TestServers {
   appOrigin: string;
   /** Origen B: la API, en otro puerto (otro origen). */
   apiOrigin: string;
+  /** Origen C: un tercer origen (otra API, página y iframe) para el aislamiento CORS (003). */
+  thirdOrigin: string;
   /** Requests recibidos por la API en orden de llegada. */
   received: ReceivedRequest[];
   close(): Promise<void>;
@@ -24,6 +26,7 @@ export interface TestServers {
 export interface ServerPorts {
   app?: number;
   api?: number;
+  third?: number;
 }
 
 /** Llamadas de la SPA de prueba (quickstart). Cada botón escribe la respuesta en `#out`. */
@@ -42,6 +45,36 @@ const CALLS = [
   ["graphql-list", "POST", "/graphql"],
 ] as const;
 
+/**
+ * Llamadas CORS de 003 (quickstart): `[id, origen, método, ruta, credenciales, headers, body]`.
+ * `origen` es `"api"` (B) o `"third"` (C). El resultado incluye `x-total` si la página puede
+ * leerlo (Expose-Headers).
+ */
+const CORS_CALLS = [
+  ["cors-none", "api", "GET", "/cors/none", false, null, null],
+  ["cors-none-cred", "api", "GET", "/cors/none", true, null, null],
+  ["cors-mismatch", "api", "GET", "/cors/mismatch", false, null, null],
+  ["cors-preflight-401", "api", "PUT", "/cors/preflight-401", false, null, null],
+  ["cors-preflight-redirect", "api", "PUT", "/cors/preflight-redirect", false, null, null],
+  ["cors-method", "api", "DELETE", "/cors/method", false, null, null],
+  ["cors-header", "api", "GET", "/cors/header", false, { "x-custom": "1" }, null],
+  ["cors-header-cred", "api", "GET", "/cors/header", true, { "x-custom": "1" }, null],
+  ["cors-wildcard-credentials", "api", "GET", "/cors/wildcard-credentials", true, null, null],
+  ["cors-no-credentials", "api", "GET", "/cors/no-credentials", true, null, null],
+  ["cors-ok", "api", "GET", "/cors/ok", false, null, null],
+  [
+    "cors-sensitive",
+    "api",
+    "POST",
+    "/cors/sensitive?token=secret-query-token",
+    true,
+    { authorization: "Bearer secret-auth-token", "content-type": "application/json" },
+    JSON.stringify({ password: "secret-body-value" }),
+  ],
+  ["cors-third", "third", "GET", "/cors/none", false, null, null],
+  ["blocked", "api", "GET", "/blocked", false, null, null],
+] as const;
+
 const GRAPHQL_BODIES: Record<string, string> = {
   "graphql-user": JSON.stringify({
     operationName: "GetUser",
@@ -54,15 +87,17 @@ const GRAPHQL_BODIES: Record<string, string> = {
   "graphql-list": JSON.stringify({ query: "query ListUsers { users { id } }" }),
 };
 
-function appPage(apiOrigin: string) {
-  const buttons = CALLS.map(
-    ([id]) => `<button type="button" data-testid="call-${id}">${id}</button>`,
-  ).join("\n");
+function appPage(apiOrigin: string, thirdOrigin: string) {
+  const buttons = [...CALLS, ...CORS_CALLS]
+    .map(([id]) => `<button type="button" data-testid="call-${id}">${id}</button>`)
+    .join("\n");
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>Nahual test app</title></head>
 <body><h1>Nahual test app</h1>
-<nav><a href="/next" data-testid="nav-next">next</a></nav>
+<nav><a href="/next" data-testid="nav-next">next</a>
+<a href="${thirdOrigin}/page" data-testid="nav-third">third</a></nav>
 ${buttons}
+<button type="button" data-testid="load-frame">frame</button>
 <pre id="out"></pre>
 <script>
   const API = ${JSON.stringify(apiOrigin)};
@@ -87,9 +122,37 @@ ${buttons}
       return result;
     }
   };
+  const THIRD = ${JSON.stringify(thirdOrigin)};
+  const CORS_CALLS = ${JSON.stringify(CORS_CALLS)};
+  window.corsCall = async (id) => {
+    const [, target, method, path, credentials, headers, body] = CORS_CALLS.find((c) => c[0] === id);
+    const init = { method, credentials: credentials ? "include" : "omit" };
+    if (headers) init.headers = headers;
+    if (body) init.body = body;
+    try {
+      const res = await fetch((target === "third" ? THIRD : API) + path, init);
+      const text = await res.text();
+      const result = { id, status: res.status, total: res.headers.get("x-total"), body: text.slice(0, 2000) };
+      document.getElementById("out").textContent = JSON.stringify(result);
+      return result;
+    } catch (error) {
+      const result = { id, error: String(error) };
+      document.getElementById("out").textContent = JSON.stringify(result);
+      return result;
+    }
+  };
   for (const [id] of CALLS) {
     document.querySelector('[data-testid="call-' + id + '"]').addEventListener("click", () => window.call(id));
   }
+  for (const [id] of CORS_CALLS) {
+    document.querySelector('[data-testid="call-' + id + '"]').addEventListener("click", () => window.corsCall(id));
+  }
+  document.querySelector('[data-testid="load-frame"]').addEventListener("click", () => {
+    const frame = document.createElement("iframe");
+    frame.src = THIRD + "/frame";
+    frame.dataset.testid = "third-frame";
+    document.body.append(frame);
+  });
 </script></body></html>`;
 }
 
@@ -134,6 +197,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
   const received: ReceivedRequest[] = [];
   let appOrigin = "";
   let apiOrigin = "";
+  let thirdOrigin = "";
 
   const app = createServer((req, res) => {
     if (req.url === "/load") {
@@ -146,7 +210,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         "content-type": "text/html; charset=utf-8",
         "set-cookie": "nahual_session=secret-session-value; Path=/",
       });
-      res.end(appPage(apiOrigin));
+      res.end(appPage(apiOrigin, thirdOrigin));
       return;
     }
     res.writeHead(404).end();
@@ -178,6 +242,10 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
           body,
         });
       }
+      if (url.pathname.startsWith("/cors/")) {
+        corsRoute(url.pathname, req, res);
+        return;
+      }
       if (url.pathname !== "/no-cors") {
         cors(res);
         if (req.method === "OPTIONS") {
@@ -188,6 +256,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
       switch (url.pathname) {
         case "/echo-headers":
           return json(res, 200, { headers: req.headers });
+        case "/blocked":
         case "/data":
           return json(res, 200, { ok: true });
         case "/api/items":
@@ -254,16 +323,116 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
     })();
   });
 
+  /**
+   * Rutas CORS de 003 (quickstart). Cada una provoca una causa de bloqueo concreta; `/cors/ok`
+   * responde bien (con `x-total`, sin exponerlo).
+   */
+  function corsRoute(pathname: string, req: IncomingMessage, res: ServerResponse) {
+    const preflight = req.method === "OPTIONS";
+    const exact = { "access-control-allow-origin": appOrigin };
+    const data = (headers: Record<string, string> = {}) => {
+      res.writeHead(200, { "content-type": "application/json", ...headers });
+      res.end(JSON.stringify({ ok: true, path: pathname }));
+    };
+    switch (pathname) {
+      case "/cors/none":
+      case "/cors/sensitive":
+        if (preflight) return void res.writeHead(204).end();
+        return data();
+      case "/cors/mismatch":
+        return preflight
+          ? void res.writeHead(204, { "access-control-allow-origin": "https://otro.example" }).end()
+          : data({ "access-control-allow-origin": "https://otro.example" });
+      case "/cors/preflight-401":
+        if (preflight) return void res.writeHead(401).end();
+        return data();
+      case "/cors/preflight-redirect":
+        if (preflight) return void res.writeHead(302, { location: "/cors/ok" }).end();
+        return data();
+      case "/cors/method":
+        if (preflight) {
+          res.writeHead(204, {
+            ...exact,
+            "access-control-allow-methods": "GET, POST",
+            "access-control-allow-headers": "content-type",
+          });
+          return void res.end();
+        }
+        return data(exact);
+      case "/cors/header": {
+        const base = { ...exact, "access-control-allow-credentials": "true" };
+        if (preflight) {
+          res.writeHead(204, {
+            ...base,
+            "access-control-allow-methods": "GET",
+            "access-control-allow-headers": "content-type",
+          });
+          return void res.end();
+        }
+        return data(base);
+      }
+      case "/cors/wildcard-credentials":
+        if (preflight) return void res.writeHead(204, { "access-control-allow-origin": "*" }).end();
+        return data({ "access-control-allow-origin": "*" });
+      case "/cors/no-credentials":
+        if (preflight) return void res.writeHead(204, exact).end();
+        return data(exact);
+      case "/cors/ok": {
+        const ok = {
+          ...exact,
+          "access-control-allow-credentials": "true",
+          "access-control-allow-methods": "GET, PUT",
+          "access-control-allow-headers": "content-type, x-custom",
+        };
+        if (preflight) return void res.writeHead(204, ok).end();
+        return data({ ...ok, "x-total": "42" });
+      }
+      default:
+        res.writeHead(404).end();
+    }
+  }
+
+  // Origen C: otra API sin CORS, una página para navegar fuera de la app y un iframe que llama a B.
+  const third = createServer((req, res) => {
+    const url = new URL(req.url ?? "/", "http://x");
+    switch (url.pathname) {
+      case "/cors/none":
+        if (req.method === "OPTIONS") return void res.writeHead(204).end();
+        res.writeHead(200, { "content-type": "application/json" });
+        return void res.end(JSON.stringify({ ok: true, third: true }));
+      case "/page":
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        return void res.end(
+          `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Origen C</title></head>` +
+            `<body><a href="${appOrigin}/" data-testid="nav-back">volver</a></body></html>`,
+        );
+      case "/frame":
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        return void res.end(
+          `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Frame C</title></head>` +
+            `<body><pre id="out"></pre><script>` +
+            `window.callApi = () => fetch(${JSON.stringify(apiOrigin)} + "/cors/none")` +
+            `.then((r) => r.status, (e) => String(e))` +
+            `.then((v) => { document.getElementById("out").textContent = String(v); return v; });` +
+            `</script></body></html>`,
+        );
+      default:
+        res.writeHead(404).end();
+    }
+  });
+
   appOrigin = await listen(app, ports.app);
   apiOrigin = await listen(api, ports.api);
+  thirdOrigin = await listen(third, ports.third);
 
   return {
     appOrigin,
     apiOrigin,
+    thirdOrigin,
     received,
     close: async () => {
       await Promise.all(
-        [app, api].map(
+        [app, api, third].map(
           (s) =>
             new Promise<void>((resolve) => {
               s.closeAllConnections();

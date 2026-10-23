@@ -1,9 +1,11 @@
 import { computeFetchPatterns, type Rule, type Settings } from "@nahual/domain";
 import { makeEvent } from "@nahual/protocol";
 import { createActionExecutor } from "./action-executor.ts";
+import { createCorsRelaxer, createRelaxingExecutor } from "./cors-relaxer.ts";
 import { createDebuggerManager } from "./debugger-manager.ts";
 import type { DebuggerPort } from "./debugger-port.ts";
 import { createFetchInterceptor } from "./fetch-interceptor.ts";
+import { createFrameOrigins } from "./frame-origins.ts";
 import { createNetworkCapture } from "./network-capture.ts";
 import {
   createPanelPort,
@@ -34,6 +36,7 @@ export interface BackgroundDeps {
 export function createBackground(deps: BackgroundDeps) {
   const { debugger: cdp } = deps;
   const registry = createSessionRegistry(deps.sessionStorage);
+  const frames = createFrameOrigins({ debugger: cdp });
 
   const attachedTabs = () => port.tabs().filter((tabId) => manager.isAttached(tabId));
 
@@ -50,6 +53,7 @@ export function createBackground(deps: BackgroundDeps) {
         activeRuleCount: rules.forSite(site).filter((r) => r.enabled).length,
         queueSize: engine.queueSize(tabId),
         globalPaused: settings.get().globalPaused,
+        relaxationCount: relaxer.count(tabId),
       }),
     );
   };
@@ -60,12 +64,16 @@ export function createBackground(deps: BackgroundDeps) {
     const patterns = computeFetchPatterns(rules.all(), {
       site: manager.siteOf(tabId),
       globalPaused: settings.get().globalPaused,
+      relaxedApiOrigins: relaxer.patterns(tabId),
     });
     void interceptor.applyPatterns(tabId, patterns);
   };
 
   const sendRules = (tabId: number, list: Rule[]) =>
     port.send(tabId, makeEvent("rules", { rules: list, discarded: rules.discarded() }));
+
+  const sendRelaxations = (tabId: number) =>
+    port.send(tabId, makeEvent("relaxations", { items: relaxer.views(tabId) }));
 
   const notice = (messageKey: string) => {
     const event = makeEvent("notice", { messageKey });
@@ -75,6 +83,8 @@ export function createBackground(deps: BackgroundDeps) {
   const settings = createSettingsStore({
     storage: deps.localStorage,
     onChange: (value: Settings) => {
+      // Producción y "pausar Nahual" cambian las relajaciones antes de recalcular patrones.
+      relaxer.settingsChanged();
       for (const tabId of port.tabs()) {
         port.send(tabId, makeEvent("settings", value));
         applyPatterns(tabId);
@@ -96,9 +106,26 @@ export function createBackground(deps: BackgroundDeps) {
     onNotice: notice,
   });
 
+  /** Relajaciones CORS por pestaña, solo en memoria (003, research R10). */
+  const relaxer = createCorsRelaxer({
+    settings: () => settings.get(),
+    productionListReadable: () => settings.productionListReadable(),
+    isAttached: (tabId) => manager.isAttached(tabId),
+    hasFrameOrigin: (tabId, origin) => frames.hasOrigin(tabId, origin),
+    onChange: (tabId) => {
+      sendRelaxations(tabId);
+      applyPatterns(tabId);
+      sendState(tabId);
+    },
+    onNotice: (tabId, messageKey) => port.send(tabId, makeEvent("notice", { messageKey })),
+  });
+
   const capture = createNetworkCapture({
     debugger: cdp,
     onUpdates: (tabId, updates) => port.send(tabId, makeEvent("exchanges", { updates })),
+    frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
+    onCorsFailure: (tabId, _exchangeId, diagnosis, url) =>
+      relaxer.noteFailure(tabId, url, diagnosis),
   });
 
   const engine = createRuleEngine({
@@ -107,7 +134,13 @@ export function createBackground(deps: BackgroundDeps) {
     settings: () => settings.get(),
     siteOf: (tabId) => manager.siteOf(tabId),
     capture,
-    executor: createActionExecutor({ debugger: cdp }),
+    // La relajación CORS es el último paso antes de entregar cada respuesta (research R9).
+    executor: createRelaxingExecutor({
+      base: createActionExecutor({ debugger: cdp }),
+      relaxer,
+      frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
+      onRelaxed: (tabId, exchangeId, info) => capture.relaxed(tabId, exchangeId, info),
+    }),
     onPaused: (tabId, view) => port.send(tabId, makeEvent("paused", view)),
     onResolved: (tabId, result) => port.send(tabId, makeEvent("resolved", result)),
     onQueueChange: (tabId) => sendState(tabId),
@@ -125,15 +158,19 @@ export function createBackground(deps: BackgroundDeps) {
     onSessionEnded: (tabId) => {
       engine.sessionEnded(tabId);
       interceptor.sessionEnded(tabId);
+      relaxer.sessionEnded(tabId);
       capture.sessionEnded(tabId);
+      frames.sessionEnded(tabId);
       sendState(tabId);
     },
     onAttached: (tabId) => {
+      void frames.seed(tabId);
       applyPatterns(tabId);
       sendState(tabId);
     },
     onNavigated: (tabId, site, url) => {
       engine.navigated(tabId);
+      relaxer.refresh(tabId);
       port.send(tabId, makeEvent("navigated", { site, url }));
       applyPatterns(tabId);
       sendState(tabId);
@@ -177,6 +214,13 @@ export function createBackground(deps: BackgroundDeps) {
       case "continueAll":
         await engine.continueAll(tabId);
         return { ok: true };
+      case "relaxCors": {
+        const result = relaxer.create(tabId, command.payload);
+        return result.ok ? { ok: true } : result;
+      }
+      case "endRelaxation":
+        relaxer.end(tabId, command.payload.relaxationId ?? null, "user");
+        return { ok: true };
       case "getBody": {
         const { exchangeId, side } = command.payload;
         const body = await capture.getBody(tabId, exchangeId, side);
@@ -207,6 +251,7 @@ export function createBackground(deps: BackgroundDeps) {
     onHello: (tabId) => {
       port.send(tabId, makeEvent("settings", settings.get()));
       sendRules(tabId, rules.all());
+      sendRelaxations(tabId);
       sendState(tabId);
     },
     onCommand,
@@ -216,5 +261,5 @@ export function createBackground(deps: BackgroundDeps) {
     },
   });
 
-  return { ready, manager, settings, rules, engine, attachedTabs };
+  return { ready, manager, settings, rules, engine, frames, relaxer, attachedTabs };
 }

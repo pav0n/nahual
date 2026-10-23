@@ -62,6 +62,8 @@ export interface RequestPausedEvent {
   responseHeaders?: FetchHeaderEntry[];
   responseErrorReason?: string;
   networkId?: string;
+  /** Frame que hizo el request: da el origen de la app (003, research R4). */
+  frameId?: string;
 }
 
 export interface GetResponseBodyResult {
