@@ -1,6 +1,7 @@
 import type { FetchPattern } from "@nahual/domain";
 import type { DebuggerPort, RequestPausedEvent } from "./debugger-port.ts";
 import { logger } from "./logger.ts";
+import { isLabTab } from "./test-hooks.ts";
 
 export interface FetchInterceptorOptions {
   debugger: DebuggerPort;
@@ -26,7 +27,7 @@ export function createFetchInterceptor(options: FetchInterceptorOptions): FetchI
   const applied = new Map<number, string>();
 
   cdp.onEvent((tabId, method, params) => {
-    if (method !== "Fetch.requestPaused") return;
+    if (method !== "Fetch.requestPaused" || isLabTab(tabId)) return;
     const event = params as RequestPausedEvent;
     options.onRequestPaused(tabId, event).catch(async () => {
       // Fallar de forma segura (principio II): el request sigue sin cambios.

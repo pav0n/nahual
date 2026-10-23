@@ -16,9 +16,13 @@ export function requestWillBeSent(
     hasPostData?: boolean;
     timestamp?: number;
     redirectResponse?: { url: string; status: number; headers: Record<string, string> };
+    frameId?: string;
+    initiator?: { type: string; requestId?: string };
   } = {},
 ) {
   return {
+    ...(overrides.frameId !== undefined ? { frameId: overrides.frameId } : {}),
+    ...(overrides.initiator ? { initiator: overrides.initiator } : {}),
     requestId,
     loaderId: "loader-1",
     documentURL: "https://app.test/",
@@ -67,12 +71,33 @@ export const loadingFinished = (requestId: string, encodedDataLength = 100, time
   encodedDataLength,
 });
 
-export const loadingFailed = (requestId: string, errorText = "net::ERR_FAILED", timestamp = 3) => ({
+export const loadingFailed = (
+  requestId: string,
+  errorText = "net::ERR_FAILED",
+  timestamp = 3,
+  extra: {
+    corsErrorStatus?: { corsError: string; failedParameter: string };
+    blockedReason?: string;
+  } = {},
+) => ({
   requestId,
   timestamp,
   type: "Fetch",
   errorText,
   canceled: false,
+  ...extra,
+});
+
+/** `loadingFailed` de un bloqueo CORS (003, research R3). */
+export const corsFailed = (requestId: string, corsError: string, failedParameter = "") =>
+  loadingFailed(requestId, "net::ERR_FAILED", 3, {
+    corsErrorStatus: { corsError, failedParameter },
+  });
+
+export const requestWillBeSentExtraInfo = (requestId: string, headers: Record<string, string>) => ({
+  requestId,
+  associatedCookies: [],
+  headers,
 });
 
 export function requestPaused(
@@ -96,7 +121,49 @@ export function requestPaused(
   };
 }
 
-export const frameNavigated = (url: string, parentId?: string) => ({
-  frame: { id: parentId ? "child" : "main", url, ...(parentId ? { parentId } : {}) },
+export const frameNavigated = (
+  url: string,
+  parentId?: string,
+  options: { id?: string; securityOrigin?: string } = {},
+) => ({
+  frame: {
+    id: options.id ?? (parentId ? "child" : "main"),
+    url,
+    ...(parentId ? { parentId } : {}),
+    ...(options.securityOrigin !== undefined ? { securityOrigin: options.securityOrigin } : {}),
+  },
   type: "Navigation",
 });
+
+export const frameDetached = (frameId: string) => ({ frameId, reason: "remove" });
+
+/** Preflight `OPTIONS` pausado por Fetch (003). */
+export function preflightPaused(
+  requestId: string,
+  overrides: {
+    url?: string;
+    method?: string;
+    headers?: string;
+    origin?: string;
+    frameId?: string;
+    status?: number;
+    responseHeaders?: { name: string; value: string }[];
+  } = {},
+): RequestPausedEvent {
+  return requestPaused(requestId, {
+    resourceType: "Preflight",
+    ...(overrides.frameId !== undefined ? { frameId: overrides.frameId } : {}),
+    ...(overrides.status !== undefined
+      ? { responseStatusCode: overrides.status, responseHeaders: overrides.responseHeaders ?? [] }
+      : {}),
+    request: {
+      url: overrides.url ?? "https://api.test/items",
+      method: "OPTIONS",
+      headers: {
+        "access-control-request-method": overrides.method ?? "PUT",
+        ...(overrides.headers ? { "access-control-request-headers": overrides.headers } : {}),
+        ...(overrides.origin ? { origin: overrides.origin } : {}),
+      },
+    },
+  });
+}

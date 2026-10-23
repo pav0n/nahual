@@ -24,7 +24,10 @@ export async function installLab(worker: Worker, tabId: number) {
     type LabPolicy =
       | { name: "continue" }
       | { name: "addCors"; origin: string; credentials: boolean }
-      | { name: "fulfillPreflight"; origin: string; credentials: boolean };
+      | { name: "fulfillPreflight"; origin: string; credentials: boolean }
+      | { name: "fulfillPreflightAtResponse"; origin: string; credentials: boolean }
+      | { name: "continuePreflightAtResponse"; origin: string; credentials: boolean }
+      | { name: "markResponse"; origin: string };
     type Action = { cmd: string; params?: Record<string, unknown> };
     // Estrategias con nombre: el SW no puede evaluar código (CSP de MV3).
     const corsHeaders = (origin: string, credentials: boolean) => [
@@ -40,6 +43,55 @@ export async function installLab(worker: Worker, tabId: number) {
     ): Action => {
       const req = p.request as { method: string };
       if (!policy || policy.name === "continue") return { cmd: "continue" };
+      // 003-X5: el preflight llega al servidor y se reemplaza en la etapa Response.
+      if (
+        policy.name === "fulfillPreflightAtResponse" ||
+        policy.name === "continuePreflightAtResponse"
+      ) {
+        if (req.method === "OPTIONS" && stage === "Response") {
+          return {
+            cmd:
+              policy.name === "fulfillPreflightAtResponse"
+                ? "Fetch.fulfillRequest"
+                : "Fetch.continueResponse",
+            params: {
+              responseCode: 204,
+              responseHeaders: corsHeaders(policy.origin, policy.credentials),
+            },
+          };
+        }
+        if (req.method !== "OPTIONS" && stage === "Response") {
+          return {
+            cmd: "Fetch.continueResponse",
+            params: {
+              responseCode: p.responseStatusCode,
+              responseHeaders: [
+                ...(p.responseHeaders as { name: string; value: string }[]),
+                ...corsHeaders(policy.origin, policy.credentials),
+              ],
+            },
+          };
+        }
+        return { cmd: "continue" };
+      }
+      // 003-X4: se cambian los Access-Control-* y se añade una marca en la etapa Response.
+      if (policy.name === "markResponse") {
+        if (stage !== "Response") return { cmd: "continue" };
+        const original = (p.responseHeaders as { name: string; value: string }[]).filter(
+          (h) => !h.name.toLowerCase().startsWith("access-control-"),
+        );
+        return {
+          cmd: "Fetch.continueResponse",
+          params: {
+            responseCode: p.responseStatusCode,
+            responseHeaders: [
+              ...original,
+              { name: "Access-Control-Allow-Origin", value: policy.origin },
+              { name: "X-Nahual-Marker", value: "1" },
+            ],
+          },
+        };
+      }
       if (policy.name === "fulfillPreflight" && req.method === "OPTIONS") {
         return {
           cmd: "Fetch.fulfillRequest",
@@ -67,14 +119,37 @@ export async function installLab(worker: Worker, tabId: number) {
     g.labEvents = [];
     g.labTimings = [];
     g.labPolicy = null;
+    // El FetchInterceptor de Nahual no debe responder las pausas del laboratorio (build de pruebas).
+    (g.__nahualLabTabs as Set<number> | undefined)?.add(id);
     await chrome.debugger.attach({ tabId: id }, "1.3");
     chrome.debugger.onEvent.addListener(async (source, method, params) => {
       if (source.tabId !== id) return;
       const events = g.labEvents as unknown[];
       const p = params as Record<string, unknown>;
+      const names = (headers: unknown) =>
+        Array.isArray(headers)
+          ? (headers as { name: string }[]).map((h) => h.name.toLowerCase())
+          : Object.keys((headers ?? {}) as object).map((k) => k.toLowerCase());
       if (method === "Network.requestWillBeSent") {
-        const req = p.request as { method: string; url: string };
-        events.push({ method, type: p.type, reqMethod: req.method, url: req.url });
+        const req = p.request as { method: string; url: string; headers: object };
+        events.push({
+          method,
+          requestId: p.requestId,
+          type: p.type,
+          reqMethod: req.method,
+          url: req.url,
+          frameId: p.frameId !== undefined,
+          initiator: p.initiator,
+          requestHeaders: names(req.headers),
+        });
+      } else if (method === "Network.requestWillBeSentExtraInfo") {
+        events.push({ method, requestId: p.requestId, requestHeaders: names(p.headers) });
+      } else if (method === "Network.responseReceivedExtraInfo") {
+        events.push({
+          method,
+          requestId: p.requestId,
+          headers: p.headers,
+        });
       } else if (method === "Network.loadingFailed") {
         events.push({
           method,
@@ -83,18 +158,28 @@ export async function installLab(worker: Worker, tabId: number) {
           corsErrorStatus: p.corsErrorStatus,
         });
       } else if (method === "Network.responseReceived") {
-        const r = p.response as { status: number; url: string };
-        events.push({ method, type: p.type, status: r.status, url: r.url });
+        const r = p.response as { status: number; url: string; headers: object };
+        events.push({
+          method,
+          requestId: p.requestId,
+          type: p.type,
+          status: r.status,
+          url: r.url,
+          headers: r.headers,
+        });
       } else if (method === "Fetch.requestPaused") {
         const req = p.request as { method: string; url: string };
         const stage = p.responseStatusCode === undefined ? "Request" : "Response";
         events.push({
           method,
+          networkId: p.networkId,
           stage,
           reqMethod: req.method,
           url: req.url,
           resourceType: p.resourceType,
           status: p.responseStatusCode,
+          frameId: p.frameId !== undefined,
+          requestHeaders: names((req as { headers?: object }).headers),
         });
         const action = decide(g.labPolicy as LabPolicy | null, p, stage);
         const requestId = p.requestId as string;
@@ -144,7 +229,10 @@ export const labEvents = (worker: Worker) =>
 export type LabPolicy =
   | { name: "continue" }
   | { name: "addCors"; origin: string; credentials: boolean }
-  | { name: "fulfillPreflight"; origin: string; credentials: boolean };
+  | { name: "fulfillPreflight"; origin: string; credentials: boolean }
+  | { name: "fulfillPreflightAtResponse"; origin: string; credentials: boolean }
+  | { name: "continuePreflightAtResponse"; origin: string; credentials: boolean }
+  | { name: "markResponse"; origin: string };
 
 /** Tiempos (ms) entre requestPaused y la respuesta del comando de continuación, en el SW. */
 export const labTimings = (worker: Worker) =>
