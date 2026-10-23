@@ -1,6 +1,7 @@
 import type { SessionState } from "@nahual/protocol";
+import type { ReactNode } from "react";
 import { t } from "../../shared/i18n.ts";
-import { command } from "../commands.ts";
+import { userAttach, userDetach, userReconnect } from "../attach-control.ts";
 import { usePanelStore } from "../store/index.ts";
 import { SHORTCUT_TOGGLE_ATTACH } from "../use-shortcuts.ts";
 
@@ -11,13 +12,21 @@ const ICONS: Record<SessionState["status"], string> = {
   conflict: "▲",
 };
 
-/** Indicador permanente del debugger (FR-028): estado con texto, sitio y acción. */
-export function StatusBar() {
+/** Causas que son un error con solución (principio III), no un estado normal. */
+const ERROR_CAUSES = new Set(["restricted_page", "already_attached", "unknown"]);
+
+/**
+ * Indicador permanente (FR-028): estado del debugger con texto e icono (no solo color), sitio,
+ * reglas activas, tamaño de la cola, "pausar Nahual" y la acción que corresponde.
+ */
+export function StatusBar({ globalPauseControl }: { globalPauseControl?: ReactNode }) {
   const state = usePanelStore((s) => s.session);
+  const setHelpOpen = usePanelStore((s) => s.setHelpOpen);
   const status = state?.status ?? "detached";
   const hint = t("shortcut_hint", SHORTCUT_TOGGLE_ATTACH);
   // Hubo una sesión (o un conflicto) que terminó: se ofrece reconectar en lugar de adjuntar.
   const canReconnect = status === "conflict" || (status === "detached" && state?.cause != null);
+  const isError = state?.cause != null && ERROR_CAUSES.has(state.cause);
 
   return (
     <div className="status">
@@ -30,14 +39,25 @@ export function StatusBar() {
           <span className="muted">
             {" · "}
             {state?.site ? t("site_label", state.site) : t("site_none")}
+            {" · "}
+            {t("status_rules_active", String(state?.activeRuleCount ?? 0))}
+            {" · "}
+            {t("status_queue_size", String(state?.queueSize ?? 0))}
           </span>
         ) : null}
-        {state?.cause ? <p className="muted">{t(`cause_${state.cause}`)}</p> : null}
+        {state?.globalPaused ? <p className="paused-badge">{t("status_global_paused")}</p> : null}
+        {state?.cause ? (
+          <p className={isError ? "field-error" : "muted"}>
+            {t(`cause_${state.cause}`)}
+            {isError ? ` ${t(`solution_${state.cause}`)}` : ""}
+          </p>
+        ) : null}
       </div>
+      {globalPauseControl}
       {status === "attached" ? (
         <button
           type="button"
-          onClick={() => void command("detach", {})}
+          onClick={() => void userDetach()}
           aria-keyshortcuts="Alt+Shift+A"
           title={hint}
         >
@@ -47,7 +67,7 @@ export function StatusBar() {
         <button
           type="button"
           className="primary"
-          onClick={() => void command("reconnect", {})}
+          onClick={() => void userReconnect()}
           aria-keyshortcuts="Alt+Shift+A"
           title={hint}
         >
@@ -57,7 +77,7 @@ export function StatusBar() {
         <button
           type="button"
           className="primary"
-          onClick={() => void command("attach", {})}
+          onClick={() => void userAttach()}
           disabled={status === "attaching"}
           aria-keyshortcuts="Alt+Shift+A"
           title={hint}
@@ -65,6 +85,9 @@ export function StatusBar() {
           {t("action_attach")} <kbd>{SHORTCUT_TOGGLE_ATTACH}</kbd>
         </button>
       )}
+      <button type="button" onClick={() => setHelpOpen(true)}>
+        {t("action_help")}
+      </button>
     </div>
   );
 }

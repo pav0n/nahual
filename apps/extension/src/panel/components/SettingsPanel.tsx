@@ -4,10 +4,13 @@ import { t } from "../../shared/i18n.ts";
 import { command } from "../commands.ts";
 import { usePanelStore } from "../store/index.ts";
 import { Field } from "./common/Field.tsx";
+import { Switch } from "./common/Switch.tsx";
 
 /** Ajustes del panel (FR-022 y, con la historia 3, FR-027a). */
 export function SettingsPanel({ children }: { children?: ReactNode }) {
   const saved = usePanelStore((s) => s.settings?.pauseTimeoutSeconds ?? LIMITS.pauseTimeoutDefault);
+  const autoAttachOn = usePanelStore((s) => s.settings?.autoAttach ?? true);
+  const consent = usePanelStore((s) => s.settings?.attachConsent ?? false);
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>(undefined);
   const value = draft ?? String(saved);
@@ -58,6 +61,14 @@ export function SettingsPanel({ children }: { children?: ReactNode }) {
         </Field>
         <button type="submit">{t("action_apply")}</button>
       </form>
+      <Switch
+        label={t("settings_auto_attach")}
+        checked={autoAttachOn}
+        onChange={(autoAttach) => void command("updateSettings", { autoAttach })}
+      />
+      <p className="muted">
+        {t(consent ? "settings_auto_attach_hint" : "settings_auto_attach_no_consent")}
+      </p>
       {children}
     </details>
   );

@@ -14,6 +14,9 @@ export interface Toast {
 export interface UiSlice {
   tab: PanelTab;
   toasts: Toast[];
+  /** Onboarding reabierto desde "Ayuda" (FR-027). */
+  helpOpen: boolean;
+  setHelpOpen(open: boolean): void;
   setTab(tab: PanelTab): void;
   pushToast(toast: Omit<Toast, "id">, timeoutMs?: number): number;
   dismissToast(id: number): void;
@@ -24,6 +27,11 @@ let toastSeq = 0;
 export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
   tab: "traffic",
   toasts: [],
+  helpOpen: false,
+  setHelpOpen: (open) =>
+    set((s) => {
+      s.helpOpen = open;
+    }),
   setTab: (tab) =>
     set((s) => {
       s.tab = tab;

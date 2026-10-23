@@ -16,7 +16,7 @@ export interface ConnectionSlice {
   session: SessionState | null;
   lastError: CommandError | null;
   notices: Notice[];
-  setSession(session: SessionState): void;
+  setSession(session: SessionState | null): void;
   setError(error: CommandError | null): void;
   pushNotice(messageKey: string, params?: string[]): void;
   dismissNotice(id: number): void;

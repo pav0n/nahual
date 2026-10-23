@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { t } from "../shared/i18n.ts";
+import { toggleAttach } from "./attach-control.ts";
 import { command } from "./commands.ts";
 import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
 import { Notices } from "./components/Notices.tsx";
+import { Onboarding } from "./components/Onboarding.tsx";
 import { useContinueAll } from "./components/queue/PauseQueue.tsx";
 import { QueueView } from "./components/queue/QueueView.tsx";
 import { RulesView } from "./components/rules/RulesView.tsx";
@@ -30,12 +32,7 @@ export function App({ tabId }: { tabId: number | null }) {
   const continueAll = useContinueAll();
 
   useShortcuts({
-    toggleAttach: () => {
-      const state = usePanelStore.getState().session;
-      if (!state || state.status === "attaching") return;
-      if (state.status === "attached") void command("detach", {});
-      else void command(state.status === "conflict" || state.cause ? "reconnect" : "attach", {});
-    },
+    toggleAttach,
     continueSelected: () => {
       const { paused, selectedPausedId } = usePanelStore.getState();
       const item = paused.find((p) => p.pausedId === selectedPausedId) ?? paused[0];
@@ -88,6 +85,7 @@ export function App({ tabId }: { tabId: number | null }) {
         <QueueView continueAll={continueAll} />
       </TabPanel>
       {continueAll.dialog}
+      <Onboarding />
       <ToastRegion />
     </main>
   );

@@ -261,3 +261,53 @@ test.describe("cola de pausados (historia 2)", () => {
     expect(await doneA).toBe(1);
   });
 });
+
+test.describe("primer uso (historia 3)", () => {
+  test("adjunto automático sobre una página restringida: falla con causa y la pestaña sigue usable", async ({
+    context,
+    nahualWorker,
+    extensionId,
+  }) => {
+    await nahualWorker.evaluate(() =>
+      chrome.storage.local.set({
+        "nahual.settings.v1": {
+          version: 1,
+          settings: {
+            pauseTimeoutSeconds: 60,
+            globalPaused: false,
+            onboardingSeen: true,
+            attachConsent: true,
+            autoAttach: true,
+          },
+        },
+      }),
+    );
+    const page = await context.newPage();
+    await page.goto("chrome://version/");
+    const tabId = await tabIdOf(nahualWorker, "chrome://version/");
+    const panel = await openPanel(context, extensionId, tabId);
+    await expect(statusOf(panel)).toContainText("Disconnected", { timeout: 5_000 });
+    await expect(statusOf(panel)).toContainText("Open your app in a normal tab");
+    await page.reload();
+    await expect(page.locator("body")).toContainText(/Chromium|Chrome/);
+    expect(await ownSessions(nahualWorker)).toEqual([]);
+  });
+
+  test("cerrar el panel durante el onboarding no deja el debugger adjunto", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    await nahualWorker.evaluate(() => chrome.storage.local.remove("nahual.settings.v1"));
+    await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await context.newPage();
+    await panel.goto(
+      `chrome-extension://${extensionId}/src/panel/panel.html?__nahualTestTabId=${tabId}`,
+    );
+    await expect(panel.getByRole("dialog")).toBeVisible();
+    await panel.close();
+    await expect.poll(() => ownSessions(nahualWorker)).toEqual([]);
+  });
+});

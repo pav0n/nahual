@@ -21,3 +21,4 @@ export * from "./match/prefilter.ts";
 export * from "./match/query.ts";
 export * from "./match/status.ts";
 export * from "./validate.ts";
+export * from "./templates.ts";

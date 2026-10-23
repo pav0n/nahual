@@ -37,7 +37,14 @@ export function RuleEditor({ initial, focus = "name", actionEditor, onClose }: P
   const [form, setForm] = useState<RuleForm>(initial);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [saving, setSaving] = useState(false);
+  /** Cambia tras un guardado fallido: el foco va al primer campo con error. */
+  const [failedSaves, setFailedSaves] = useState(0);
   const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (failedSaves === 0) return;
+    rootRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [failedSaves]);
 
   useEffect(() => {
     rootRef.current?.querySelector<HTMLElement>(`[data-focus="${focus}"]`)?.focus();
@@ -55,9 +62,7 @@ export function RuleEditor({ initial, focus = "name", actionEditor, onClose }: P
     }
     setIssues(reply.issues);
     // El foco va al primer campo con error para corregirlo con teclado.
-    requestAnimationFrame(() =>
-      rootRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-    );
+    setFailedSaves((n) => n + 1);
   };
 
   return (

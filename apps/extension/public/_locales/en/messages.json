@@ -799,5 +799,92 @@
   },
   "action_view_queue": {
     "message": "View queue"
+  },
+  "onboarding_step": {
+    "message": "Step $1 of $2"
+  },
+  "onboarding_bar_title": {
+    "message": "Chrome will show a yellow bar"
+  },
+  "onboarding_bar_body": {
+    "message": "When attaching, Chrome shows “Nahual started debugging this browser”. That is expected: Nahual uses the Chrome debugger to see and pause this tab’s traffic. You can release it any time from the panel or the bar."
+  },
+  "onboarding_data_title": {
+    "message": "What Nahual sees"
+  },
+  "onboarding_data_body": {
+    "message": "While attached, Nahual sees all of this tab’s traffic: URLs, headers and bodies, including cookies and tokens. Only while the panel is open."
+  },
+  "onboarding_data_mask": {
+    "message": "Sensitive values (Authorization, Cookie, tokens) are masked until you press “Show”."
+  },
+  "onboarding_local_title": {
+    "message": "Nothing leaves your browser"
+  },
+  "onboarding_local_body": {
+    "message": "Nahual has no server and makes no requests of its own. History lives in memory and is cleared when you close the panel; only your rules are saved, in this browser."
+  },
+  "action_back": {
+    "message": "Back"
+  },
+  "action_next": {
+    "message": "Next"
+  },
+  "action_skip": {
+    "message": "Skip"
+  },
+  "action_close": {
+    "message": "Close"
+  },
+  "action_attach_and_start": {
+    "message": "Attach and start"
+  },
+  "action_help": {
+    "message": "Help"
+  },
+  "status_rules_active": {
+    "message": "$1 active rules"
+  },
+  "status_queue_size": {
+    "message": "$1 queued"
+  },
+  "status_global_paused": {
+    "message": "Nahual is paused: rules are not applied; capture continues."
+  },
+  "solution_restricted_page": {
+    "message": "Open your app in a normal tab (http or https) and try again."
+  },
+  "solution_already_attached": {
+    "message": "Close the other tool using the debugger on this tab and press Reconnect."
+  },
+  "solution_unknown": {
+    "message": "Press Reconnect. If it happens again, reload the tab."
+  },
+  "settings_auto_attach": {
+    "message": "Attach when the panel opens"
+  },
+  "settings_auto_attach_hint": {
+    "message": "Turn it off to always attach manually."
+  },
+  "settings_auto_attach_no_consent": {
+    "message": "It takes effect after your first “Attach”."
+  },
+  "templates_label": {
+    "message": "Templates"
+  },
+  "template_suggested": {
+    "message": "suggested"
+  },
+  "template_errors": {
+    "message": "Pause error responses"
+  },
+  "template_empty": {
+    "message": "Pause empty responses"
+  },
+  "template_mock503": {
+    "message": "Simulate API down"
+  },
+  "template_slow3s": {
+    "message": "Simulate slow network"
   }
 }

@@ -799,5 +799,92 @@
   },
   "action_view_queue": {
     "message": "Ver la cola"
+  },
+  "onboarding_step": {
+    "message": "Paso $1 de $2"
+  },
+  "onboarding_bar_title": {
+    "message": "Chrome mostrará una barra amarilla"
+  },
+  "onboarding_bar_body": {
+    "message": "Al adjuntar, Chrome muestra «Nahual está depurando este navegador». Es normal: Nahual usa el debugger de Chrome para ver y pausar el tráfico de esta pestaña. Puedes soltarlo cuando quieras desde el panel o desde la barra."
+  },
+  "onboarding_data_title": {
+    "message": "Qué ve Nahual"
+  },
+  "onboarding_data_body": {
+    "message": "Mientras está adjunto, Nahual ve todo el tráfico de esta pestaña: URLs, headers y bodies, incluidas cookies y tokens. Solo mientras el panel está abierto."
+  },
+  "onboarding_data_mask": {
+    "message": "Los valores sensibles (Authorization, Cookie, tokens) se muestran enmascarados hasta que pulses «Mostrar»."
+  },
+  "onboarding_local_title": {
+    "message": "Nada sale de tu navegador"
+  },
+  "onboarding_local_body": {
+    "message": "Nahual no tiene servidor ni hace requests propios. El historial vive en memoria y se borra al cerrar el panel; solo tus reglas se guardan, en este navegador."
+  },
+  "action_back": {
+    "message": "Atrás"
+  },
+  "action_next": {
+    "message": "Siguiente"
+  },
+  "action_skip": {
+    "message": "Omitir"
+  },
+  "action_close": {
+    "message": "Cerrar"
+  },
+  "action_attach_and_start": {
+    "message": "Adjuntar y empezar"
+  },
+  "action_help": {
+    "message": "Ayuda"
+  },
+  "status_rules_active": {
+    "message": "$1 reglas activas"
+  },
+  "status_queue_size": {
+    "message": "$1 en cola"
+  },
+  "status_global_paused": {
+    "message": "Nahual en pausa: las reglas no se aplican; la captura sigue."
+  },
+  "solution_restricted_page": {
+    "message": "Abre tu app en una pestaña normal (http o https) y vuelve a intentarlo."
+  },
+  "solution_already_attached": {
+    "message": "Cierra la otra herramienta que usa el debugger en esta pestaña y pulsa Reconectar."
+  },
+  "solution_unknown": {
+    "message": "Pulsa Reconectar. Si se repite, recarga la pestaña."
+  },
+  "settings_auto_attach": {
+    "message": "Adjuntar al abrir el panel"
+  },
+  "settings_auto_attach_hint": {
+    "message": "Desactívalo para adjuntar siempre a mano."
+  },
+  "settings_auto_attach_no_consent": {
+    "message": "Se activa después de tu primer «Adjuntar»."
+  },
+  "templates_label": {
+    "message": "Plantillas"
+  },
+  "template_suggested": {
+    "message": "sugerida"
+  },
+  "template_errors": {
+    "message": "Pausar respuestas con error"
+  },
+  "template_empty": {
+    "message": "Pausar respuestas vacías"
+  },
+  "template_mock503": {
+    "message": "Simular API caída"
+  },
+  "template_slow3s": {
+    "message": "Simular red lenta"
   }
 }

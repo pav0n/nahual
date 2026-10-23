@@ -135,3 +135,43 @@ test("pestañas y adjuntar solo con teclado", async ({
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Disconnected");
 });
+
+test.describe("primer uso", () => {
+  test.use({ freshProfile: true });
+
+  test("onboarding: axe en cada paso, foco atrapado y Escape", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await context.newPage();
+    await panel.setViewportSize({ width: 320, height: 800 });
+    await panel.goto(
+      `chrome-extension://${extensionId}/src/panel/panel.html?__nahualTestTabId=${tabId}`,
+    );
+    await panel.bringToFront();
+    const dialog = panel.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    for (let step = 1; step <= 3; step++) {
+      await expectNoSeriousViolations(panel, `onboarding paso ${step}`);
+      await expectNoHorizontalScroll(panel);
+      if (step < 3) await dialog.getByRole("button", { name: "Next" }).click();
+    }
+    // El resto de la página queda inerte: el foco nunca cae en un elemento fuera del diálogo
+    // (puede salir a la interfaz del navegador, que no es parte de la página).
+    for (let i = 0; i < 8; i++) {
+      await panel.keyboard.press("Tab");
+      const outside = await panel.evaluate(() => {
+        const el = document.activeElement;
+        return el !== null && el !== document.body && !el.closest("dialog");
+      });
+      expect(outside).toBe(false);
+    }
+    await panel.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expectNoSeriousViolations(panel, "tras el onboarding");
+  });
+});
