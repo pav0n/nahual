@@ -303,3 +303,50 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoSeriousViolations(panel, "ajustes de producción con error");
   });
 }
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`axe del reporte para backend (003, T069), tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.reload();
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await corsCall(app, "cors-header-cred");
+
+    const section = await openCorsDetail(panel, "/cors/header");
+    const opener = section.getByRole("button", { name: "Generate report for backend" });
+    await opener.click();
+    const dialog = panel.getByRole("dialog", { name: /^Report for backend/ });
+    await dialog.getByLabel("Configuration example").selectOption({ label: "NestJS" });
+    await expectNoSeriousViolations(panel, "reporte con datos");
+    await expectNoHorizontalScroll(panel);
+
+    // El resto de la página queda inerte (como en 002: el foco puede salir a la interfaz del
+    // navegador, pero nunca cae en un elemento fuera del diálogo) y vuelve al botón al cerrar.
+    for (let i = 0; i < 6; i++) {
+      await panel.keyboard.press("Tab");
+      const outside = await panel.evaluate(() => {
+        const el = document.activeElement;
+        return el !== null && el !== document.body && !el.closest("dialog");
+      });
+      expect(outside).toBe(false);
+    }
+    await panel.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(opener).toBeFocused();
+
+    // Vacío: desde el indicador, para un origen sin bloqueos.
+    await relaxExtraOrigins(panel, tabId, servers.appOrigin, 1);
+    await relaxIndicator(panel).getByRole("button", { name: "Report" }).click();
+    await expect(dialog).toContainText("No blocked requests");
+    await expectNoSeriousViolations(panel, "reporte vacío");
+  });
+}

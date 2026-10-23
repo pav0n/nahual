@@ -100,6 +100,7 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
       : undefined,
   );
   const [relaxing, setRelaxing] = useState(false);
+  const openReport = usePanelStore((s) => s.openReport);
   const relaxButton = useRef<HTMLButtonElement>(null);
   const activeText = useRef<HTMLParagraphElement>(null);
   const focusAfter = useRef<"button" | "active" | null>(null);
@@ -271,6 +272,17 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
             </>
           ) : null}
         </div>
+      ) : null}
+      {diagnosis || relaxed ? (
+        <p>
+          <button
+            type="button"
+            className="link"
+            onClick={() => openReport(diagnosis?.apiOrigin ?? new URL(exchange.url).origin)}
+          >
+            {t("cors_report_action")}
+          </button>
+        </p>
       ) : null}
       {related}
       {children}

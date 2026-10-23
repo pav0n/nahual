@@ -1297,5 +1297,107 @@
   },
   "action_add": {
     "message": "Añadir"
+  },
+  "cors_report_action": {
+    "message": "Generar reporte para backend"
+  },
+  "cors_report_dialog_title": {
+    "message": "Reporte para backend: $1"
+  },
+  "cors_report_title": {
+    "message": "Configuración CORS que necesita $1"
+  },
+  "cors_report_warning": {
+    "message": "Aviso: Nahual solo relaja CORS en el navegador de quien depura. En staging y producción estos requests fallarán hasta que el servidor se configure así."
+  },
+  "cors_report_origins": {
+    "message": "Orígenes que deben permitirse (Access-Control-Allow-Origin, uno exacto por respuesta):"
+  },
+  "cors_report_methods": {
+    "message": "Métodos (Access-Control-Allow-Methods):"
+  },
+  "cors_report_headers": {
+    "message": "Headers que pide la app (Access-Control-Allow-Headers):"
+  },
+  "cors_report_credentials_yes": {
+    "message": "Credenciales: sí. Hace falta Access-Control-Allow-Credentials: true y nunca *."
+  },
+  "cors_report_credentials_no": {
+    "message": "Credenciales: no detectadas."
+  },
+  "cors_report_max_age": {
+    "message": "Access-Control-Max-Age sugerido: $1 s (es una sugerencia)."
+  },
+  "cors_report_causes": {
+    "message": "Causas detectadas:"
+  },
+  "cors_report_endpoints": {
+    "message": "Endpoints afectados:"
+  },
+  "cors_report_example": {
+    "message": "Ejemplo para $1:"
+  },
+  "cors_report_framework": {
+    "message": "Ejemplo de configuración"
+  },
+  "cors_report_framework_none": {
+    "message": "Sin ejemplo"
+  },
+  "cors_report_text": {
+    "message": "Texto del reporte"
+  },
+  "cors_report_copy": {
+    "message": "Copiar"
+  },
+  "cors_report_copied": {
+    "message": "Reporte copiado al portapapeles."
+  },
+  "cors_report_copy_manual": {
+    "message": "No se pudo copiar automáticamente: el texto está seleccionado, cópialo con Ctrl+C."
+  },
+  "cors_report_empty_title": {
+    "message": "Sin requests bloqueados para este origen"
+  },
+  "cors_report_empty_body": {
+    "message": "El reporte se arma con los requests bloqueados por CORS o relajados por Nahual. Con el panel abierto, repite en la app la acción que falla y vuelve a abrirlo."
+  },
+  "cors_framework_express": {
+    "message": "Express"
+  },
+  "cors_framework_nestjs": {
+    "message": "NestJS"
+  },
+  "cors_framework_aws_api_gateway": {
+    "message": "AWS API Gateway"
+  },
+  "cors_framework_cloud_run": {
+    "message": "Google Cloud Run"
+  },
+  "cors_cause_name_missing_allow_origin": {
+    "message": "falta Access-Control-Allow-Origin"
+  },
+  "cors_cause_name_origin_mismatch": {
+    "message": "origen permitido distinto"
+  },
+  "cors_cause_name_method_not_allowed": {
+    "message": "método no permitido"
+  },
+  "cors_cause_name_header_not_allowed": {
+    "message": "header no permitido"
+  },
+  "cors_cause_name_preflight_status": {
+    "message": "preflight con status no 2xx"
+  },
+  "cors_cause_name_wildcard_with_credentials": {
+    "message": "comodín * con credenciales"
+  },
+  "cors_cause_name_missing_allow_credentials": {
+    "message": "falta Access-Control-Allow-Credentials"
+  },
+  "cors_cause_name_preflight_redirect": {
+    "message": "redirección en el preflight"
+  },
+  "cors_cause_name_unrecognized": {
+    "message": "causa no reconocida"
   }
 }

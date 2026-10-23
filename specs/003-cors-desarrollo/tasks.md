@@ -177,21 +177,21 @@ ejemplos por framework.
 
 ### Dominio (prueba primero)
 
-- [ ] T061 [P] [US3] Prueba primero `packages/domain/tests/cors/report.test.ts`: `buildCorsReport(exchanges, apiOrigin)` reúne orígenes de app, métodos, headers solicitados (sin los del navegador), credenciales, causas con conteo, endpoints `MÉTODO /ruta` sin query string, deduplicados y "≤ 50", `suggestedMaxAgeSeconds: 600` y `relaxedInBrowser`; ignora intercambios de otros orígenes de API; con tokens sembrados en `Authorization`, `Cookie`, query (`?token=`) y body, **ningún** valor aparece en `renderCorsReport` (FR-035, SC-006); `renderCorsReport` toma sus textos de `t` e incluye el aviso de "solo en este navegador" (FR-036)
-- [ ] T062 [P] [US3] Prueba primero `packages/domain/tests/cors/snippets.test.ts`: ejemplos para `express`, `nestjs`, `aws_api_gateway` y `cloud_run` con los orígenes exactos, métodos y headers del reporte; con credenciales nunca `*` y con `credentials: true`; `cloud_run` indica que CORS se configura en la app o en el gateway; los datos solo entran como valores validados (origen, token de header, método)
-- [ ] T063 [US3] Implementar `packages/domain/src/cors/report.ts` (T061)
-- [ ] T064 [US3] Implementar `packages/domain/src/cors/snippets.ts` (T062)
+- [X] T061 [P] [US3] Prueba primero `packages/domain/tests/cors/report.test.ts`: `buildCorsReport(exchanges, apiOrigin)` reúne orígenes de app, métodos, headers solicitados (sin los del navegador), credenciales, causas con conteo, endpoints `MÉTODO /ruta` sin query string, deduplicados y "≤ 50", `suggestedMaxAgeSeconds: 600` y `relaxedInBrowser`; ignora intercambios de otros orígenes de API; con tokens sembrados en `Authorization`, `Cookie`, query (`?token=`) y body, **ningún** valor aparece en `renderCorsReport` (FR-035, SC-006); `renderCorsReport` toma sus textos de `t` e incluye el aviso de "solo en este navegador" (FR-036)
+- [X] T062 [P] [US3] Prueba primero `packages/domain/tests/cors/snippets.test.ts`: ejemplos para `express`, `nestjs`, `aws_api_gateway` y `cloud_run` con los orígenes exactos, métodos y headers del reporte; con credenciales nunca `*` y con `credentials: true`; `cloud_run` indica que CORS se configura en la app o en el gateway; los datos solo entran como valores validados (origen, token de header, método)
+- [X] T063 [US3] Implementar `packages/domain/src/cors/report.ts` (T061)
+- [X] T064 [US3] Implementar `packages/domain/src/cors/snippets.ts` (T062)
 
 ### Panel
 
-- [ ] T065 [US3] Crear `apps/extension/src/panel/components/cors/CorsReport.tsx`: `<dialog>` nativo abierto desde `CorsSection.tsx` ("Generar reporte para backend") y desde `RelaxIndicator.tsx` ("Reporte"), con el origen de API, selector de framework opcional, `<textarea readonly>` con el texto, aviso visible y estado vacío que explica cómo provocar requests bloqueados (FR-032–FR-037)
-- [ ] T066 [US3] Implementar "Copiar" en `apps/extension/src/panel/components/cors/CorsReport.tsx`: `navigator.clipboard.writeText`, si falla seleccionar el `textarea` y `document.execCommand("copy")` dentro del gesto, y si también falla un aviso para copiar con `Ctrl+C` (research R14)
-- [ ] T067 [P] [US3] Añadir las claves de US3 (secciones del reporte, aviso, frameworks, copiar, estado vacío) en `apps/extension/public/_locales/es/messages.json` y `apps/extension/public/_locales/en/messages.json`
+- [X] T065 [US3] Crear `apps/extension/src/panel/components/cors/CorsReport.tsx`: `<dialog>` nativo abierto desde `CorsSection.tsx` ("Generar reporte para backend") y desde `RelaxIndicator.tsx` ("Reporte"), con el origen de API, selector de framework opcional, `<textarea readonly>` con el texto, aviso visible y estado vacío que explica cómo provocar requests bloqueados (FR-032–FR-037)
+- [X] T066 [US3] Implementar "Copiar" en `apps/extension/src/panel/components/cors/CorsReport.tsx`: `navigator.clipboard.writeText`, si falla seleccionar el `textarea` y `document.execCommand("copy")` dentro del gesto, y si también falla un aviso para copiar con `Ctrl+C` (research R14)
+- [X] T067 [P] [US3] Añadir las claves de US3 (secciones del reporte, aviso, frameworks, copiar, estado vacío) en `apps/extension/public/_locales/es/messages.json` y `apps/extension/public/_locales/en/messages.json`
 
 ### E2E y accesibilidad
 
-- [ ] T068 [US3] Escribir `apps/extension/e2e/cors-report.spec.ts`: tras `/cors/sensitive`, `/cors/header` (con credenciales) y `/cors/preflight-401`, el reporte de la API lista el origen A, `PUT`, `x-custom`, credenciales, `Max-Age` 600, las causas y los endpoints sin query; con Express incluye el ejemplo; "Copiar" deja el texto en el portapapeles (permisos de Playwright); ningún valor sembrado (token, cookie, body) aparece en el texto (SC-006); sin bloqueos ⇒ estado vacío
-- [ ] T069 [US3] Ampliar `apps/extension/e2e/a11y.spec.ts` con el diálogo del reporte (con datos y vacío) en ambos temas a 320 px; foco atrapado en el diálogo y devuelto al cerrar
+- [X] T068 [US3] Escribir `apps/extension/e2e/cors-report.spec.ts`: tras `/cors/sensitive`, `/cors/header` (con credenciales) y `/cors/preflight-401`, el reporte de la API lista el origen A, `PUT`, `x-custom`, credenciales, `Max-Age` 600, las causas y los endpoints sin query; con Express incluye el ejemplo; "Copiar" deja el texto en el portapapeles (permisos de Playwright); ningún valor sembrado (token, cookie, body) aparece en el texto (SC-006); sin bloqueos ⇒ estado vacío
+- [X] T069 [US3] Ampliar `apps/extension/e2e/a11y.spec.ts` con el diálogo del reporte (con datos y vacío) en ambos temas a 320 px; foco atrapado en el diálogo y devuelto al cerrar
 
 **Checkpoint US3**: pruebas de US3 en verde; demo: quickstart 11.
 

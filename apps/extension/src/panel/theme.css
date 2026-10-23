@@ -728,3 +728,13 @@ dialog::backdrop {
 .production-list li {
   overflow-wrap: anywhere;
 }
+
+dialog.report {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.report-text {
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
+}

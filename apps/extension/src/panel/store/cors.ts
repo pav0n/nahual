@@ -8,6 +8,10 @@ export interface CorsSlice {
   awaitingRelaxationsAfterReconnect: boolean;
   setRelaxations(items: RelaxationView[]): void;
   beginReconnect(): void;
+  /** Origen de API del reporte abierto (historia 3), o null. */
+  reportApiOrigin: string | null;
+  openReport(apiOrigin: string): void;
+  closeReport(): void;
 }
 
 export const createCorsSlice: SliceCreator<CorsSlice> = (set, get) => ({
@@ -27,5 +31,14 @@ export const createCorsSlice: SliceCreator<CorsSlice> = (set, get) => ({
   beginReconnect: () =>
     set((s) => {
       s.awaitingRelaxationsAfterReconnect = true;
+    }),
+  reportApiOrigin: null,
+  openReport: (apiOrigin) =>
+    set((s) => {
+      s.reportApiOrigin = apiOrigin;
+    }),
+  closeReport: () =>
+    set((s) => {
+      s.reportApiOrigin = null;
     }),
 });

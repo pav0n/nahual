@@ -30,3 +30,5 @@ export * from "./cors/request-headers.ts";
 export * from "./cors/link-preflight.ts";
 export * from "./cors/headers.ts";
 export * from "./cors/relaxation.ts";
+export * from "./cors/report.ts";
+export * from "./cors/snippets.ts";
