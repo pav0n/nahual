@@ -328,8 +328,14 @@ Suite completa (54 pruebas, HeadlessChrome 156, Debian 13), 2026-10-22:
 Queda una inestabilidad intermitente sin identificar (3 de 20 corridas). Si reaparece, el script
 de la segunda tanda guarda el nombre y el error de la prueba.
 
-## Resultados por registrar en implementación
+## Validación con personas (T109, T110)
 
-- SC-001: resultados de la prueba moderada con 5 devs (quickstart). El recorrido guiado
-  automatizado (`first-use.spec.ts`: onboarding ⇒ plantilla ⇒ pausa ⇒ edición ⇒ continuar) tarda
-  ~1,3 s; es solo una referencia, no sustituye a la prueba con personas.
+- **SC-001 / T109** (2026-10-22): el equipo reportó que el recorrido de primer uso (pausar y
+  editar la primera respuesta sin documentación) se completa sin problema en menos de 2 minutos.
+  El reporte no detalla el número de participantes ni los tiempos individuales. Como referencia,
+  el recorrido automatizado (`first-use.spec.ts`) tarda ~1,3 s.
+- **T110** (2026-10-22): el equipo reportó que la demo de punta a punta con los pasos del
+  quickstart pasa sin problema.
+- **Fricción observada**: falta poder crear una regla desde un intercambio de la lista (clic
+  derecho sobre un request ⇒ "Crear regla a partir de este request", con el prefiltro, el método
+  y el tipo ya rellenados). Queda como candidata para una feature futura; no bloquea SC-001.
