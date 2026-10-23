@@ -103,6 +103,21 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoSeriousViolations(panel, "mock desde la cola");
     await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
     expect((await error).status).toBe(500);
+
+    // Historia 4: editor de acciones (mock, fallar, retrasar) y lista reordenable.
+    await panel.getByRole("tab", { name: "Rules" }).click();
+    await panel.getByRole("button", { name: "New rule" }).click();
+    const editor = panel.locator(".editor");
+    for (const action of ["mock", "fail", "delay"]) {
+      await editor.getByLabel("Action").selectOption(action);
+      await expectNoSeriousViolations(panel, `acción ${action}`);
+      await expectNoHorizontalScroll(panel);
+    }
+    await editor.getByLabel("Name", { exact: true }).fill("Segunda");
+    await editor.getByRole("button", { name: "Save rule" }).click();
+    await expect(panel.locator(".rule-item")).toHaveCount(2);
+    await expectNoSeriousViolations(panel, "lista reordenable");
+    await expectNoHorizontalScroll(panel);
   });
 }
 

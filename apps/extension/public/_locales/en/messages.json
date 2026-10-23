@@ -886,5 +886,83 @@
   },
   "template_slow3s": {
     "message": "Simulate slow network"
+  },
+  "action_kind": {
+    "message": "Action"
+  },
+  "action_kind_mock": {
+    "message": "Mock"
+  },
+  "action_kind_fail": {
+    "message": "Fail"
+  },
+  "action_kind_delay": {
+    "message": "Delay"
+  },
+  "action_kind_log": {
+    "message": "Log only"
+  },
+  "action_kind_pause_hint": {
+    "message": "Stops the request and puts it in the queue to edit it."
+  },
+  "action_kind_mock_hint": {
+    "message": "At Request it responds without touching the network; at Response it replaces the response."
+  },
+  "action_kind_fail_hint": {
+    "message": "The page receives a network error."
+  },
+  "action_kind_delay_hint": {
+    "message": "The request continues unchanged after the delay; the rest of the traffic does not wait."
+  },
+  "action_kind_log_hint": {
+    "message": "Continues unchanged and marks the exchange in the history."
+  },
+  "action_fail_reason": {
+    "message": "Network error"
+  },
+  "fail_failed": {
+    "message": "Failed"
+  },
+  "fail_aborted": {
+    "message": "Aborted"
+  },
+  "fail_timedOut": {
+    "message": "Timed out"
+  },
+  "fail_connectionRefused": {
+    "message": "Connection refused"
+  },
+  "fail_nameNotResolved": {
+    "message": "Name not resolved"
+  },
+  "fail_accessDenied": {
+    "message": "Access denied"
+  },
+  "fail_internetDisconnected": {
+    "message": "Internet disconnected"
+  },
+  "action_delay_ms": {
+    "message": "Delay (ms)"
+  },
+  "action_delay_hint": {
+    "message": "Between 1 and $1 ms."
+  },
+  "action_move_up": {
+    "message": "Move up"
+  },
+  "action_move_down": {
+    "message": "Move down"
+  },
+  "action_move_up_rule": {
+    "message": "Move rule “$1” up"
+  },
+  "action_move_down_rule": {
+    "message": "Move rule “$1” down"
+  },
+  "toast_rule_moved": {
+    "message": "Rule “$1” is now at position $2 of $3."
+  },
+  "action_pause_nahual": {
+    "message": "Pause Nahual"
   }
 }

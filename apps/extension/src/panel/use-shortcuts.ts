@@ -17,6 +17,7 @@ export function useShortcuts(handlers: {
   toggleAttach(): void;
   continueSelected(): void;
   continueAll(): void;
+  togglePauseNahual(): void;
   focusSearch(): void;
 }) {
   const ref = useRef(handlers);
@@ -41,6 +42,9 @@ export function useShortcuts(handlers: {
       } else if (event.code === "KeyC") {
         event.preventDefault();
         ref.current.continueSelected();
+      } else if (event.code === "KeyP") {
+        event.preventDefault();
+        ref.current.togglePauseNahual();
       } else if (event.code === "KeyK") {
         event.preventDefault();
         ref.current.continueAll();

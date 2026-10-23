@@ -2,8 +2,10 @@ import type { SessionState } from "@nahual/protocol";
 import type { ReactNode } from "react";
 import { t } from "../../shared/i18n.ts";
 import { userAttach, userDetach, userReconnect } from "../attach-control.ts";
+import { updateSettings } from "../settings-commands.ts";
 import { usePanelStore } from "../store/index.ts";
 import { SHORTCUT_TOGGLE_ATTACH } from "../use-shortcuts.ts";
+import { Switch } from "./common/Switch.tsx";
 
 const ICONS: Record<SessionState["status"], string> = {
   attached: "●",
@@ -20,6 +22,7 @@ const ERROR_CAUSES = new Set(["restricted_page", "already_attached", "unknown"])
  * reglas activas, tamaño de la cola, "pausar Nahual" y la acción que corresponde.
  */
 export function StatusBar({ globalPauseControl }: { globalPauseControl?: ReactNode }) {
+  const settings = usePanelStore((s) => s.settings);
   const state = usePanelStore((s) => s.session);
   const setHelpOpen = usePanelStore((s) => s.setHelpOpen);
   const status = state?.status ?? "detached";
@@ -53,7 +56,15 @@ export function StatusBar({ globalPauseControl }: { globalPauseControl?: ReactNo
           </p>
         ) : null}
       </div>
-      {globalPauseControl}
+      {globalPauseControl ?? (
+        <Switch
+          label={t("action_pause_nahual")}
+          checked={settings?.globalPaused ?? false}
+          disabled={settings === null}
+          onChange={(globalPaused) => void updateSettings({ globalPaused })}
+          keyshortcuts="Alt+Shift+P"
+        />
+      )}
       {status === "attached" ? (
         <button
           type="button"

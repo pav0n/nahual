@@ -2,9 +2,11 @@ import type { Rule } from "@nahual/domain";
 import type { ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
+import { setRuleEnabled } from "../../settings-commands.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
 import { Switch } from "../common/Switch.tsx";
+import { moveRule } from "./ReorderControls.tsx";
 
 interface Props {
   onEdit(rule: Rule): void;
@@ -47,7 +49,19 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
   };
 
   const item = (rule: Rule, index: number, siteRules: Rule[], showSite: boolean) => (
-    <li key={rule.id} className="rule-item" data-rule-id={rule.id}>
+    <li
+      key={rule.id}
+      className="rule-item"
+      data-rule-id={rule.id}
+      onKeyDown={(event) => {
+        // Alt+Flechas reordena la regla enfocada (FR-015, solo teclado).
+        if (!reorderControls || !event.altKey || showSite) return;
+        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+          event.preventDefault();
+          void moveRule(rule, siteRules, event.key === "ArrowUp" ? -1 : 1);
+        }
+      }}
+    >
       <div className="row">
         <span className="grow">
           <strong>{rule.name}</strong>
@@ -57,11 +71,11 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
         <Switch
           label={t("rule_enabled", rule.name)}
           checked={rule.enabled}
-          onChange={(enabled) => void command("setRuleEnabled", { ruleId: rule.id, enabled })}
+          onChange={(enabled) => void setRuleEnabled(rule.id, enabled)}
         />
       </div>
       <div className="row">
-        {reorderControls ? reorderControls(rule, index, siteRules) : null}
+        {reorderControls && !showSite ? reorderControls(rule, index, siteRules) : null}
         <button
           type="button"
           onClick={() => onEdit(rule)}

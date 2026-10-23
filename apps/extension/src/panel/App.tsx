@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { t } from "../shared/i18n.ts";
 import { toggleAttach } from "./attach-control.ts";
 import { command } from "./commands.ts";
+import { updateSettings } from "./settings-commands.ts";
 import { TabPanel, Tabs } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
 import { Notices } from "./components/Notices.tsx";
@@ -37,6 +38,10 @@ export function App({ tabId }: { tabId: number | null }) {
       const { paused, selectedPausedId } = usePanelStore.getState();
       const item = paused.find((p) => p.pausedId === selectedPausedId) ?? paused[0];
       if (item) void command("resolvePaused", { pausedId: item.pausedId, action: "continue" });
+    },
+    togglePauseNahual: () => {
+      const settings = usePanelStore.getState().settings;
+      if (settings) void updateSettings({ globalPaused: !settings.globalPaused });
     },
     continueAll: () => {
       if (usePanelStore.getState().paused.length > 0) continueAll.request();

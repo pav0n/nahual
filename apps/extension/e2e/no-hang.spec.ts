@@ -311,3 +311,77 @@ test.describe("primer uso (historia 3)", () => {
     await expect.poll(() => ownSessions(nahualWorker)).toEqual([]);
   });
 });
+
+test.describe("retrasos (historia 4)", () => {
+  async function withDelay({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }: {
+    context: BrowserContext;
+    nahualWorker: Worker;
+    extensionId: string;
+    servers: TestServers;
+  }) {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await attachAndReload(panel, app);
+    await openTab(panel, "Rules");
+    await panel.getByRole("button", { name: "Create your first rule" }).click();
+    const editor = panel.locator(".editor");
+    await editor.getByLabel("Name", { exact: true }).fill("Retraso largo");
+    await editor.getByLabel("URL prefilter").fill("*/data*");
+    await editor.getByLabel("Stage").selectOption("request");
+    await editor.getByLabel("Action").selectOption("delay");
+    await editor.getByLabel("Delay (ms)").fill("60000");
+    await editor.getByRole("button", { name: "Save rule" }).click();
+    await expect(panel.locator(".rule-item").filter({ hasText: "Retraso largo" })).toBeVisible();
+    const started = Date.now();
+    const done = startMany(app, servers.apiOrigin, "/data", 2);
+    done.catch(() => {});
+    // Que los requests ya estén retenidos por el retraso.
+    await expect.poll(() => servers.received.filter((r) => r.path === "/data").length).toBe(0);
+    await app.waitForTimeout(300);
+    return { app, panel, done, started };
+  }
+
+  test("retraso de 60 s y navegación: la página navega sin esperar", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const fixtures = { context, nahualWorker, extensionId, servers };
+    const { app, started } = await withDelay(fixtures);
+    await app.goto(`${fixtures.servers.appOrigin}/next`);
+    await expect(app.getByRole("heading", { name: "Nahual test app" })).toBeVisible();
+    expect(Date.now() - started).toBeLessThan(10_000);
+  });
+
+  test("retraso de 60 s y Soltar: los requests continúan al instante", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const fixtures = { context, nahualWorker, extensionId, servers };
+    const { panel, done, started } = await withDelay(fixtures);
+    await panel.getByRole("button", { name: /^Detach/ }).click();
+    expect(await done).toBe(2);
+    expect(Date.now() - started).toBeLessThan(10_000);
+  });
+
+  test("retraso de 60 s y cierre de la pestaña: no quedan sesiones", async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const fixtures = { context, nahualWorker, extensionId, servers };
+    const { app } = await withDelay(fixtures);
+    await app.close();
+    await expect.poll(() => ownSessions(fixtures.nahualWorker)).toEqual([]);
+  });
+});

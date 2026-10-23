@@ -244,3 +244,150 @@ describe("RuleEngine: resolver la cola", () => {
     expect(cdp.sent.length).toBe(before);
   });
 });
+
+describe("RuleEngine: acciones automáticas (historia 4)", () => {
+  const request = (id: string) =>
+    requestPaused(id, {
+      networkId: id,
+      request: { url: "https://api.test/api/items", method: "GET", headers: {} },
+    });
+
+  it("Mock en etapa Request ⇒ fulfillRequest y el request no sale", async () => {
+    rules = [
+      rule({
+        stage: "request",
+        conditions: [],
+        action: {
+          kind: "mock",
+          status: 503,
+          headers: [{ name: "content-type", value: "application/json" }],
+          body: "{}",
+          bodyEncoding: "text",
+        },
+      }),
+    ];
+    await engine.handle(1, request("fetch-1"));
+    expect(cdp.calls("Fetch.fulfillRequest")).toEqual([
+      expect.objectContaining({ requestId: "fetch-1", responseCode: 503 }),
+    ]);
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([]);
+    expect(effects.at(-1)?.effect.result).toBe("mocked");
+  });
+
+  it("un mock a otro origen lleva ACAO con el origen exacto de la página (research R21)", async () => {
+    rules = [
+      rule({
+        stage: "request",
+        conditions: [],
+        action: { kind: "mock", status: 503, headers: [], body: "{}", bodyEncoding: "text" },
+      }),
+    ];
+    await engine.handle(1, request("fetch-1"));
+    expect(cdp.calls("Fetch.fulfillRequest")[0]).toMatchObject({
+      responseHeaders: [
+        { name: "access-control-allow-origin", value: SITE },
+        { name: "access-control-allow-credentials", value: "true" },
+      ],
+    });
+  });
+
+  it("un preflight no se responde con el mock: continúa sin cambios", async () => {
+    rules = [
+      rule({
+        stage: "request",
+        conditions: [],
+        action: { kind: "mock", status: 503, headers: [], body: "{}", bodyEncoding: "text" },
+      }),
+    ];
+    await engine.handle(
+      1,
+      requestPaused("fetch-1", {
+        request: {
+          url: "https://api.test/api/items",
+          method: "OPTIONS",
+          headers: { "Access-Control-Request-Method": "PUT" },
+        },
+      }),
+    );
+    expect(cdp.calls("Fetch.fulfillRequest")).toEqual([]);
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([{ requestId: "fetch-1" }]);
+  });
+
+  it("Mock en etapa Response ⇒ reemplaza la respuesta recibida", async () => {
+    rules = [
+      rule({
+        action: { kind: "mock", status: 200, headers: [], body: "ok", bodyEncoding: "text" },
+      }),
+    ];
+    await engine.handle(1, response500());
+    expect(cdp.calls("Fetch.fulfillRequest")[0]).toMatchObject({
+      requestId: "fetch-1",
+      responseCode: 200,
+    });
+    expect(effects.at(-1)?.effect.result).toBe("mocked");
+  });
+
+  it.each([
+    ["failed", "Failed"],
+    ["aborted", "Aborted"],
+    ["timedOut", "TimedOut"],
+    ["connectionRefused", "ConnectionRefused"],
+    ["nameNotResolved", "NameNotResolved"],
+    ["accessDenied", "AccessDenied"],
+    ["internetDisconnected", "InternetDisconnected"],
+  ] as const)("Fallar %s ⇒ failRequest %s", async (errorReason, cdpReason) => {
+    rules = [rule({ stage: "request", conditions: [], action: { kind: "fail", errorReason } })];
+    await engine.handle(1, request("fetch-1"));
+    expect(cdp.calls("Fetch.failRequest")).toEqual([
+      { requestId: "fetch-1", errorReason: cdpReason },
+    ]);
+    expect(effects.at(-1)?.effect.result).toBe("failed");
+  });
+
+  it("Retrasar ⇒ continúa tras ≥ N ms sin bloquear otros intercambios", async () => {
+    rules = [
+      rule({
+        stage: "request",
+        conditions: [],
+        prefilter: { kind: "glob", pattern: "*/slow*" },
+        action: { kind: "delay", ms: 3000 },
+      }),
+    ];
+    await engine.handle(
+      1,
+      requestPaused("fetch-slow", { networkId: "s", request: { url: "https://api.test/slow" } }),
+    );
+    await engine.handle(1, request("fetch-fast"));
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([{ requestId: "fetch-fast" }]);
+    vi.advanceTimersByTime(2_999);
+    expect(cdp.calls("Fetch.continueRequest")).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    await flush();
+    expect(cdp.calls("Fetch.continueRequest").at(-1)).toEqual({ requestId: "fetch-slow" });
+    expect(effects.at(-1)?.effect.result).toBe("delayed");
+  });
+
+  it("navegación y detach cancelan los retrasos", async () => {
+    rules = [rule({ stage: "request", conditions: [], action: { kind: "delay", ms: 60_000 } })];
+    await engine.handle(1, request("fetch-1"));
+    vi.advanceTimersByTime(10);
+    engine.navigated(1);
+    await flush();
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([{ requestId: "fetch-1" }]);
+    await engine.handle(1, request("fetch-2"));
+    engine.sessionEnded(1);
+    vi.advanceTimersByTime(120_000);
+    await flush();
+    expect(cdp.calls("Fetch.continueRequest")).toEqual([{ requestId: "fetch-1" }]);
+  });
+
+  it("Solo registrar ⇒ continúa sin cambios y marca la entrada", async () => {
+    rules = [rule({ action: { kind: "log" } })];
+    await engine.handle(1, response500());
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-1" }]);
+    expect(effects.at(-1)?.effect).toMatchObject({
+      result: "logged",
+      ruleName: "Errores de la API",
+    });
+  });
+});

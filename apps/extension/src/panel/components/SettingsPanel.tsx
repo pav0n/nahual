@@ -2,6 +2,7 @@ import { LIMITS } from "@nahual/domain";
 import { useState, type ReactNode } from "react";
 import { t } from "../../shared/i18n.ts";
 import { command } from "../commands.ts";
+import { updateSettings } from "../settings-commands.ts";
 import { usePanelStore } from "../store/index.ts";
 import { Field } from "./common/Field.tsx";
 import { Switch } from "./common/Switch.tsx";
@@ -64,7 +65,7 @@ export function SettingsPanel({ children }: { children?: ReactNode }) {
       <Switch
         label={t("settings_auto_attach")}
         checked={autoAttachOn}
-        onChange={(autoAttach) => void command("updateSettings", { autoAttach })}
+        onChange={(autoAttach) => void updateSettings({ autoAttach })}
       />
       <p className="muted">
         {t(consent ? "settings_auto_attach_hint" : "settings_auto_attach_no_consent")}

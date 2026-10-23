@@ -3,6 +3,8 @@ import {
   QueueMockActionSchema,
   decodeBody,
   headerValues,
+  isPreflight,
+  mockHeadersFor,
   selectRule,
   validatePausedEdit,
   validateQueueMock,
@@ -10,6 +12,7 @@ import {
   type BodyInfo,
   type ExchangeView,
   type Header,
+  type MockAction,
   type PausedItemView,
   type Rule,
   type RuleEffect,
@@ -130,6 +133,12 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     if (result.outcome === "gone") return ["apply_failed", "error_request_gone"];
     return ["apply_failed", result.errorKey];
   };
+
+  /** Un mock local a otro origen necesita CORS para que la página lo lea (research R21). */
+  const withCors = (tabId: number, mock: MockAction, requestUrl: string): MockAction => ({
+    ...mock,
+    headers: mockHeadersFor(mock.headers, { pageOrigin: options.siteOf(tabId), requestUrl }),
+  });
 
   const queue = createPauseQueue<Queued>({
     onExpire: (tabId, item) => {
@@ -337,14 +346,77 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     }
 
     const { rule } = selection;
-    switch (rule.action.kind) {
+    const item = { exchangeId, rule, stage };
+    const action = rule.action;
+    switch (action.kind) {
       case "pause":
         await pause(tabId, event, stage, rule, exchangeId, target, view(), bodies);
         return;
-      default:
-        // Las demás acciones llegan con la historia 4; mientras, continúa sin cambios.
-        await executor.continueUnchanged(tabId, target);
+      case "mock": {
+        // Un preflight respondido con el mock rompería el request real: sigue sin cambios.
+        if (isPreflight(event.request.method, requestHeaders)) {
+          await executor.continueUnchanged(tabId, target);
+          return;
+        }
+        const result = await executor.mock(
+          tabId,
+          target,
+          withCors(tabId, action, event.request.url),
+        );
+        effect(tabId, item, ...effectOf(result, "mocked"));
         return;
+      }
+      case "fail": {
+        const result = await executor.fail(tabId, target, action.errorReason);
+        effect(tabId, item, ...effectOf(result, "failed"));
+        return;
+      }
+      case "delay":
+        delay(tabId, target, item, action.ms);
+        return;
+      case "log":
+        await executor.continueUnchanged(tabId, target);
+        effect(tabId, item, "logged");
+        return;
+    }
+  }
+
+  const effectOf = (result: ExecResult, success: RuleResult): [RuleResult, Partial<RuleEffect>] => {
+    const [outcome, errorKey] = outcomeOf(result, success);
+    return [outcome, errorKey ? { errorKey } : {}];
+  };
+
+  /** Retrasos activos por pestaña: fuera de la cola visible (research R8). */
+  const delays = new Map<
+    number,
+    Map<string, { timer: ReturnType<typeof setTimeout>; target: PausedTarget }>
+  >();
+
+  function delay(
+    tabId: number,
+    target: PausedTarget,
+    item: { exchangeId: string; rule: Rule; stage: Stage },
+    ms: number,
+  ) {
+    const tab = delays.get(tabId) ?? new Map();
+    delays.set(tabId, tab);
+    const timer = setTimeout(() => {
+      tab.delete(target.requestId);
+      void executor
+        .continueUnchanged(tabId, target)
+        .then((result) => effect(tabId, item, ...effectOf(result, "delayed")));
+    }, ms);
+    tab.set(target.requestId, { timer, target });
+  }
+
+  /** Cancela los retrasos de la pestaña; con `resume` los continúa sin cambios. */
+  function clearDelays(tabId: number, resume: boolean) {
+    const tab = delays.get(tabId);
+    if (!tab) return;
+    delays.delete(tabId);
+    for (const { timer, target } of tab.values()) {
+      clearTimeout(timer);
+      if (resume) void executor.continueUnchanged(tabId, target);
     }
   }
 
@@ -370,7 +442,11 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
         const validation = validateQueueMock(request.mock);
         if (!validation.ok) return { ok: false, code: "edit_invalid", issues: validation.issues };
         if (!queue.take(tabId, request.pausedId)) return { ok: false, code: "unknown_paused_id" };
-        const mock = QueueMockActionSchema.parse(validation.value);
+        const mock = withCors(
+          tabId,
+          QueueMockActionSchema.parse(validation.value),
+          item.view.request.url,
+        );
         const [outcome, errorKey] = outcomeOf(
           await executor.mock(tabId, item.target, mock),
           "mocked",
@@ -408,6 +484,7 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     },
 
     navigated(tabId) {
+      clearDelays(tabId, true);
       const commit = Date.now();
       for (const item of queue.takeWhere(tabId, (i) => i.pausedAt < commit)) {
         void executor
@@ -417,6 +494,8 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     },
 
     sessionEnded(tabId) {
+      // Chrome ya liberó los requests de la sesión: solo se cancelan los temporizadores.
+      clearDelays(tabId, false);
       for (const item of queue.takeAll(tabId)) finish(tabId, item, "continued_on_detach");
     },
 

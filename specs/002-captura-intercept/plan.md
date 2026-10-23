@@ -76,6 +76,7 @@ Sin `NEEDS CLARIFICATION`: todo resuelto en [research.md](./research.md) (R1–R
 | **Nueva:** reglas corruptas o manipuladas en `storage.local` | Sí | Validación Zod regla por regla al leer; las inválidas no se usan; aviso |
 | **Nueva:** regla demasiado amplia que bloquea el sitio | Sí | Plantillas de mock/retraso exigen prefiltro; "Pausar Nahual"; "Continuar todos"; cola llena ⇒ continuar |
 | **Nueva:** regex con backtracking catastrófico bloquea el SW | Sí | Longitud ≤ 512, compilada al guardar, texto evaluado acotado (R19). Riesgo residual aceptado: la regex es del propio dev y se recupera con "Pausar Nahual" o soltando |
+| **Nueva:** mock local a otro origen descartado por CORS, o relajación de CORS por la puerta de atrás | Sí | Solo en respuestas sintéticas de mocks: ACAO con el origen exacto de la página, nunca `*`, solo si el mock no define CORS; los preflight no se mockean (research R21). Las respuestas reales no se tocan (eso es 003) |
 | **Nueva:** mensaje gigante del panel agota memoria del SW | Bajo | Puerto solo de la propia extensión; límite de 6 MB descartado antes de parsear |
 | Dependencia comprometida | Sí | 4 dependencias nuevas sin transitivas (salvo `iregexp-check` y `virtual-core`), exactas, auditadas, licencias verificadas |
 

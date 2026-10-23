@@ -886,5 +886,83 @@
   },
   "template_slow3s": {
     "message": "Simular red lenta"
+  },
+  "action_kind": {
+    "message": "Acción"
+  },
+  "action_kind_mock": {
+    "message": "Mock"
+  },
+  "action_kind_fail": {
+    "message": "Fallar"
+  },
+  "action_kind_delay": {
+    "message": "Retrasar"
+  },
+  "action_kind_log": {
+    "message": "Solo registrar"
+  },
+  "action_kind_pause_hint": {
+    "message": "Detiene el request y lo pone en la cola para editarlo."
+  },
+  "action_kind_mock_hint": {
+    "message": "En Request responde sin tocar la red; en Response reemplaza la respuesta."
+  },
+  "action_kind_fail_hint": {
+    "message": "La página recibe un error de red."
+  },
+  "action_kind_delay_hint": {
+    "message": "El request continúa sin cambios tras el retraso; el resto del tráfico no espera."
+  },
+  "action_kind_log_hint": {
+    "message": "Continúa sin cambios y marca el intercambio en el historial."
+  },
+  "action_fail_reason": {
+    "message": "Error de red"
+  },
+  "fail_failed": {
+    "message": "Fallido"
+  },
+  "fail_aborted": {
+    "message": "Abortado"
+  },
+  "fail_timedOut": {
+    "message": "Timeout"
+  },
+  "fail_connectionRefused": {
+    "message": "Conexión rechazada"
+  },
+  "fail_nameNotResolved": {
+    "message": "Nombre no resuelto"
+  },
+  "fail_accessDenied": {
+    "message": "Acceso denegado"
+  },
+  "fail_internetDisconnected": {
+    "message": "Sin conexión"
+  },
+  "action_delay_ms": {
+    "message": "Retraso (ms)"
+  },
+  "action_delay_hint": {
+    "message": "Entre 1 y $1 ms."
+  },
+  "action_move_up": {
+    "message": "Subir"
+  },
+  "action_move_down": {
+    "message": "Bajar"
+  },
+  "action_move_up_rule": {
+    "message": "Subir la regla «$1»"
+  },
+  "action_move_down_rule": {
+    "message": "Bajar la regla «$1»"
+  },
+  "toast_rule_moved": {
+    "message": "Regla «$1» en la posición $2 de $3."
+  },
+  "action_pause_nahual": {
+    "message": "Pausar Nahual"
   }
 }

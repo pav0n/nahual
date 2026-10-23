@@ -1,12 +1,14 @@
 import { TEMPLATES, type Rule, type RuleTemplate, type TemplateId } from "@nahual/domain";
 import { useState } from "react";
 import { t } from "../../../shared/i18n.ts";
+import { ActionEditor } from "./ActionEditor.tsx";
 import { RuleEditor } from "./RuleEditor.tsx";
+import { ReorderControls } from "./ReorderControls.tsx";
 import { RuleList } from "./RuleList.tsx";
 import { emptyRuleForm, toRuleForm, type RuleForm } from "./rule-form.ts";
 
-/** Plantillas que ofrece el estado vacío (FR-018); las de mock y retraso llegan con la historia 4. */
-export const OFFERED_TEMPLATES: TemplateId[] = ["errors", "empty"];
+/** Plantillas que ofrece el estado vacío (FR-018), con la sugerida primero. */
+export const OFFERED_TEMPLATES: TemplateId[] = ["errors", "empty", "mock503", "slow3s"];
 
 /** Pestaña de reglas: lista o editor. */
 export function RulesView({ templates = OFFERED_TEMPLATES }: { templates?: TemplateId[] }) {
@@ -25,7 +27,14 @@ export function RulesView({ templates = OFFERED_TEMPLATES }: { templates?: Templ
 
   if (editing) {
     return (
-      <RuleEditor initial={editing.form} focus={editing.focus} onClose={() => setEditing(null)} />
+      <RuleEditor
+        initial={editing.form}
+        focus={editing.focus}
+        actionEditor={(form, setForm, issues) => (
+          <ActionEditor form={form} setForm={setForm} issues={issues} />
+        )}
+        onClose={() => setEditing(null)}
+      />
     );
   }
   return (
@@ -46,6 +55,9 @@ export function RulesView({ templates = OFFERED_TEMPLATES }: { templates?: Templ
           ))}
         </div>
       }
+      reorderControls={(rule, index, siteRules) => (
+        <ReorderControls rule={rule} index={index} siteRules={siteRules} />
+      )}
       onEdit={(rule: Rule) => setEditing({ form: toRuleForm(rule, true), focus: "name" })}
       onDuplicate={(rule: Rule) =>
         setEditing({

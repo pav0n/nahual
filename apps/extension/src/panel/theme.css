@@ -608,3 +608,14 @@ dialog::backdrop {
   color: var(--warn);
   font-weight: 600;
 }
+
+.action-editor {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin: 0;
+  padding: 4px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}

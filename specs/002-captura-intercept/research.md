@@ -283,6 +283,24 @@ exacta publicada hace al menos 14 días, mínimas dependencias transitivas.
   Dentro del presupuesto de 20 ms (SC-002). La corrida 2 sale por debajo de la 1 por ruido del
   fixture local; el overhead de la captura pasiva no es medible a esta escala.
 
+## R21. Mocks locales y CORS (decisión de implementación)
+
+- **Contexto**: hallado en la E2E de la historia 4. Un mock respondido con `Fetch.fulfillRequest`
+  a un request de **otro origen** no lleva headers CORS, y la página lo descarta (`Failed to
+  fetch`). Como casi todas las SPA llaman a su API en otro origen, sin esto "Simular API caída"
+  (FR-018) y la acción Mock (FR-019) no servirían.
+- **Decision**: función pura `mockHeadersFor` en `packages/domain`: si el request va a otro origen
+  que la página y el mock no define `Access-Control-Allow-Origin`, se añade
+  `Access-Control-Allow-Origin: <origen exacto de la página>` (nunca `*`) y
+  `Access-Control-Allow-Credentials: true`. Se aplica a los mocks de reglas y a los creados desde
+  la cola. Los preflight (`OPTIONS` con `Access-Control-Request-Method`) no se responden con el
+  mock: continúan sin cambios.
+- **Rationale**: el contenido del mock es sintético (lo escribió el dev), así que no expone datos
+  de ningún servidor; el origen es exacto y solo afecta a ese mock. Es distinto del modo CORS de
+  desarrollo de 003, que relaja respuestas reales del servidor.
+- **Limitación**: si el preflight de un request no simple va a una API caída, el preflight falla
+  y el mock nunca se aplica. Responder preflights localmente es alcance de 003.
+
 ## Resultados por registrar en implementación
 
 - R13/R14: tamaño final del bundle del panel antes y después de 002.

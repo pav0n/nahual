@@ -201,3 +201,28 @@ describe("RuleStore: escritura", () => {
     expect(await store.setEnabled(RULE_ID2, true)).toEqual({ ok: false, code: "unknown_rule" });
   });
 });
+
+describe("RuleStore: prioridad (FR-016)", () => {
+  it("reorderRules exige una permutación exacta del sitio y renumera order", async () => {
+    const store = await open();
+    for (const name of ["a", "b", "c"]) await store.save(draft({ name }), SITE);
+    const ids = store.forSite(SITE).map((r) => r.id);
+    const [a, b, c] = ids as [string, string, string];
+    expect(await store.reorder(SITE, [c, a, b])).toEqual({ ok: true });
+    expect(store.forSite(SITE).map((r) => [r.name, r.order])).toEqual([
+      ["c", 0],
+      ["a", 1],
+      ["b", 2],
+    ]);
+    expect(await store.reorder(SITE, [a, b])).toEqual({ ok: false, code: "unknown_rule" });
+    expect(await store.reorder(SITE, [a, b, RULE_ID2])).toEqual({
+      ok: false,
+      code: "unknown_rule",
+    });
+    expect(
+      stored()
+        .map((r) => r.order)
+        .sort(),
+    ).toEqual([0, 1, 2]);
+  });
+});
