@@ -205,7 +205,7 @@ ejemplos por framework.
 - [X] T073 Ejecutar la E2E completa 10 veces seguidas (`pnpm e2e`) registrando el nombre de cualquier prueba fallida, y anotar el resultado en `specs/003-cors-desarrollo/research.md`; si reaparece el fallo intermitente de 002, identificarlo y corregirlo o registrarlo
 - [X] T074 [P] Actualizar `README.md` con CORS de desarrollo (diagnóstico, relajación acotada, indicador, `Alt+Shift+R`, orígenes de producción, reporte) y el tercer origen de `fixture:serve`
 - [X] T075 Añadir la sección "Revisión de implementación" en `specs/003-cors-desarrollo/plan.md`: diff contra el modelo de amenazas (filas de 003), permisos (sin cambios), dependencias (ninguna), mensajería v3, redacción en diagnóstico y reporte, fallo seguro y definición de terminado por historia
-- [ ] T076 **Checkpoint final**: demo de punta a punta con los pasos 1–12 de `specs/003-cors-desarrollo/quickstart.md` en Chrome estable; `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm verify:dist && pnpm e2e` en verde; `research.md` sin "pendiente"; recordar la deuda de 001 (E5/T066, T067 y la definición de "en conflicto")
+- [X] T076 **Checkpoint final**: demo de punta a punta con los pasos 1–12 de `specs/003-cors-desarrollo/quickstart.md` en Chrome estable; `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm verify:dist && pnpm e2e` en verde; `research.md` sin "pendiente"; recordar la deuda de 001 (E5/T066, T067 y la definición de "en conflicto")
 
 ---
 
