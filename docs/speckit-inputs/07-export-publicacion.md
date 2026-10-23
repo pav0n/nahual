@@ -1,6 +1,6 @@
-# Nahual — 06 · Exportar al código, perfiles y publicación
+# Nahual — 07 · Exportar al código, perfiles y publicación
 
-> Feature `006-export-publicacion`. Depende de: `003`, `004` y `005`.
+> Feature `007-export-publicacion`. Depende de: `003`, `004` (rediseño del panel), `005` y `006`.
 > Objetivo: el diferenciador de Nahual. Llevar lo capturado al código del proyecto y publicar la extensión.
 
 ## Contexto para el agente
@@ -59,7 +59,7 @@ Criterios de éxito:
 ## `/speckit.plan`
 
 ```text
-Planifica sobre 003, 004 y 005.
+Planifica sobre 003, 004, 005 y 006.
 
 packages/domain (TDD):
 - Exportadores puros: cURL, fetch, Vitest, MSW, Zod (inferencia desde uno o varios ejemplos).

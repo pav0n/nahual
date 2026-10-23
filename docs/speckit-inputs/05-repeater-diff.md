@@ -1,6 +1,6 @@
-# Nahual — 04 · Repeater + diff
+# Nahual — 05 · Repeater + diff
 
-> Feature `004-repeater-diff`. Depende de: `002-captura-intercept` (tráfico capturado y detalle).
+> Feature `005-repeater-diff`. Depende de: `002-captura-intercept` (tráfico capturado y detalle) y `004-rediseno-panel` (sección en la barra y acciones del request).
 > Objetivo: reproducir un bug reenviando requests y ver qué cambió entre respuestas.
 
 ## Contexto para el agente

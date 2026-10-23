@@ -1,6 +1,6 @@
-# Nahual — 05 · Hooks en TypeScript
+# Nahual — 06 · Hooks en TypeScript
 
-> Feature `005-hooks-typescript`. Depende de: `002-captura-intercept` (motor de reglas y acciones).
+> Feature `006-hooks-typescript`. Depende de: `002-captura-intercept` (motor de reglas y acciones) y `004-rediseno-panel` (editor de reglas ancho y cajón de consola).
 > Objetivo: que el dev transforme tráfico con lógica propia, escrita en TypeScript con autocompletado, sin poner en riesgo el navegador.
 
 ## Contexto para el agente
