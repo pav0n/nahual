@@ -7,6 +7,13 @@ export interface FetchPattern {
   resourceType?: string;
 }
 
+/** Origen de API con una relajación CORS activa (003, research R11). */
+export interface RelaxedOrigin {
+  origin: string;
+  /** Hay preflights que redirigen: se responden en etapa Request (research R1, X5). */
+  requestStage?: boolean;
+}
+
 /** Por encima de este número de patrones, la etapa se reduce a `*` (research R3). */
 export const MAX_FETCH_PATTERNS = 50;
 
@@ -19,14 +26,17 @@ const STAGES = { request: "Request", response: "Response" } as const;
  */
 export function computeFetchPatterns(
   rules: Rule[],
-  context: { site: string | null; globalPaused: boolean },
+  context: { site: string | null; globalPaused: boolean; relaxedApiOrigins?: RelaxedOrigin[] },
 ): FetchPattern[] {
-  if (context.globalPaused || context.site === null) return [];
+  if (context.globalPaused) return [];
+  const relaxed = context.relaxedApiOrigins ?? [];
   const result: FetchPattern[] = [];
   for (const stage of ["request", "response"] as const) {
     const requestStage = STAGES[stage];
-    const active = rules.filter((r) => r.enabled && r.site === context.site && r.stage === stage);
-    if (active.length === 0) continue;
+    const active =
+      context.site === null
+        ? []
+        : rules.filter((r) => r.enabled && r.site === context.site && r.stage === stage);
     const patterns: FetchPattern[] = [];
     for (const rule of active) {
       const urlPattern = rule.prefilter.kind === "glob" ? rule.prefilter.pattern : "*";
@@ -35,6 +45,10 @@ export function computeFetchPatterns(
         for (const resourceType of rule.resourceTypes)
           patterns.push({ urlPattern, requestStage, resourceType });
     }
+    for (const { origin, requestStage: atRequest } of relaxed)
+      if (stage === "response" || atRequest)
+        patterns.push({ urlPattern: `${origin}/*`, requestStage });
+    if (patterns.length === 0) continue;
     const catchAll = patterns.some((p) => p.urlPattern === "*" && p.resourceType === undefined);
     if (catchAll) {
       result.push({ urlPattern: "*", requestStage });

@@ -30,6 +30,7 @@ function apply(list: CapturedExchange[], index: Map<string, number>, update: Exc
   if (!entry) return false;
   Object.assign(entry, update.fields);
   if (update.effect) entry.ruleEffects.push(update.effect);
+  if (update.cors) entry.cors = { ...entry.cors, ...update.cors };
   return false;
 }
 

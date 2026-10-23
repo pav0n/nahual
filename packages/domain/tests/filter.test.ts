@@ -72,3 +72,35 @@ describe("filtro de tráfico (FR-003)", () => {
     expect(run({ regex: "END$" }, ex({ url }))).toBe(false);
   });
 });
+
+describe("compileFilter: filtro CORS (003, FR-002)", () => {
+  const base = { text: "", regex: "", status: "", types: [] };
+  const plain = { url: "https://api.test/a", status: 200, resourceType: "Fetch" };
+  const blocked = { ...plain, cors: { diagnosis: { cause: "missing_allow_origin" } } };
+  const relaxed = { ...plain, cors: { relaxed: { preflightReplaced: false } } };
+  const failed = { ...plain, cors: { relaxed: { preflightReplaced: false, errorKey: "x" } } };
+
+  const matches = (cors: "all" | "blocked" | "relaxed", exchange: object) => {
+    const compiled = compileFilter({ ...base, cors });
+    if (!compiled.ok) throw new Error("filtro inválido");
+    return compiled.matches(exchange as never);
+  };
+
+  it("todos por defecto", () => {
+    const compiled = compileFilter(base);
+    expect(compiled.ok && compiled.matches(plain)).toBe(true);
+    expect(matches("all", blocked)).toBe(true);
+  });
+
+  it("bloqueados: solo los que tienen diagnóstico", () => {
+    expect(matches("blocked", blocked)).toBe(true);
+    expect(matches("blocked", plain)).toBe(false);
+    expect(matches("blocked", relaxed)).toBe(false);
+  });
+
+  it("relajados: solo los que la relajación cambió sin error", () => {
+    expect(matches("relaxed", relaxed)).toBe(true);
+    expect(matches("relaxed", failed)).toBe(false);
+    expect(matches("relaxed", blocked)).toBe(false);
+  });
+});

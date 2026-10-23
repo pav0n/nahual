@@ -12,18 +12,19 @@ describe("EnvelopeSchema", () => {
     expect(EnvelopeSchema.safeParse(msg).success).toBe(true);
   });
 
-  it("expone la versión 2", () => {
-    expect(PROTOCOL_VERSION).toBe(2);
+  it("expone la versión 3", () => {
+    expect(PROTOCOL_VERSION).toBe(3);
   });
 
   it.each([
-    ["v distinta de 2", { ...envelope("hello", {}), v: 3 }],
+    ["mensaje de v2 (002)", { ...envelope("hello", {}), v: 2 }],
+    ["v futura", { ...envelope("hello", {}), v: 4 }],
     ["mensaje de v1 (001)", { ...envelope("hello", {}), v: 1 }],
     ["id que no es UUID", { ...envelope("hello", {}), id: "abc" }],
     ["id UUID v1", { ...envelope("hello", {}), id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8" }],
     ["correlationId inválido", envelope("ack", {}, { correlationId: "x" })],
     ["campos extra", envelope("hello", {}, { extra: true })],
-    ["payload ausente", { v: 2, id: UUID, type: "hello" }],
+    ["payload ausente", { v: 3, id: UUID, type: "hello" }],
     ["type vacío", envelope("", {})],
     ["no es objeto", "hola"],
   ])("rechaza %s", (_name, msg) => {

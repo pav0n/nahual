@@ -90,3 +90,85 @@ describe("SettingsStore (contracts/storage.md)", () => {
     expect(changes.at(-1)?.autoAttach).toBe(false);
   });
 });
+
+describe("SettingsStore: CORS de desarrollo (003, research R12)", () => {
+  it("lee ajustes de 002 sin los campos nuevos con sus defaults y sin aviso", async () => {
+    storage.data.set(SETTINGS_KEY, {
+      version: 1,
+      settings: {
+        pauseTimeoutSeconds: 60,
+        globalPaused: false,
+        onboardingSeen: true,
+        attachConsent: true,
+        autoAttach: true,
+      },
+    });
+    const store = await open();
+    expect(store.get().corsDefaultDurationMinutes).toBe(480);
+    expect(store.get().productionOrigins).toEqual([]);
+    expect(store.productionListReadable()).toBe(true);
+    expect(notices).toEqual([]);
+  });
+
+  it("lista con una entrada corrupta ⇒ aviso y bloqueo hasta guardarla", async () => {
+    storage.data.set(SETTINGS_KEY, {
+      version: 1,
+      settings: { ...DEFAULT_SETTINGS, productionOrigins: ["https://*.empresa.com", "basura"] },
+    });
+    const store = await open();
+    expect(store.get().productionOrigins).toEqual(["https://*.empresa.com"]);
+    expect(store.productionListReadable()).toBe(false);
+    expect(notices).toEqual(["cors_production_list_invalid"]);
+    expect(await store.update({ globalPaused: true })).toEqual({ ok: true });
+    expect(store.productionListReadable()).toBe(false);
+    // La entrada corrupta sigue en disco: otra escritura no la descarta en silencio.
+    expect(
+      (storage.data.get(SETTINGS_KEY) as { settings: { productionOrigins: unknown } }).settings
+        .productionOrigins,
+    ).toEqual(["https://*.empresa.com", "basura"]);
+    expect(notices).toEqual(["cors_production_list_invalid"]);
+    expect(await store.update({ productionOrigins: ["https://*.empresa.com"] })).toEqual({
+      ok: true,
+    });
+    expect(store.productionListReadable()).toBe(true);
+  });
+
+  it("normaliza la lista al guardar y quita duplicados", async () => {
+    const store = await open();
+    expect(
+      await store.update({
+        productionOrigins: [
+          "https://*.Empresa.com/",
+          "https://*.empresa.com",
+          "HTTP://LOCALHOST:8080",
+        ],
+      }),
+    ).toEqual({ ok: true });
+    expect(store.get().productionOrigins).toEqual([
+      "https://*.empresa.com",
+      "http://localhost:8080",
+    ]);
+  });
+
+  it("una entrada inválida ⇒ settings_invalid con el índice y sin escribir", async () => {
+    const store = await open();
+    const result = await store.update({
+      productionOrigins: ["https://*.empresa.com", "no es un origen"],
+    });
+    expect(result).toEqual({
+      ok: false,
+      code: "settings_invalid",
+      issues: [{ path: "productionOrigins.1", messageKey: "cors_error_production_entry" }],
+    });
+    expect(storage.data.has(SETTINGS_KEY)).toBe(false);
+  });
+
+  it("duración por defecto solo 15/60/240/480", async () => {
+    const store = await open();
+    expect(await store.update({ corsDefaultDurationMinutes: 60 })).toEqual({ ok: true });
+    expect(await store.update({ corsDefaultDurationMinutes: 30 as unknown as 60 })).toMatchObject({
+      ok: false,
+      code: "settings_invalid",
+    });
+  });
+});

@@ -3,12 +3,15 @@ import type { Page } from "@playwright/test";
 import {
   attach,
   callApi,
+  corsCall,
   createRule,
   openApp,
+  openCorsDetail,
   openPanel,
   openQueue,
   pausedEditor,
   pausedOption,
+  requestRow,
   statusOf,
   tabIdOf,
   trafficRow,
@@ -190,3 +193,33 @@ test.describe("primer uso", () => {
     await expectNoSeriousViolations(panel, "tras el onboarding");
   });
 });
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`axe en la sección CORS (003, SC-008), tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.reload();
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+
+    // Historia 1: marca en la lista y detalle bloqueado, con y sin preflight observado.
+    await corsCall(app, "cors-none");
+    await expect(requestRow(panel, "/cors/none").last()).toContainText("Blocked by CORS");
+    await expectNoSeriousViolations(panel, "lista con bloqueado por CORS");
+    await openCorsDetail(panel, "/cors/none");
+    await expectNoSeriousViolations(panel, "detalle CORS bloqueado");
+    await expectNoHorizontalScroll(panel);
+    await corsCall(app, "cors-preflight-401");
+    await openCorsDetail(panel, "/cors/preflight-401");
+    await expectNoSeriousViolations(panel, "detalle CORS con preflight");
+    await expectNoHorizontalScroll(panel);
+  });
+}

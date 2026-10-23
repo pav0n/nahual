@@ -78,3 +78,63 @@ describe("computeFetchPatterns (research R3)", () => {
     ]);
   });
 });
+
+describe("computeFetchPatterns con relajaciones CORS (003, research R11)", () => {
+  const api = "http://127.0.0.1:4311";
+
+  it("añade la etapa Response por origen relajado", () => {
+    expect(computeFetchPatterns([], { ...ctx, relaxedApiOrigins: [{ origin: api }] })).toEqual([
+      { urlPattern: `${api}/*`, requestStage: "Response" },
+    ]);
+  });
+
+  it("y la etapa Request si hay preflights que redirigen (X5)", () => {
+    expect(
+      computeFetchPatterns([], {
+        ...ctx,
+        relaxedApiOrigins: [{ origin: api, requestStage: true }],
+      }),
+    ).toEqual([
+      { urlPattern: `${api}/*`, requestStage: "Request" },
+      { urlPattern: `${api}/*`, requestStage: "Response" },
+    ]);
+  });
+
+  it("un * de Response de una regla los absorbe", () => {
+    expect(
+      computeFetchPatterns([rule({ prefilter: { kind: "glob", pattern: "*" } })], {
+        ...ctx,
+        relaxedApiOrigins: [{ origin: api }],
+      }),
+    ).toEqual([{ urlPattern: "*", requestStage: "Response" }]);
+  });
+
+  it("se combinan con los de las reglas sin duplicar", () => {
+    expect(
+      computeFetchPatterns([rule()], {
+        ...ctx,
+        relaxedApiOrigins: [{ origin: api }, { origin: api }],
+      }),
+    ).toEqual([
+      { urlPattern: "*/api/*", requestStage: "Response" },
+      { urlPattern: `${api}/*`, requestStage: "Response" },
+    ]);
+  });
+
+  it("globalPaused ⇒ nada; sin sitio, las relajaciones siguen", () => {
+    expect(
+      computeFetchPatterns([], {
+        ...ctx,
+        globalPaused: true,
+        relaxedApiOrigins: [{ origin: api }],
+      }),
+    ).toEqual([]);
+    expect(
+      computeFetchPatterns([rule()], {
+        site: null,
+        globalPaused: false,
+        relaxedApiOrigins: [{ origin: api }],
+      }),
+    ).toEqual([{ urlPattern: `${api}/*`, requestStage: "Response" }]);
+  });
+});

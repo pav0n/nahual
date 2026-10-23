@@ -192,3 +192,31 @@ export async function attachAndReload(panel: Page, app: Page) {
   await attach(panel);
   await app.reload();
 }
+
+export interface CorsCallResult {
+  id: string;
+  status?: number;
+  total?: string | null;
+  body?: string;
+  error?: string;
+}
+
+/** Llama a una ruta CORS de la SPA de prueba (servers.ts, 003). */
+export function corsCall(app: Page, id: string) {
+  return app.evaluate(
+    (callId) =>
+      (window as unknown as { corsCall(id: string): Promise<CorsCallResult> }).corsCall(callId),
+    id,
+  );
+}
+
+/** Fila de la lista con esa ruta que no es un preflight (la fila empieza por el método). */
+export const requestRow = (panel: Page, path: string) =>
+  trafficRow(panel, path).filter({ hasNotText: /^OPTIONS/ });
+
+/** Abre el detalle de la última fila (no preflight) con esa ruta. */
+export async function openCorsDetail(panel: Page, path: string) {
+  await requestRow(panel, path).last().click();
+  await expect(panel.locator(".detail h2")).toContainText(path);
+  return panel.locator(".detail .cors");
+}

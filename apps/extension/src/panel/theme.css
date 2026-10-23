@@ -396,6 +396,50 @@ kbd {
   font-size: 11px;
 }
 
+.tag-cors {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.tag-relaxed {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.cors {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cors h3,
+.cors h4 {
+  margin: 0;
+}
+
+.cors p {
+  margin: 0;
+}
+
+.cors-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cors-columns > div {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.cors-diff {
+  font-family: var(--mono, monospace);
+  overflow-wrap: anywhere;
+}
+
 .detail {
   display: flex;
   flex-direction: column;

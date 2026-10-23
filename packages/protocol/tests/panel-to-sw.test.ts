@@ -7,7 +7,7 @@ const ok = (type: string, payload: unknown) =>
 const bad = (type: string, payload: unknown) =>
   expect(PanelMessageSchema.safeParse(envelope(type, payload)).success).toBe(false);
 
-describe("PanelMessageSchema v2", () => {
+describe("PanelMessageSchema (comandos de 002)", () => {
   it("hello { tabId: int ≥ 0 }", () => {
     ok("hello", { tabId: 0 });
     bad("hello", { tabId: -1 });
@@ -84,5 +84,46 @@ describe("PanelMessageSchema v2", () => {
 
   it("rechaza type desconocido", () => {
     bad("evalCode", {});
+  });
+});
+
+describe("PanelMessageSchema v3 (003, contracts/panel-protocol.md)", () => {
+  const relax = {
+    appOrigin: "http://localhost:3000",
+    apiOrigin: "https://api-dev.empresa.com",
+    durationMinutes: 480,
+    exposeHeaders: ["x-total"],
+    credentials: true,
+  };
+
+  it("relaxCors con duración 15/60/240/480 y ≤ 30 Expose-Headers", () => {
+    ok("relaxCors", relax);
+    for (const durationMinutes of [15, 60, 240]) ok("relaxCors", { ...relax, durationMinutes });
+    bad("relaxCors", { ...relax, durationMinutes: 600 });
+    bad("relaxCors", { ...relax, exposeHeaders: Array.from({ length: 31 }, (_, i) => `x-${i}`) });
+    bad("relaxCors", { ...relax, exposeHeaders: ["*"] });
+    bad("relaxCors", { ...relax, tabId: 3 });
+    bad("relaxCors", { ...relax, credentials: undefined });
+  });
+
+  it("relaxCors deja al SW validar los orígenes (issues por campo)", () => {
+    ok("relaxCors", { ...relax, appOrigin: "null" });
+    bad("relaxCors", { ...relax, appOrigin: "x".repeat(300) });
+  });
+
+  it("endRelaxation con id opcional", () => {
+    ok("endRelaxation", {});
+    ok("endRelaxation", { relaxationId: UUID });
+    bad("endRelaxation", { relaxationId: "x" });
+  });
+
+  it("updateSettings acepta los campos de CORS; la lista la valida el SW", () => {
+    ok("updateSettings", { corsDefaultDurationMinutes: 60 });
+    bad("updateSettings", { corsDefaultDurationMinutes: 30 });
+    ok("updateSettings", { productionOrigins: ["https://*.empresa.com", "no es un origen"] });
+    bad("updateSettings", {
+      productionOrigins: Array.from({ length: 101 }, (_, i) => `https://a${i}.test`),
+    });
+    bad("updateSettings", { productionOrigins: ["x".repeat(300)] });
   });
 });

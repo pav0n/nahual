@@ -4,6 +4,7 @@ import { createActionExecutor } from "./action-executor.ts";
 import { createDebuggerManager } from "./debugger-manager.ts";
 import type { DebuggerPort } from "./debugger-port.ts";
 import { createFetchInterceptor } from "./fetch-interceptor.ts";
+import { createFrameOrigins } from "./frame-origins.ts";
 import { createNetworkCapture } from "./network-capture.ts";
 import {
   createPanelPort,
@@ -34,6 +35,7 @@ export interface BackgroundDeps {
 export function createBackground(deps: BackgroundDeps) {
   const { debugger: cdp } = deps;
   const registry = createSessionRegistry(deps.sessionStorage);
+  const frames = createFrameOrigins({ debugger: cdp });
 
   const attachedTabs = () => port.tabs().filter((tabId) => manager.isAttached(tabId));
 
@@ -50,6 +52,7 @@ export function createBackground(deps: BackgroundDeps) {
         activeRuleCount: rules.forSite(site).filter((r) => r.enabled).length,
         queueSize: engine.queueSize(tabId),
         globalPaused: settings.get().globalPaused,
+        relaxationCount: 0,
       }),
     );
   };
@@ -99,6 +102,7 @@ export function createBackground(deps: BackgroundDeps) {
   const capture = createNetworkCapture({
     debugger: cdp,
     onUpdates: (tabId, updates) => port.send(tabId, makeEvent("exchanges", { updates })),
+    frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
   });
 
   const engine = createRuleEngine({
@@ -126,9 +130,11 @@ export function createBackground(deps: BackgroundDeps) {
       engine.sessionEnded(tabId);
       interceptor.sessionEnded(tabId);
       capture.sessionEnded(tabId);
+      frames.sessionEnded(tabId);
       sendState(tabId);
     },
     onAttached: (tabId) => {
+      void frames.seed(tabId);
       applyPatterns(tabId);
       sendState(tabId);
     },
@@ -177,6 +183,10 @@ export function createBackground(deps: BackgroundDeps) {
       case "continueAll":
         await engine.continueAll(tabId);
         return { ok: true };
+      case "relaxCors":
+      case "endRelaxation":
+        // Se cablean con el CorsRelaxer (T048).
+        return { ok: false, code: "relaxation_invalid" };
       case "getBody": {
         const { exchangeId, side } = command.payload;
         const body = await capture.getBody(tabId, exchangeId, side);
@@ -216,5 +226,5 @@ export function createBackground(deps: BackgroundDeps) {
     },
   });
 
-  return { ready, manager, settings, rules, engine, attachedTabs };
+  return { ready, manager, settings, rules, engine, frames, attachedTabs };
 }

@@ -1,7 +1,10 @@
 import {
   LIMITS,
   MAX_BODY_BYTES,
+  classifyCorsFailure,
   decodeBody,
+  parseOrigin,
+  type CorsDiagnosis,
   isTextualContentType,
   utf8ByteLength,
   type BodyInfo,
@@ -24,6 +27,10 @@ export interface NetworkCaptureOptions {
   /** Agrupación de updates (research R11). */
   batchMs?: number;
   maxBatch?: number;
+  /** Origen del frame que hizo el request (003, research R4). */
+  frameOriginOf?(tabId: number, frameId: string | undefined): string | null;
+  /** Un request se bloqueó por CORS (003): el CorsRelaxer aprende credenciales (research R5). */
+  onCorsFailure?(tabId: number, exchangeId: string, diagnosis: CorsDiagnosis): void;
 }
 
 export interface NetworkCapture {
@@ -55,6 +62,15 @@ interface Entry {
   hasRequestBody: boolean;
   extraRequestHeaders: Header[] | null;
   extraResponseHeaders: Header[] | null;
+  // 003: datos para el diagnóstico CORS.
+  method?: string;
+  url?: string;
+  requestHeaders?: Header[];
+  responseHeaders?: Header[];
+  appOrigin?: string | null;
+  /** En un request: su preflight observado. En un preflight: `Access-Control-Request-Headers`. */
+  preflightId?: string;
+  requestedHeaders?: string | undefined;
 }
 
 interface Tab {
@@ -180,10 +196,11 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     entry.status = response.status;
     entry.mimeType = response.mimeType ?? null;
     entry.contentType = headerValue(response.headers, "content-type");
+    entry.responseHeaders = entry.extraResponseHeaders ?? toHeaderList(response.headers);
     const fields: Partial<ExchangeFields> = {
       status: response.status,
       mimeType: entry.mimeType,
-      responseHeaders: entry.extraResponseHeaders ?? toHeaderList(response.headers),
+      responseHeaders: entry.responseHeaders,
     };
     push(tabId, { id: entry.id, kind: "response", fields });
   };
@@ -197,6 +214,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       wallTime?: number;
       request: CdpRequest;
       redirectResponse?: CdpResponse;
+      frameId?: string;
+      initiator?: { type?: string; requestId?: string };
     },
   ) => {
     const tab = tabOf(tabId);
@@ -242,6 +261,21 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     const isPreflight =
       method.toUpperCase() === "OPTIONS" &&
       headerValue(request.headers, "access-control-request-method") !== null;
+    entry.method = method;
+    entry.url = request.url;
+    entry.requestHeaders = toHeaderList(request.headers);
+    entry.appOrigin = options.frameOriginOf?.(tabId, event.frameId) ?? null;
+    // El preflight llega por Network con el request real como iniciador (research R6, X2).
+    let preflightFor: string | undefined;
+    if (isPreflight && event.initiator?.type === "preflight" && event.initiator.requestId) {
+      const owner = currentEntry(tabId, event.initiator.requestId);
+      if (owner) {
+        owner.preflightId = id;
+        preflightFor = owner.id;
+      }
+      entry.requestedHeaders =
+        headerValue(request.headers, "access-control-request-headers") ?? undefined;
+    }
     push(tabId, {
       id,
       kind: "start",
@@ -251,6 +285,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         ...truncateUrl(request.url),
         resourceType: (event.type ?? "Other").slice(0, 64),
         isPreflight,
+        ...(preflightFor !== undefined ? { preflightFor } : {}),
+        appOrigin: entry.appOrigin,
         requestHeaders: entry.extraRequestHeaders ?? toHeaderList(request.headers),
         responseHeaders: [],
         status: null,
@@ -269,6 +305,40 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         responseBody: { available: false, size: null, reason: "pending" },
       },
     });
+  };
+
+  const diagnose = (
+    tabId: number,
+    entry: Entry,
+    status: { corsError: string; failedParameter?: string },
+  ) => {
+    const requestHeaders = entry.extraRequestHeaders ?? entry.requestHeaders ?? [];
+    const originHeader = requestHeaders.find((h) => h.name.toLowerCase() === "origin")?.value;
+    const preflight = entry.preflightId
+      ? tabs.get(tabId)?.entries.get(entry.preflightId)
+      : undefined;
+    const diagnosis = classifyCorsFailure({
+      corsError: status.corsError,
+      failedParameter: status.failedParameter ?? "",
+      method: entry.method ?? "GET",
+      url: entry.url ?? "",
+      appOrigin: entry.appOrigin ?? (originHeader ? parseOrigin(originHeader) : null),
+      requestHeaders,
+      responseStatus: entry.status,
+      responseHeaders: entry.responseHeaders ?? [],
+      preflight: preflight
+        ? {
+            exchangeId: preflight.id,
+            status: preflight.status,
+            headers: preflight.responseHeaders ?? [],
+            ...(preflight.requestedHeaders !== undefined
+              ? { requestedHeaders: preflight.requestedHeaders }
+              : {}),
+          }
+        : null,
+    });
+    push(tabId, { id: entry.id, kind: "cors", fields: {}, cors: { diagnosis } });
+    options.onCorsFailure?.(tabId, entry.id, diagnosis);
   };
 
   cdp.onEvent((tabId, method, params) => {
@@ -320,10 +390,18 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         return;
       }
       case "Network.responseReceivedExtraInfo": {
-        const event = params as { requestId: string; headers: Record<string, string> };
+        const event = params as {
+          requestId: string;
+          headers: Record<string, string>;
+          statusCode?: number;
+        };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
         entry.extraResponseHeaders = toHeaderList(event.headers);
+        // Una respuesta bloqueada por CORS no emite responseReceived: el diagnóstico sale de aquí.
+        entry.responseHeaders = entry.extraResponseHeaders;
+        if (entry.status === null && typeof event.statusCode === "number")
+          entry.status = event.statusCode;
         entry.contentType ??= headerValue(event.headers, "content-type");
         push(tabId, {
           id: entry.id,
@@ -356,7 +434,12 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         return;
       }
       case "Network.loadingFailed": {
-        const event = params as { requestId: string; timestamp: number; errorText: string };
+        const event = params as {
+          requestId: string;
+          timestamp: number;
+          errorText: string;
+          corsErrorStatus?: { corsError: string; failedParameter?: string };
+        };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
         push(tabId, {
@@ -369,6 +452,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
             responseBody: { available: false, size: null, reason: "none" },
           },
         });
+        // Solo `corsErrorStatus` dice que es CORS; `blockedReason` es otra cosa (research R3).
+        if (event.corsErrorStatus) diagnose(tabId, entry, event.corsErrorStatus);
         return;
       }
       default:

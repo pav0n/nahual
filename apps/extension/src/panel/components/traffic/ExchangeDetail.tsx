@@ -4,6 +4,7 @@ import { t } from "../../../shared/i18n.ts";
 import { formatBytes, formatDuration, formatStatus } from "../../format.ts";
 import { TabPanel, Tabs } from "../common/Tabs.tsx";
 import { BodyView } from "./BodyView.tsx";
+import { CorsSection } from "./CorsSection.tsx";
 import { HeaderList } from "./HeaderList.tsx";
 
 type DetailTab = "headers" | "request" | "response";
@@ -12,9 +13,14 @@ const PREFIX = "detail";
 /** Detalle de un intercambio (FR-004): resumen, headers y bodies de request y response. */
 export function ExchangeDetail({
   exchange,
+  relatedId = null,
+  onOpen,
   onClose,
 }: {
   exchange: CapturedExchange;
+  /** Preflight de un request o request de un preflight (FR-006). */
+  relatedId?: string | null;
+  onOpen?(id: string): void;
   onClose(): void;
 }) {
   const [tab, setTab] = useState<DetailTab>("headers");
@@ -80,6 +86,7 @@ export function ExchangeDetail({
           ))}
         </ul>
       ) : null}
+      <CorsSection exchange={exchange} relatedId={relatedId} onOpen={(id) => onOpen?.(id)} />
       <Tabs<DetailTab>
         idPrefix={PREFIX}
         label={t("detail_tabs_label")}

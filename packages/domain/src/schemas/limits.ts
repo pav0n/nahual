@@ -32,6 +32,15 @@ export const LIMITS = {
   pauseTimeoutDefault: 60,
   /** Texto evaluado por una regex o comparación (research R19). */
   evalTextMax: 8192,
+  // CORS de desarrollo (003, data-model).
+  originMax: 256,
+  relaxationsPerTab: 10,
+  productionOriginsMax: 100,
+  exposeHeadersMax: 30,
+  requestedHeadersMax: 50,
+  corsHeaderNameMax: 128,
+  redirectingPreflightsMax: 50,
+  reportEndpointsMax: 50,
 } as const;
 
 /** Token HTTP (RFC 9110, sección 5.6.2). */

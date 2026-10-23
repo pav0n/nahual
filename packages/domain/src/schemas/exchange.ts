@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { HeaderSchema, StageSchema } from "./common.ts";
 import { LIMITS } from "./limits.ts";
+import { CorsDiagnosisSchema, CorsRelaxedInfoSchema } from "../cors/schemas.ts";
 
 /** Por qué un body no se muestra o no se evalúa (FR-004, FR-012). */
 export const BODY_UNAVAILABLE_REASONS = [
@@ -82,19 +83,32 @@ export const ExchangeFieldsSchema = z.strictObject({
   mimeType: z.string().max(256).nullable(),
   requestBody: BodyInfoSchema,
   responseBody: BodyInfoSchema,
+  /** En un preflight: id del intercambio del request real (`initiator.requestId`, research R6). */
+  preflightFor: z.string().max(256).optional(),
+  /** Origen del frame que hizo el request (003, research R4). */
+  appOrigin: z.string().max(LIMITS.originMax).nullable().optional(),
 });
 export type ExchangeFields = z.infer<typeof ExchangeFieldsSchema>;
+
+/** Información CORS de un intercambio (003): diagnóstico del bloqueo y lo que cambió la relajación. */
+export const ExchangeCorsSchema = z.strictObject({
+  diagnosis: CorsDiagnosisSchema.optional(),
+  relaxed: CorsRelaxedInfoSchema.optional(),
+});
+export type ExchangeCors = z.infer<typeof ExchangeCorsSchema>;
 
 export const CapturedExchangeSchema = ExchangeFieldsSchema.extend({
   id: z.string().min(1).max(256),
   ruleEffects: z.array(RuleEffectSchema).max(4),
+  cors: ExchangeCorsSchema.optional(),
 });
 export type CapturedExchange = z.infer<typeof CapturedExchangeSchema>;
 
 export const ExchangeUpdateSchema = z.strictObject({
   id: z.string().min(1).max(256),
-  kind: z.enum(["start", "response", "headers", "finish", "fail", "effect"]),
+  kind: z.enum(["start", "response", "headers", "finish", "fail", "effect", "cors"]),
   fields: ExchangeFieldsSchema.partial(),
   effect: RuleEffectSchema.optional(),
+  cors: ExchangeCorsSchema.optional(),
 });
 export type ExchangeUpdate = z.infer<typeof ExchangeUpdateSchema>;

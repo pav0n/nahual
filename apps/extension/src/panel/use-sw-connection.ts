@@ -10,9 +10,10 @@ export function useSwConnection(tabId: number | null): void {
     if (tabId === null) return;
     sw.connect(tabId, {
       onEvent: dispatchSwEvent,
-      onConnected: () => {
+      onConnected: (reconnected) => {
         // El estado anterior puede ser de antes de un reinicio del SW: se espera el nuevo.
         usePanelStore.getState().setSession(null);
+        if (reconnected) usePanelStore.getState().beginReconnect();
         autoAttach.connected();
       },
     });

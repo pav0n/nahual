@@ -147,6 +147,12 @@ export function TrafficGrid({ exchanges, selectedId, onOpen }: Props) {
                     </span>
                   </span>
                 ) : null}
+                {exchange.cors?.diagnosis ? (
+                  <span className="tag tag-cors">
+                    <span aria-hidden="true">⊘ </span>
+                    {t("traffic_cors_blocked")}
+                  </span>
+                ) : null}
                 {exchange.isPreflight ? (
                   <span className="tag">{t("traffic_preflight")}</span>
                 ) : null}

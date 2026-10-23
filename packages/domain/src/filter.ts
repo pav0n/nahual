@@ -9,12 +9,16 @@ export interface FilterInput {
   status: string;
   /** Tipos de recurso; vacío = todos. */
   types: string[];
+  /** Intercambios bloqueados por CORS o relajados por Nahual (003, FR-002). */
+  cors?: "all" | "blocked" | "relaxed" | undefined;
 }
 
 export interface FilterableExchange {
   url: string;
   status: number | null;
   resourceType: string;
+  cors?:
+    { diagnosis?: unknown; relaxed?: { errorKey?: string | undefined } | undefined } | undefined;
 }
 
 export type CompiledFilter =
@@ -61,6 +65,7 @@ export function compileFilter(input: FilterInput): CompiledFilter {
   const statusTests = parseStatus(input.status);
   if (statusTests === null) return { ok: false, field: "status" };
   const types = new Set(input.types);
+  const cors = input.cors ?? "all";
 
   return {
     ok: true,
@@ -71,6 +76,9 @@ export function compileFilter(input: FilterInput): CompiledFilter {
         const { status } = exchange;
         if (status === null || !statusTests.some((test) => test(status))) return false;
       }
+      if (cors === "blocked" && !exchange.cors?.diagnosis) return false;
+      if (cors === "relaxed" && (!exchange.cors?.relaxed || exchange.cors.relaxed.errorKey))
+        return false;
       return types.size === 0 || types.has(exchange.resourceType);
     },
   };
