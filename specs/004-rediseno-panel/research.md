@@ -15,7 +15,7 @@ diseño tiene respaldo para cualquier resultado.
   `ChromeDevTools/devtools-frontend`, licencia BSD), **resueltos y medidos en Chrome estable** con
   el experimento D1. Se copian valores, no código. Se replican como variables CSS propias en
   `theme.css` con el prefijo `--nh-`, en dos bloques (claro y oscuro).
-- **Valores de partida** (a confirmar en D1):
+- **Valores medidos** (D1, Chrome 156, 2026-10-23):
 
   | Token propio | Uso | Claro | Oscuro | Origen |
   |---|---|---|---|---|
@@ -23,21 +23,25 @@ diseño tiene respaldo para cualquier resultado.
   | `--nh-bar` | Barras, cabeceras, encabezado de tabla | `#f1f3f4` | `#292a2d` | `--color-background-elevation-1` |
   | `--nh-bar-2` | Hover de barra, pestaña activa del detalle | `#dee1e6` | `#35363a` | `--color-background-elevation-2` |
   | `--nh-divider` | Separadores de filas y paneles | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 10%)` | `--divider-line` |
-  | `--nh-input-border` | Bordes de campos y botones | `#cacdd1` | `#5f6368` | `--input-outline` |
+  | `--nh-input-border` | Bordes de campos y botones | `#cacdd1` (medido) ⇒ **`#80868b`** | `#cacdd1` (medido) ⇒ **`#80868b`** | `--input-outline` (desvío: ver abajo) |
   | `--nh-text` | Texto | `#202124` | `#e8eaed` | `--color-text-primary` |
   | `--nh-text-2` | Texto secundario (host, contadores) | `#5f6368` | `#9aa0a6` | `--color-text-secondary` |
-  | `--nh-selected` | Fila seleccionada con foco | por medir (D1) | por medir (D1) | `--sys-color-tonal-container` |
-  | `--nh-selected-inactive` | Fila seleccionada sin foco | por medir (D1) | por medir (D1) | `--sys-color-surface-variant` |
-  | `--nh-focus` | Anillo de foco | por medir (D1) | por medir (D1) | `--sys-color-state-focus-ring` |
+  | `--nh-selected` | Fila seleccionada con foco | `#d3e3fd` | `#004a77` | `--sys-color-tonal-container` |
+  | `--nh-selected-inactive` | Fila seleccionada sin foco | `#e1e3e1` | `#444746` | `--sys-color-surface-variant` |
+  | `--nh-focus` | Anillo de foco | `#0b57d0` | `#a8c7fa` | `--sys-color-state-focus-ring` |
 
-- **Tipografía y medidas** (D1): familia del sistema como DevTools (`system-ui` con las mismas
-  alternativas por plataforma), 12 px de texto base, 11 px en contadores, alto de fila de la lista
-  y de las barras igual al de Network, iconos de 16 px con trazo de 1,5 px.
+- **Tipografía y medidas** (D1): la familia de DevTools (`"Google Sans Text", "Google Sans",
+  system-ui, sans-serif`), 12 px de texto base, 11 px en contadores, fila de la lista de 21 px y
+  barra de 26 px como Network, iconos en una caja de 20 px como los de la barra de Network (el
+  plan decía 16 px; D1 midió 20 px y se sigue la medida), dibujados como línea de 1,5 px.
 - **Desvíos deliberados** (permitidos por SC-006 si se documentan): error y aviso **no** usan los
   tokens de DevTools (`--color-error-text` es `#f00` sobre blanco, contraste 4,0:1, falla WCAG AA
   para texto). Se conservan los de 002/003 (`#b3261e` / `#f28b82`; `#8a4b00` / `#fdd663`), que
   pasan 4,5:1. Igual con cualquier token medido en D1 que no llegue a 4,5:1 en texto o 3:1 en
   bordes de controles: se oscurece lo mínimo y se anota aquí.
+  - **`--input-outline`** mide `#cacdd1` en ambos temas: 1,5:1 sobre blanco, falla 3:1 (WCAG
+    1.4.11) para el borde de un campo. Se usa `#80868b` (3,7:1 sobre `#ffffff`, 4,5:1 sobre
+    `#202124`). Los separadores (`--divider-line`) no delimitan controles y se copian tal cual.
 - **Rationale**: el panel es un iframe de extensión y no hereda las variables de DevTools (no hay
   API para leerlas); copiar los valores es la única forma de igualar el aspecto (FR-003). Usar
   los nombres de los tokens de origen hace trazable cada valor cuando DevTools cambie.
@@ -52,7 +56,7 @@ abre Chrome con DevTools desacoplado y, a través del destino `devtools://` que 
 los valores calculados de los tokens de la tabla, la fuente y el alto de fila del panel Network
 en ambos temas. Si Chrome no permite inspeccionar ese destino desde Playwright, el respaldo es
 manual: DevTools sobre DevTools (`Ctrl+Shift+I` en la ventana desacoplada) y copiar los valores
-calculados. Los resultados reemplazan "por medir" en la tabla.
+calculados. Los resultados se copian a la tabla.
 
 ---
 
@@ -291,5 +295,16 @@ Escape sigue cerrando el diálogo de Nahual (patrón APG) y se documenta el efec
 
 ## Resultados
 
-- **D1**: por registrar al inicio de la implementación; reemplaza los "por medir" de R1.
-- **D2**: por registrar al inicio de la implementación.
+- **D1** (2026-10-23, Chromium 156 headless con `--auto-open-devtools-for-tabs`, experimento
+  automático `e2e/experiments/d1-devtools-tokens.spec.ts`): Chrome expone el destino
+  `devtools://` a CDP y los tokens se leen con `getComputedStyle`. Valores en la tabla de R1.
+  Fuente `"Google Sans Text", "Google Sans", system-ui, sans-serif` a 12 px; fila de la tabla de
+  Network 21 px; barra de herramientas 26 px; iconos de la barra en cajas de 20 × 20 px. Desvío
+  anotado: borde de campos (`--input-outline`).
+- **D2** (2026-10-23, mismo navegador, experimento automático `e2e/experiments/d2-escape.spec.ts`
+  con el panel real abierto en DevTools con `Ctrl+[`): con un `<dialog>` modal abierto en el panel
+  y el foco dentro, **Escape abre también el cajón de la consola de DevTools** (alto 0 ⇒ 199 px) y
+  el diálogo no llega a cerrarse. Con un `keydown` en fase de captura en `window` que hace
+  `stopPropagation()` para Escape, el cajón no cambia y el diálogo se cierra con su `cancel`
+  nativo. Decisión: `Dialog` y `Menu` detienen la propagación de Escape en captura mientras están
+  abiertos; fuera de ellos Escape sigue siendo de DevTools (R12).
