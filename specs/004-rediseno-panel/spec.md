@@ -13,6 +13,30 @@ visualmente con DevTools y deje lugar a las features 005–007." Entrada complet
 por el usuario: https://claude.ai/artifact/NigD1YaXVAwL9k8fKpdWXE (guía de estructura e
 interacción, no de píxeles; la referencia visual es DevTools).
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: ¿Los requests pausados siguen con sección propia (Pausados) o pasan a ser solo un filtro de
+  Tráfico? → A: Sección propia siempre visible **y** marcados y editables en Tráfico; la barra
+  queda con 3 secciones (4 con el repeater de 005).
+- Q: ¿Ajustes guarda cada cambio solo o con un botón "Guardar"? → A: Cada campo se guarda solo al
+  confirmarlo (salir del campo, Enter, o al cambiar un interruptor o una lista); uno inválido no
+  se guarda y muestra su error. Cerrar el diálogo nunca pide confirmación.
+- Q: ¿Qué pasa al hacer clic en el estado de la sesión de la barra superior? → A: Abre un menú
+  corto con el estado, la causa si hay error y la acción (Soltar, Adjuntar o Reconectar); el
+  atajo `Alt+Shift+A` sigue actuando directo.
+- Q: ¿Cómo se ordenan y muestran las columnas de la lista de Tráfico? → A: Nombre primero (ruta
+  completa en monoespaciada y host en gris, con las marcas CORS, pausado y preflight junto al
+  nombre), luego Método, Estado, Tipo, Tamaño y Tiempo.
+- Q: ¿Quién valida que el panel se entiende sin explicación previa (SC-005)? → A: Al menos 1 dev
+  que usa DevTools a diario (puede ser el usuario) en la demo de cierre, más los que haya
+  disponibles; los tiempos de cada tarea se registran.
+- Q: ¿Dónde y cómo se muestran los avisos y errores del sistema (lista de producción ilegible,
+  relajaciones terminadas por reinicio, ajustes restablecidos, comando fallido)? → A: En la
+  franja de indicadores, una línea por aviso con causa, solución y botón para cerrarlo; se quedan
+  hasta que el dev los cierra; con más de 2 se agrupan en "N avisos" desplegable.
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Glosario: **panel nativo** = cualquier panel propio de DevTools (Network, Elements, Console…);
@@ -44,7 +68,8 @@ redimensionar lista y detalle con el ratón y con el teclado.
    cambia de tema sin recargarse y sin perder la selección ni lo que estaba escribiendo.
 3. **Given** la lista de tráfico, **When** el dev abre el detalle de un request, **Then** el
    detalle aparece a un lado de la lista, separado por un divisor, y la lista oculta sus columnas
-   secundarias (tipo, tamaño, tiempo) como hace Network.
+   secundarias (tipo, tamaño, tiempo) como hace Network; la columna Nombre, primera como en
+   Network, sigue mostrando la ruta y el host.
 4. **Given** el detalle abierto, **When** el dev arrastra el divisor o lo enfoca y usa las flechas,
    **Then** cambia el reparto de ancho; al reabrir el panel se conserva el último reparto.
 5. **Given** el panel a menos del ancho mínimo para dos columnas, **When** el dev abre un detalle,
@@ -74,8 +99,9 @@ indicadores.
 
 1. **Given** el panel abierto, **When** el dev lo mira, **Then** ve una sola barra superior: a la
    izquierda las secciones Tráfico, Reglas y Pausados con sus contadores (reglas activas, requests
-   pausados); a la derecha el estado de la sesión (adjunto o no y el sitio, que también sirve para
-   adjuntar o soltar), "Pausar Nahual", Ajustes y Ayuda; y no hay un título "Nahual" repetido.
+   pausados); a la derecha el estado de la sesión (adjunto o no y el sitio; al pulsarlo abre un
+   menú con la acción Soltar, Adjuntar o Reconectar), "Pausar Nahual", Ajustes y Ayuda; y no hay
+   un título "Nahual" repetido.
 2. **Given** Nahual en pausa o una relajación CORS activa, **When** el dev mira el panel, **Then**
    cada estado ocupa una sola línea bajo la barra con su acción (Reanudar, Apagar y cuenta
    regresiva); sin esos estados la línea no existe.
@@ -87,7 +113,8 @@ indicadores.
    no se guarda y el campo explica el rango permitido.
 5. **Given** una regla que pausa un request, **When** el request se pausa, **Then** aparece marcado
    como pausado en la lista de Tráfico y, al seleccionarlo, su detalle abre en "Editar" con las
-   acciones Continuar, Responder con mock y Fallar, y el tiempo que le queda.
+   acciones de 002 (Continuar sin cambios, Continuar con cambios, Responder con mock y Fallar) y
+   el tiempo que le queda.
 6. **Given** varios requests pausados, **When** el dev abre la sección Pausados, **Then** puede
    atenderlos uno tras otro y "Continuar todos" sigue disponible.
 7. **Given** un request bloqueado por CORS, **When** el dev lo selecciona, **Then** su detalle abre
@@ -163,6 +190,8 @@ visible.
 - **2,000 entradas**: la lista conserva el desplazamiento fluido y el filtrado bajo 300 ms con el
   detalle abierto y con varias filas seleccionadas.
 - **Cambio de tema con diálogos o menús abiertos**: cambian de tema sin cerrarse.
+- **Varios avisos a la vez** (por ejemplo, tras reiniciar el service worker con la lista de
+  producción ilegible): se agrupan en "N avisos"; cerrar uno no cierra los demás.
 - **Ajustes abierto mientras llega tráfico o se pausa un request**: los contadores de la barra se
   actualizan detrás del diálogo; al cerrarlo, el foco vuelve al botón de Ajustes.
 - **Request seleccionado que desaparece** (limpiar la lista, tope de 2,000): el detalle se cierra y
@@ -173,10 +202,13 @@ visible.
   está disponible, "Permitir CORS" no.
 - **Divisor llevado al extremo**: ni la lista ni el detalle bajan de un ancho mínimo usable; el
   reparto recordado se ajusta si el panel ahora es más angosto.
+- **Crear regla con otro borrador sin guardar**: se pide confirmación antes de reemplazarlo;
+  cancelar conserva el borrador anterior y deja al dev en Reglas.
 - **Clic derecho en una zona sin fila**: no abre el menú de acciones; el navegador tampoco muestra
   su menú propio sobre la lista.
 - **Atajos**: ningún atajo nuevo choca con los existentes (`Alt+Shift+A`, `Alt+Shift+C`,
-  `Alt+Shift+K`, `Alt+Shift+P`, `Alt+Shift+R`, `/`) ni con los de DevTools.
+  `Alt+Shift+K`, `Alt+Shift+P`, `Alt+Shift+R`, `Alt+Shift+F`, `/`, `Alt+↑`, `Alt+↓`) ni con los
+  de DevTools.
 
 ## Requirements *(mandatory)*
 
@@ -204,13 +236,17 @@ visible.
 - **FR-006**: Lista y detalle MUST mostrarse lado a lado, separados por un divisor que se arrastra
   con el ratón y se mueve con las flechas del teclado; el reparto MUST recordarse entre aperturas
   del panel.
-- **FR-007**: Con el detalle abierto, la lista de tráfico MUST ocultar las columnas tipo, tamaño y
-  tiempo y conservar nombre, método y estado.
+- **FR-007**: La lista de tráfico MUST mostrar las columnas en este orden: Nombre (ruta completa
+  con query en monoespaciada, host en texto secundario y, junto al nombre, las marcas "Bloqueado
+  por CORS", "pausado" y "preflight"; la URL completa en la indicación emergente), Método, Estado,
+  Tipo, Tamaño y Tiempo. Con el detalle abierto MUST ocultar Tipo, Tamaño y Tiempo y conservar
+  Nombre, Método y Estado.
 - **FR-008**: Por debajo del ancho mínimo para dos columnas, el detalle MUST mostrarse debajo de la
   lista.
 - **FR-009**: Los filtros de tráfico MUST caber en una fila a 800 px o más y en no más de dos a 320
   px: búsqueda con alternador de expresión regular, tipos como botones de selección compactos,
-  "Bloqueados por CORS", contador de resultados y limpiar la lista. Conservan el comportamiento de
+  filtro de estado compacto (como `4xx, 500`), "Bloqueados por CORS", contador de resultados y
+  limpiar la lista. Conservan el comportamiento de
   002 y 003 (regex inválida conserva el filtro anterior, `/` enfoca la búsqueda).
 
 **Estructura (US2)**
@@ -221,21 +257,33 @@ visible.
 - **FR-011**: Las secciones MUST mostrar contadores: Reglas, las reglas activas; Pausados, los
   requests pausados (resaltado cuando es mayor que 0). Un contador en 0 no se muestra.
 - **FR-012**: El estado de la sesión MUST mostrar con texto e icono (no solo color) si Nahual está
-  adjunto, el sitio y la causa cuando no lo está, y MUST permitir adjuntar, soltar o reconectar
-  desde ahí, con el atajo `Alt+Shift+A` indicado.
+  adjunto y el sitio, y señalar cuando hay una causa de error. Un clic (o Enter) sobre el estado
+  MUST abrir un menú corto con el estado, la causa y su solución si la hay, y la acción que
+  corresponde (Soltar, Adjuntar o Reconectar) con el atajo `Alt+Shift+A` indicado; el clic sobre
+  el estado nunca adjunta ni suelta por sí solo. El atajo `Alt+Shift+A` sigue actuando directo.
 - **FR-013**: "Nahual en pausa" y "CORS relajado" MUST mostrarse, cuando aplican, en una línea cada
   uno bajo la barra superior, con su acción (Reanudar; Apagar, cuenta regresiva, orígenes y acceso
   al reporte) y su atajo; sin esos estados no ocupan espacio.
+- **FR-013a**: Los avisos y errores del sistema (por ejemplo, lista de orígenes de producción
+  ilegible, relajaciones terminadas por reinicio, ajustes restablecidos, un comando que falló)
+  MUST mostrarse en la franja de indicadores, una línea por aviso con su causa, su solución y un
+  botón para cerrarlo con nombre accesible; MUST quedarse hasta que el dev los cierre y
+  anunciarse a lectores de pantalla. Con más de 2 avisos MUST agruparse en una línea "N avisos"
+  que se despliega encima del contenido, sin desplazar la lista ni el detalle.
 - **FR-014**: Ajustes MUST abrirse como diálogo modal encima del panel, sin desplazar el contenido,
   con secciones General (adjuntar al abrir), Pausas (tiempo máximo de pausa), CORS de desarrollo
   (duración por defecto, orígenes de producción) y Atajos (lista de todos los atajos).
-- **FR-015**: Cada cambio válido en Ajustes MUST guardarse sin un botón de aplicar y confirmar que
-  se guardó; un valor inválido MUST NOT guardarse y su campo MUST explicar el rango o formato.
-  Quitar un origen de producción conserva el deshacer de 003.
+- **FR-015**: Cada cambio válido en Ajustes MUST guardarse al confirmarlo (salir del campo, Enter,
+  o al cambiar un interruptor o una lista), sin botón de aplicar ni de guardar, y confirmar que se
+  guardó; un valor inválido MUST NOT guardarse y su campo MUST explicar el rango o formato.
+  Cerrar el diálogo MUST NOT pedir confirmación ni descartar cambios ya confirmados; un campo
+  inválido sin corregir se descarta al cerrar y conserva el valor guardado. Quitar un origen de
+  producción conserva el deshacer de 003.
 - **FR-016**: Los requests pausados MUST marcarse en la lista de Tráfico (texto e icono) y su
-  detalle MUST abrir en "Editar" con el editor de pausa de 002, las acciones Continuar, Responder
-  con mock y Fallar, y el tiempo restante.
-- **FR-017**: La sección Pausados MUST seguir existiendo para atender varios pausados seguidos, con
+  detalle MUST abrir en "Editar" con el editor de pausa de 002, sus acciones (Continuar sin
+  cambios, Continuar con cambios, Responder con mock y Fallar) y el tiempo restante.
+- **FR-017**: La sección Pausados MUST seguir existiendo y estar siempre visible en la barra
+  (también sin pausados, con su estado vacío) para atender varios pausados seguidos, con
   "Continuar todos" y su atajo.
 - **FR-018**: El detalle de un request MUST organizarse en pestañas según el caso: CORS primero si
   fue bloqueado por CORS; Editar primero si está pausado; Headers primero en cualquier otro caso.
@@ -255,7 +303,9 @@ visible.
   activa que cubra su origen).
 - **FR-023**: "Crear regla desde este request" MUST abrir el editor de reglas con un borrador
   prellenado (patrón de URL que coincide con ese request, su método y la etapa de request) que no
-  se guarda ni se activa hasta que el dev lo confirma.
+  se guarda ni se activa hasta que el dev lo confirma. Si el editor de reglas ya tiene un
+  borrador con cambios sin guardar, MUST pedir confirmación antes de reemplazarlo; si el dev
+  cancela, conserva el borrador anterior.
 - **FR-024**: "Permitir CORS para desarrollo" desde el menú MUST llevar a la misma confirmación de
   003, con el mismo alcance y las mismas protecciones (orígenes de producción, lista ilegible).
 
@@ -315,12 +365,13 @@ visible.
   de un request pausado visto en Tráfico a continuado, 1 clic.
 - **SC-004**: 0 violaciones de accesibilidad automatizadas en todas las vistas y estados (menú
   abierto, Ajustes, detalle de pausado, CORS relajado, Nahual en pausa) en claro y oscuro.
-- **SC-005**: En una prueba con 3 devs que usan DevTools a diario, sin explicación previa, los 3
-  encuentran los filtros, el detalle, Ajustes y "Crear regla desde este request" en menos de 10 s
-  cada uno.
-- **SC-006**: En una comparación lado a lado con el panel Network en claro y oscuro, el dev no
-  identifica diferencias de tipografía, alto de filas ni colores de base (fondo, barra, borde,
-  selección); las diferencias que queden se documentan como decisión.
+- **SC-005**: En la demo de cierre, al menos 1 dev que usa DevTools a diario (más los que haya
+  disponibles), sin explicación previa, encuentra los filtros, el detalle, Ajustes y "Crear regla
+  desde este request" en menos de 10 s cada uno; los tiempos de cada dev y tarea se registran.
+- **SC-006**: Los valores visuales del panel (fuente, tamaño de texto, alto de fila y de barra,
+  fondo, barra, borde, texto, texto secundario, selección y foco) coinciden con los medidos en
+  DevTools en Chrome estable, en claro y oscuro, salvo los desvíos documentados con su motivo; en
+  la comparación lado a lado de la demo de cierre no aparecen diferencias fuera de esa lista.
 - **SC-007**: Filtrar 2,000 entradas tarda menos de 300 ms con el detalle abierto.
 - **SC-008**: El 100% de las pruebas automatizadas de extremo a extremo de 002 y 003 siguen
   pasando, cambiando solo cómo localizan los elementos, no lo que verifican.
@@ -330,21 +381,14 @@ visible.
 
 ## Assumptions
 
-- **Pausados sigue como sección**: además de marcar los pausados en Tráfico, se conserva la
-  sección Pausados (el mockup permite comparar con la alternativa de filtro; se puede revisar en
-  `/speckit-clarify`).
 - **Preferencias de interfaz globales**: el reparto del divisor y el alto del cajón se recuerdan
   para todo el panel, no por pestaña inspeccionada.
-- **Guardado automático en Ajustes**: sin botón "Aplicar" ni "Guardar"; cada campo válido se guarda
-  al confirmarlo (salir del campo o Enter) y los inválidos muestran su error.
 - **Sin selector de tema**: la constitución exige seguir el tema de DevTools; el selector del
   mockup no se implementa.
 - **Atajos futuros**: esta feature no asigna atajos a 005–007; el mockup proponía `Alt+Shift+K`
   para la consola, que ya es "Continuar todos", así que cada feature elegirá el suyo sin choques
   (FR-030).
 - **Sin permisos ni dependencias nuevas**: el rediseño se resuelve con lo que el panel ya usa.
-- **Prueba con 3 devs (SC-005)**: se hace en la demo de cierre, con devs del entorno del usuario;
-  si no hay 3 disponibles, se documenta con los que haya.
 - **Referencia visual**: Chrome estable en la fecha de implementación; si DevTools cambia su
   aspecto después, se actualiza en una feature aparte.
 - **Ancho mínimo para dos columnas**: se fija en el plan a partir de lo que necesitan lista y

@@ -31,10 +31,10 @@
 
 ## Notes
 
-- Las decisiones abiertas del input (Pausados como sección o filtro, alcance de las preferencias
-  de interfaz, guardado de Ajustes, atajos futuros) se resolvieron con valores por defecto
-  documentados en Assumptions; son candidatas para `/speckit-clarify`.
+- Las decisiones abiertas del input se resolvieron en `/speckit-clarify` (sesión 2026-10-23):
+  Pausados como sección, guardado automático de Ajustes, menú del estado de sesión, orden de
+  columnas, quién valida SC-005 y dónde van los avisos del sistema.
 - Los términos de interacción (clic derecho, Shift+F10, Ctrl/Cmd+clic, divisor) describen la
   experiencia del usuario, no la implementación.
-- SC-005 y SC-006 son verificaciones manuales (prueba con devs y comparación lado a lado) y se
-  hacen en la demo de cierre.
+- SC-005 y SC-006 son verificaciones manuales (prueba con al menos 1 dev y comparación lado a
+  lado) y se hacen en la demo de cierre.
