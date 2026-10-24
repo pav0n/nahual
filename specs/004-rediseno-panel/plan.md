@@ -201,6 +201,23 @@ fijo; la única lógica de dominio nueva va a `packages/domain`.
 - **Densidad**: texto base 12 px y alto de fila de Network (D1) en todo el panel; los campos de
   formulario conservan el área de clic mínima de WCAG 2.2 (24 × 24 px).
 
+## Revisión de implementación (T070)
+
+Revisión del diff de 004 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Permisos | Sin cambios: `debugger` y `storage`, sin host permissions ni `contextMenus`; versión `0.4.0` (`tests/dist/manifest.test.ts`) |
+| Dependencias | Ninguna nueva (`package.json` solo cambia la versión y los scripts `e2e`/`e2e:visual`); bundles del panel +27 KB de JS (+9 KB gzip), research "Resultados" |
+| Fuga de credenciales | `nahual.ui.v1` solo guarda `version`, `split` y `drawerHeight` (`ui-prefs.ts` copia campo por campo; `storage-privacy.spec.ts` lo comprueba tras una sesión con tráfico y reglas); `chrome.storage.local` sigue con `nahual.rules.v1` y `nahual.settings.v1`. El enmascarado de headers de 002 no cambia |
+| XSS en el panel | Ruta, host, avisos, menús y la cabecera del detalle se renderizan como texto; no hay `dangerouslySetInnerHTML` ni HTML de datos capturados (`traffic.spec.ts` FR-032 sigue en verde) |
+| Acción no intencionada | Soltar la pestaña pasa a un menú (clarificación 3, `panel-structure.spec.ts`); "Crear regla desde este request" solo prellena el editor y, con un borrador sin guardar, pide confirmación; el menú contextual solo existe sobre filas (sobre el área vacía de la lista no hay menú); "Permitir CORS" desde el menú lleva a la misma confirmación de 003 y se oculta para preflights, diagnósticos no relajables, orígenes de producción y pares ya relajados |
+| Ganchos de prueba | `__nahualUiSlots` (y su contenido simulado) no existe en el build de producción (`tests/dist/no-network.test.ts`), como los de 002 y 003 |
+| Desvíos visuales | Error, aviso, borde de campos y selección sin foco (research R1 y "Decisiones tomadas al implementar"); colores no medidos en D1 (texto sobre la selección, hover, primario) quedan para la comparación de T071 |
+| D1 / D2 | D1 midió los tokens, la fuente y las medidas en Chrome 156 por CDP. D2 mostró que Escape en un diálogo del panel abría el cajón de la consola de DevTools: `Dialog`, `Menu`, el detalle y la lista de avisos detienen su propagación, así que no hay efecto conocido en FR-031 (a confirmar a mano en T071) |
+| Rendimiento | Filtrar 2,000 entradas: 2,7 ms con el detalle abierto y 2,5 ms con selección múltiple (SC-007); el SW y el camino del tráfico no cambian |
+| Definición de terminado | Por historia: pruebas puras primero (atajos, `UiPrefs`, divisor, menú, pestañas del detalle, franja, catálogo de acciones; `ruleDraftFromExchange` en el dominio), E2E de la historia, axe sin violaciones serias en ambos temas (US1 a 320/800/1280 px; US2–US3 a 320 px), textos `es`/`en`; la suite de 002 y 003 sin cambiar lo que verifica (solo sus helpers). Capturas de referencia de Linux en `e2e/visual` (otras plataformas generan las suyas). Pendiente que necesita personas: la demo y la comparación lado a lado con Network en Chrome estable y la prueba de comprensión (T071) |
+
 ## Complexity Tracking
 
 Sin violaciones de la constitución que justificar.

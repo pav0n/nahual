@@ -11,6 +11,7 @@ import {
   pausedOption,
   relaxFrom,
   tabIdOf,
+  trafficRow,
 } from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
@@ -90,4 +91,37 @@ test("las relajaciones CORS nunca se guardan", async ({
   const session = await nahualWorker.evaluate(() => chrome.storage.session.get(null));
   expect(Object.keys(session)).toEqual(["nahual.sessions"]);
   expect(JSON.stringify(session)).not.toContain(servers.apiOrigin);
+});
+
+// 004 contracts/storage.md: tras una sesión completa con el panel rediseñado, storage.local sigue
+// igual y el localStorage del panel solo tiene `nahual.ui.v1` con los campos de UiPrefs.
+test("las preferencias de interfaz no guardan datos de tráfico", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await attachAndReload(panel, app);
+  for (const id of ["items", "empty"]) await callApi(app, id);
+  await trafficRow(panel, "/api/items").click();
+  const divider = panel.getByRole("separator", { name: /divider/i });
+  await divider.focus();
+  await panel.keyboard.press("ArrowLeft");
+  await createRule(panel, { name: "Datos", pattern: "*/data*", stage: "request" });
+  await panel.waitForTimeout(400);
+
+  const local = await nahualWorker.evaluate(() => chrome.storage.local.get(null));
+  expect(Object.keys(local).sort()).toEqual(["nahual.rules.v1", "nahual.settings.v1"]);
+  const prefs = await panel.evaluate(() =>
+    Object.fromEntries(Object.keys(localStorage).map((k) => [k, localStorage.getItem(k)])),
+  );
+  expect(Object.keys(prefs)).toEqual(["nahual.ui.v1"]);
+  const parsed = JSON.parse(prefs["nahual.ui.v1"] ?? "{}") as Record<string, unknown>;
+  expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "split", "version"]);
+  expect(Object.keys(parsed.split as object).sort()).toEqual(["paused", "rules", "traffic"]);
+  for (const leaked of [servers.apiOrigin, servers.appOrigin, "/api/items", "Datos"])
+    expect(prefs["nahual.ui.v1"]).not.toContain(leaked);
 });

@@ -25,12 +25,22 @@ export interface UiSlice {
    * Pausados (004, plan "Sección activa y selección").
    */
   selectedExchangeId: string | null;
+  /** Pestaña con la que abre el detalle pedido (CORS desde el preflight o desde una acción). */
+  detailTab: string | null;
+  /** Cambia con cada pestaña pedida: vuelve a abrir el detalle aunque sea el mismo request. */
+  detailTabSeq: number;
+  /** Intercambio cuyo detalle abre la confirmación de "Permitir CORS" (004 FR-024). */
+  relaxRequestFor: string | null;
   /** Borrador que "Crear regla desde este request" deja para Reglas (FR-023). */
   incomingRuleDraft: RuleDraft | null;
+  /** Cambia cuando el gancho de pruebas llena los lugares reservados: se vuelve a montar todo. */
+  slotsVersion: number;
+  bumpSlots(): void;
   setHelpOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setSection(section: PanelSection): void;
-  selectExchange(id: string | null): void;
+  selectExchange(id: string | null, tab?: string): void;
+  requestRelax(exchangeId: string | null): void;
   /** Deja el borrador para Reglas y cambia a esa sección; nada se guarda todavía. */
   openRuleDraft(draft: RuleDraft): void;
   /** Lo toma Reglas al abrir el editor; devuelve `null` si no hay ninguno. */
@@ -47,7 +57,15 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
   helpOpen: false,
   settingsOpen: false,
   selectedExchangeId: null,
+  detailTab: null,
+  detailTabSeq: 0,
+  relaxRequestFor: null,
   incomingRuleDraft: null,
+  slotsVersion: 0,
+  bumpSlots: () =>
+    set((s) => {
+      s.slotsVersion += 1;
+    }),
   setHelpOpen: (open) =>
     set((s) => {
       s.helpOpen = open;
@@ -60,9 +78,16 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
     set((s) => {
       s.section = section;
     }),
-  selectExchange: (id) =>
+  selectExchange: (id, tab) =>
     set((s) => {
       s.selectedExchangeId = id;
+      s.detailTab = tab ?? null;
+      if (tab) s.detailTabSeq += 1;
+      if (s.relaxRequestFor !== id) s.relaxRequestFor = null;
+    }),
+  requestRelax: (exchangeId) =>
+    set((s) => {
+      s.relaxRequestFor = exchangeId;
     }),
   openRuleDraft: (draft) =>
     set((s) => {

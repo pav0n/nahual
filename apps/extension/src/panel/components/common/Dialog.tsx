@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { IconButton } from "./IconButton.tsx";
 
@@ -14,6 +14,8 @@ interface Props {
   closeButton?: boolean;
   /** Foco inicial en el título (diálogos de lectura) o el del navegador (primer control). */
   focusTitle?: boolean;
+  /** Para enfocar el título desde fuera (pasos del onboarding). */
+  titleRef?: RefObject<HTMLHeadingElement | null>;
 }
 
 /**
@@ -32,9 +34,11 @@ export function Dialog({
   describedBy,
   closeButton = true,
   focusTitle = false,
+  titleRef: externalTitleRef,
 }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const ownTitleRef = useRef<HTMLHeadingElement>(null);
+  const titleRef = externalTitleRef ?? ownTitleRef;
   const opener = useRef<Element | null>(null);
   const titleId = useId();
 
@@ -51,7 +55,7 @@ export function Dialog({
       if (opener.current instanceof HTMLElement && opener.current.isConnected)
         opener.current.focus();
     }
-  }, [open, focusTitle]);
+  }, [open, focusTitle, titleRef]);
 
   useEffect(() => {
     const dialog = ref.current;

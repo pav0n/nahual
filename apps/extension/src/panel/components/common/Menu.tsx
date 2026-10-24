@@ -3,8 +3,9 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type KeyboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
 import { nextMenuIndex, placeMenu, type Anchor } from "./menu-logic.ts";
@@ -15,6 +16,8 @@ export interface MenuItem {
   /** Atajo que se muestra junto al texto (FR-012: Soltar con `Alt+Shift+A`). */
   shortcut?: string;
   disabled?: boolean;
+  /** Con valor, el item es una casilla (`menuitemcheckbox`). */
+  checked?: boolean;
   onSelect(): void;
 }
 
@@ -27,8 +30,11 @@ interface Props {
   label: string;
   items: MenuItem[];
   onClose(reason: MenuCloseReason): void;
-  /** Elemento que recupera el foco al cerrar con Escape o al elegir (el disparador o la fila). */
-  returnFocus?: HTMLElement | null;
+  /**
+   * Elemento que recupera el foco al cerrar con Escape o al elegir (el disparador o la fila). Un
+   * clic sobre él no cuenta como "fuera": lo maneja el propio disparador.
+   */
+  returnFocus?: RefObject<HTMLElement | null>;
   /** Información que no es un item (estado y causa de la sesión), encima de los items. */
   info?: ReactNode;
   id?: string;
@@ -70,33 +76,50 @@ export function Menu({ open, anchor, label, items, onClose, returnFocus, info, i
     );
   }, [open, anchor, items.length]);
 
+  const placed = position !== null;
+  useEffect(() => {
+    // Se enfoca en cuanto está colocado, para que el desplazamiento no salte.
+    if (!open || !placed || ref.current?.contains(document.activeElement)) return;
+    const first = nextMenuIndex(itemsRef.current, -1, "ArrowDown");
+    itemRefs.current[first ?? 0]?.focus();
+  }, [open, placed]);
+
   useEffect(() => {
     if (!open) return;
-    const first = nextMenuIndex(itemsRef.current, -1, "ArrowDown");
-    // Se enfoca tras colocarlo, para que el desplazamiento no salte.
-    const frame = requestAnimationFrame(() => itemRefs.current[first ?? 0]?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [open]);
+    // Escape cierra aunque el foco aún no haya entrado en el menú; tampoco llega a DevTools, que
+    // abriría el cajón de la consola (research D2).
+    const onWindowKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || ref.current?.contains(event.target as Node)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose("escape");
+      returnFocus?.current?.focus();
+    };
+    window.addEventListener("keydown", onWindowKeyDown, true);
+    return () => window.removeEventListener("keydown", onWindowKeyDown, true);
+  }, [open, onClose, returnFocus]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose("outside");
+      const target = event.target as Node;
+      if (ref.current?.contains(target) || returnFocus?.current?.contains(target)) return;
+      onClose("outside");
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [open, onClose]);
+  }, [open, onClose, returnFocus]);
 
   if (!open) return null;
 
   const close = (reason: MenuCloseReason) => {
     onClose(reason);
-    if (reason !== "outside" && reason !== "tab") returnFocus?.focus();
+    if (reason !== "outside" && reason !== "tab") returnFocus?.current?.focus();
   };
 
   const activeIndex = () => itemRefs.current.findIndex((el) => el === document.activeElement);
 
-  const onKeyDown = (event: KeyboardEvent) => {
+  const onKeyDown = (event: ReactKeyboardEvent) => {
     if (event.key === "Escape") {
       // Que Escape no llegue a DevTools, que abriría el cajón de la consola (research D2).
       event.preventDefault();
@@ -143,7 +166,8 @@ export function Menu({ open, anchor, label, items, onClose, returnFocus, info, i
               itemRefs.current[index] = el;
             }}
             type="button"
-            role="menuitem"
+            role={item.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+            aria-checked={item.checked}
             tabIndex={-1}
             disabled={item.disabled}
             className="menu-item"
@@ -153,6 +177,11 @@ export function Menu({ open, anchor, label, items, onClose, returnFocus, info, i
               item.onSelect();
             }}
           >
+            {item.checked === undefined ? null : (
+              <span className="menu-check" aria-hidden="true">
+                {item.checked ? "✓" : ""}
+              </span>
+            )}
             <span className="grow">{item.label}</span>
             {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
           </button>

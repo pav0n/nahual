@@ -307,4 +307,44 @@ Escape sigue cerrando el diálogo de Nahual (patrón APG) y se documenta el efec
   el diálogo no llega a cerrarse. Con un `keydown` en fase de captura en `window` que hace
   `stopPropagation()` para Escape, el cajón no cambia y el diálogo se cierra con su `cancel`
   nativo. Decisión: `Dialog` y `Menu` detienen la propagación de Escape en captura mientras están
-  abiertos; fuera de ellos Escape sigue siendo de DevTools (R12).
+  abiertos; fuera de ellos Escape sigue siendo de DevTools (R12). En la implementación, `Dialog`
+  la detiene en el propio `<dialog>` (antes de `document`, donde escucha DevTools), `Menu` con
+  un `keydown` en captura en `window` mientras está abierto, y el detalle y la lista de avisos
+  desplegada con su propio `keydown`.
+- **SC-007** (T067, `e2e/panel-performance.spec.ts`, Chromium 156, Linux): filtrar 2,000 entradas
+  con el detalle abierto, **2,7 ms**; con los lugares reservados llenos y 2 filas seleccionadas,
+  **2,5 ms** (meta < 300 ms). La medición de 002 sin detalle sigue en `traffic.spec.ts`.
+- **Bundles del panel** (T067, build de producción): antes de 004 (0.3.0) JS 324,310 B (97,027 B
+  con gzip) y CSS 8,471 B (2,285 B); después (0.4.0) JS 351,626 B (106,399 B) y CSS 17,807 B
+  (4,138 B). +27 KB de JS sin dependencias nuevas: estructura (`shell/`, `settings/`, `actions/`)
+  y componentes compartidos.
+- **SC-005** (prueba de comprensión): por registrar en la validación manual (T071).
+
+### Decisiones tomadas al implementar
+
+- **Iconos de 20 px** (D1): el plan decía 16 px; se sigue la medida de la barra de Network.
+- **Fila seleccionada**: siempre con `--nh-selected` y su color de texto
+  (`--sys-color-on-tonal-container`, `#041e49` / `#c2e7ff`) en toda la fila, como DevTools con
+  foco. Ese color, el de hover (`--sys-color-state-hover-on-subtle`) y el primario
+  (`--sys-color-primary`) no se midieron en D1: se tomaron de `design_system_tokens.css` y
+  quedan para la comparación lado a lado de T071. El gris de la selección sin foco (`--nh-selected-inactive`) no llega a 4,5:1 con el texto
+  secundario y el de error en tema oscuro (axe lo marcó), así que no se usa: desvío documentado.
+- **Filtro CORS**: se conserva como lista compacta con Todos / Bloqueados por CORS / Relajados,
+  porque 003 ya filtra por "Relajados" y FR-001 no permite perder comportamiento; T025 sugería un
+  único botón "Bloqueados por CORS".
+- **Tipos a menos de 600 px**: van a un botón "Tipos (n)" que abre un menú de casillas
+  (`menuitemcheckbox`); así los filtros caben en 2 filas a 320 px (FR-009). A partir de 600 px
+  son botones de selección como en Network, con el tipo completo como nombre accesible.
+- **Búsqueda con alternador de regex**: un solo campo; el alternador cambia su nombre accesible
+  ("Search URLs" ⇒ "URL regex") y pasa lo escrito al otro modo. Ya no se combinan texto y regex a
+  la vez.
+- **Pestaña CORS del detalle**: además de los bloqueados, la tienen los requests relajados y los
+  que tienen un preflight relacionado, para no perder información de 003; la pestaña inicial
+  sigue FR-018 (CORS solo si fue bloqueado). Al ir al preflight relacionado (o volver) el detalle
+  nuevo abre en CORS.
+- **Contadores de la barra**: Reglas cuenta las reglas activas del sitio actual desde el store
+  del panel (no espera al `state` del SW) y Pausados, los pausados de la pestaña.
+- **Gancho de pruebas**: `panel/test-slots.tsx` (con JSX). `pushNotice` también empuja avisos del
+  catálogo a la franja, para probar "N avisos" sin provocar 3 fallos reales del SW.
+- **Divisores**: sin márgenes negativos (un divisor encima del borde de una fila tapaba el clic,
+  SC-009); cada parte del `SplitPane` hace su propio scroll.

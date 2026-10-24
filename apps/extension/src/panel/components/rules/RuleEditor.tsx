@@ -5,6 +5,7 @@ import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
 import { Field, issueAt } from "../common/Field.tsx";
 import { ConditionEditor } from "./ConditionEditor.tsx";
+import { RULE_EDITOR_SLOTS } from "./editor-slots.ts";
 import { conditionKindsFor, emptyCondition, toRulePayload, type RuleForm } from "./rule-form.ts";
 
 const TYPES: ResourceType[] = [
@@ -26,6 +27,8 @@ interface Props {
   /** Editor de la acción (historia 4); por defecto, Pausar. */
   actionEditor?(form: RuleForm, set: (form: RuleForm) => void, issues: Issue[]): ReactNode;
   onClose(): void;
+  /** Avisa si el formulario tiene cambios sin guardar (004 FR-023). */
+  onDirtyChange?(dirty: boolean): void;
 }
 
 function toggle<T>(list: T[], item: T, on: boolean): T[] {
@@ -33,7 +36,13 @@ function toggle<T>(list: T[], item: T, on: boolean): T[] {
 }
 
 /** Editor de reglas (FR-008 a FR-013). Valida el SW y los errores se muestran junto a cada campo. */
-export function RuleEditor({ initial, focus = "name", actionEditor, onClose }: Props) {
+export function RuleEditor({
+  initial,
+  focus = "name",
+  actionEditor,
+  onClose,
+  onDirtyChange,
+}: Props) {
   const [form, setForm] = useState<RuleForm>(initial);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [saving, setSaving] = useState(false);
@@ -49,6 +58,10 @@ export function RuleEditor({ initial, focus = "name", actionEditor, onClose }: P
   useEffect(() => {
     rootRef.current?.querySelector<HTMLElement>(`[data-focus="${focus}"]`)?.focus();
   }, [focus]);
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(form) !== JSON.stringify(initial));
+  }, [form, initial, onDirtyChange]);
 
   const set = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
@@ -212,6 +225,10 @@ export function RuleEditor({ initial, focus = "name", actionEditor, onClose }: P
             <strong>{t("rule_action")}:</strong> {t("action_kind_pause")}
           </p>
         )}
+
+        {RULE_EDITOR_SLOTS.map((Slot, index) => (
+          <Slot key={index} />
+        ))}
 
         {issues.length > 0 ? (
           <p role="alert" className="alert">
