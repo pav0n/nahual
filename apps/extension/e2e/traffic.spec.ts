@@ -166,62 +166,61 @@ test("FR-032: el contenido capturado se muestra como texto y nunca se ejecuta", 
   expect(violations).toEqual([]);
 });
 
-test("US1-6/7 y SC-004: tope de 2,000, filtro < 300 ms con 2,000 entradas, limpiar y deshacer", async ({
-  context,
-  nahualWorker,
-  extensionId,
-  servers,
-}) => {
-  const fixtures = { context, nahualWorker, extensionId, servers };
-  test.setTimeout(120_000);
-  const { app, panel } = await setup(fixtures);
-  await app.evaluate(async (base) => {
-    for (let i = 0; i < 2010; i++) await (await fetch(`${base}/data?i=${i}`)).text();
-  }, servers.apiOrigin);
+test(
+  "US1-6/7 y SC-004: tope de 2,000, filtro < 300 ms con 2,000 entradas, limpiar y deshacer",
+  { tag: "@perf" },
+  async ({ context, nahualWorker, extensionId, servers }) => {
+    const fixtures = { context, nahualWorker, extensionId, servers };
+    test.setTimeout(120_000);
+    const { app, panel } = await setup(fixtures);
+    await app.evaluate(async (base) => {
+      for (let i = 0; i < 2010; i++) await (await fetch(`${base}/data?i=${i}`)).text();
+    }, servers.apiOrigin);
 
-  await expect(panel.getByText("History is full")).toBeVisible({ timeout: 30_000 });
-  await expect(count(panel)).toHaveText("2000 of 2000");
+    await expect(panel.getByText("History is full")).toBeVisible({ timeout: 30_000 });
+    await expect(count(panel)).toHaveText("2000 of 2000");
 
-  // SC-004: cambiar un filtro con 2,000 entradas.
-  const elapsed = await panel.evaluate(async () => {
-    const input = document.getElementById("traffic-search") as HTMLInputElement;
-    const counter = document.querySelector(".filters .count") as HTMLElement;
-    const before = counter.textContent;
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    const start = performance.now();
-    setter?.call(input, "i=1999");
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    while (counter.textContent === before) await new Promise((r) => requestAnimationFrame(r));
-    return performance.now() - start;
-  });
-  console.log(`[SC-004] filtro con 2,000 entradas: ${elapsed.toFixed(1)} ms`);
-  expect(elapsed).toBeLessThan(300);
-  await expect(count(panel)).toHaveText("1 of 2000");
-
-  // Desplazamiento: ninguna tarea larga (> 50 ms) mientras se recorre la lista.
-  await filterTraffic(panel, "");
-  const longTasks = await panel.evaluate(async () => {
-    const durations: number[] = [];
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) durations.push(entry.duration);
+    // SC-004: cambiar un filtro con 2,000 entradas.
+    const elapsed = await panel.evaluate(async () => {
+      const input = document.getElementById("traffic-search") as HTMLInputElement;
+      const counter = document.querySelector(".filters .count") as HTMLElement;
+      const before = counter.textContent;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      const start = performance.now();
+      setter?.call(input, "i=1999");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      while (counter.textContent === before) await new Promise((r) => requestAnimationFrame(r));
+      return performance.now() - start;
     });
-    observer.observe({ type: "longtask", buffered: false });
-    const grid = document.querySelector(".grid-scroll") as HTMLElement;
-    for (let i = 0; i < 40; i++) {
-      grid.scrollTop += 1400;
-      await new Promise((r) => requestAnimationFrame(r));
-    }
-    observer.disconnect();
-    return durations;
-  });
-  console.log(`[SC-004] tareas largas al desplazar: ${JSON.stringify(longTasks)}`);
-  expect(longTasks.filter((d) => d > 50)).toEqual([]);
+    console.log(`[SC-004] filtro con 2,000 entradas: ${elapsed.toFixed(1)} ms`);
+    expect(elapsed).toBeLessThan(300);
+    await expect(count(panel)).toHaveText("1 of 2000");
 
-  await panel.getByRole("button", { name: "Clear" }).click();
-  await expect(panel.getByText("No traffic yet")).toBeVisible();
-  await panel.getByRole("button", { name: "Undo" }).click();
-  await expect(count(panel)).toHaveText("2000 of 2000");
-});
+    // Desplazamiento: ninguna tarea larga (> 50 ms) mientras se recorre la lista.
+    await filterTraffic(panel, "");
+    const longTasks = await panel.evaluate(async () => {
+      const durations: number[] = [];
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) durations.push(entry.duration);
+      });
+      observer.observe({ type: "longtask", buffered: false });
+      const grid = document.querySelector(".grid-scroll") as HTMLElement;
+      for (let i = 0; i < 40; i++) {
+        grid.scrollTop += 1400;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      observer.disconnect();
+      return durations;
+    });
+    console.log(`[SC-004] tareas largas al desplazar: ${JSON.stringify(longTasks)}`);
+    expect(longTasks.filter((d) => d > 50)).toEqual([]);
+
+    await panel.getByRole("button", { name: "Clear" }).click();
+    await expect(panel.getByText("No traffic yet")).toBeVisible();
+    await panel.getByRole("button", { name: "Undo" }).click();
+    await expect(count(panel)).toHaveText("2000 of 2000");
+  },
+);
 
 test("navegación por teclado en la lista: flechas y Enter abren el detalle", async ({
   context,

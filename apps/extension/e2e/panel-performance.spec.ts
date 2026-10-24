@@ -28,50 +28,51 @@ const measureFilter = (panel: Page, text: string) =>
     return performance.now() - start;
   }, text);
 
-test("SC-007: filtrar 2,000 entradas < 300 ms con detalle abierto y con selección múltiple", async ({
-  context,
-  nahualWorker,
-  extensionId,
-  servers,
-}) => {
-  test.setTimeout(120_000);
-  const app = await openApp(context, servers.appOrigin);
-  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
-  const panel = await openPanel(context, extensionId, tabId);
-  await panel.setViewportSize({ width: 1280, height: 800 });
-  await attachAndReload(panel, app);
-  await app.evaluate(async (base) => {
-    for (let i = 0; i < 2010; i++) await (await fetch(`${base}/data?i=${i}`)).text();
-  }, servers.apiOrigin);
-  await expect(count(panel)).toHaveText("2000 of 2000", { timeout: 30_000 });
+test(
+  "SC-007: filtrar 2,000 entradas < 300 ms con detalle abierto y con selección múltiple",
+  { tag: "@perf" },
+  async ({ context, nahualWorker, extensionId, servers }) => {
+    test.setTimeout(120_000);
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.setViewportSize({ width: 1280, height: 800 });
+    await attachAndReload(panel, app);
+    await app.evaluate(async (base) => {
+      for (let i = 0; i < 2010; i++) await (await fetch(`${base}/data?i=${i}`)).text();
+    }, servers.apiOrigin);
+    await expect(count(panel)).toHaveText("2000 of 2000", { timeout: 30_000 });
 
-  // Con el detalle abierto.
-  // Filas del principio de la lista virtualizada (las primeras 10 se descartaron por el tope).
-  await trafficRow(panel, /\?i=10(?!\d)/).click();
-  await expect(panel.locator(".detail")).toBeVisible();
-  const withDetail = await measureFilter(panel, "i=1999");
-  console.log(`[SC-007] filtro con 2,000 entradas y detalle abierto: ${withDetail.toFixed(1)} ms`);
-  expect(withDetail).toBeLessThan(300);
-
-  // Con selección múltiple (gancho del build de pruebas) y 2 filas marcadas.
-  await filterTraffic(panel, "");
-  await panel.evaluate(() =>
-    (window as { __nahualUiSlots?: { enable(): void } }).__nahualUiSlots?.enable(),
-  );
-  for (const row of [/\?i=11(?!\d)/, /\?i=12(?!\d)/])
-    await trafficRow(panel, row)
-      .getByRole("checkbox", { name: /^Select/ })
-      .check();
-  await expect(panel.getByText("2 selected")).toBeVisible();
-  const withSelection = await measureFilter(panel, "i=1998");
-  console.log(
-    `[SC-007] filtro con 2,000 entradas y 2 seleccionadas: ${withSelection.toFixed(1)} ms`,
-  );
-  expect(withSelection).toBeLessThan(300);
-  test
-    .info()
-    .annotations.push(
-      { type: "SC-007 detalle", description: `${withDetail.toFixed(1)} ms` },
-      { type: "SC-007 selección", description: `${withSelection.toFixed(1)} ms` },
+    // Con el detalle abierto.
+    // Filas del principio de la lista virtualizada (las primeras 10 se descartaron por el tope).
+    await trafficRow(panel, /\?i=10(?!\d)/).click();
+    await expect(panel.locator(".detail")).toBeVisible();
+    const withDetail = await measureFilter(panel, "i=1999");
+    console.log(
+      `[SC-007] filtro con 2,000 entradas y detalle abierto: ${withDetail.toFixed(1)} ms`,
     );
-});
+    expect(withDetail).toBeLessThan(300);
+
+    // Con selección múltiple (gancho del build de pruebas) y 2 filas marcadas.
+    await filterTraffic(panel, "");
+    await panel.evaluate(() =>
+      (window as { __nahualUiSlots?: { enable(): void } }).__nahualUiSlots?.enable(),
+    );
+    for (const row of [/\?i=11(?!\d)/, /\?i=12(?!\d)/])
+      await trafficRow(panel, row)
+        .getByRole("checkbox", { name: /^Select/ })
+        .check();
+    await expect(panel.getByText("2 selected")).toBeVisible();
+    const withSelection = await measureFilter(panel, "i=1998");
+    console.log(
+      `[SC-007] filtro con 2,000 entradas y 2 seleccionadas: ${withSelection.toFixed(1)} ms`,
+    );
+    expect(withSelection).toBeLessThan(300);
+    test
+      .info()
+      .annotations.push(
+        { type: "SC-007 detalle", description: `${withDetail.toFixed(1)} ms` },
+        { type: "SC-007 selección", description: `${withSelection.toFixed(1)} ms` },
+      );
+  },
+);
