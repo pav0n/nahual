@@ -6,6 +6,7 @@ import { SHORTCUT_CONTINUE, SHORTCUT_CONTINUE_ALL } from "../../use-shortcuts.ts
 import { ConfirmDialog } from "../common/ConfirmDialog.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
 import { Countdown } from "./Countdown.tsx";
+import { ariaOf } from "../../shortcuts.ts";
 
 export const optionId = (pausedId: string) => `paused-${pausedId}`;
 
@@ -74,7 +75,7 @@ export function PauseQueue({ onContinueAll }: { onContinueAll(): void }) {
         <button
           type="button"
           onClick={onContinueAll}
-          aria-keyshortcuts="Alt+Shift+K"
+          aria-keyshortcuts={ariaOf("continueAll")}
           title={t("shortcut_hint", SHORTCUT_CONTINUE_ALL)}
         >
           {t("action_continue_all")} <kbd>{SHORTCUT_CONTINUE_ALL}</kbd>
@@ -86,7 +87,7 @@ export function PauseQueue({ onContinueAll }: { onContinueAll(): void }) {
         tabIndex={0}
         aria-activedescendant={selectedId ? optionId(selectedId) : undefined}
         onKeyDown={onKeyDown}
-        aria-keyshortcuts="Alt+Shift+C"
+        aria-keyshortcuts={ariaOf("continueSelected")}
         title={t("shortcut_continue_selected", SHORTCUT_CONTINUE)}
       >
         {paused.map((item) => (

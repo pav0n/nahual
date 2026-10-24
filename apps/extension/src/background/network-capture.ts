@@ -37,6 +37,11 @@ export interface NetworkCaptureOptions {
 export interface NetworkCapture {
   /** Id del intercambio actual de un `requestId` de Network (`#n` tras redirecciones). */
   exchangeIdOf(tabId: number, networkId: string): string | null;
+  /**
+   * Tipo de recurso según Network, que distingue `fetch()` ("Fetch") de `XMLHttpRequest`; la
+   * interceptación reporta los dos como "XHR".
+   */
+  resourceTypeOf(tabId: number, networkId: string): string | null;
   /** Marca que una regla actuó sobre el intercambio (FR-002). */
   effect(tabId: number, exchangeId: string, effect: RuleEffect): void;
   /** Lo que la relajación CORS cambió en el intercambio (FR-026). */
@@ -68,6 +73,7 @@ interface Entry {
   mimeType: string | null;
   contentType: string | null;
   hasRequestBody: boolean;
+  resourceType: string;
   extraRequestHeaders: Header[] | null;
   extraResponseHeaders: Header[] | null;
   // 003: datos para el diagnóstico CORS.
@@ -262,6 +268,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       mimeType: null,
       contentType: null,
       hasRequestBody: request.postData !== undefined || request.hasPostData === true,
+      resourceType: (event.type ?? "Other").slice(0, 64),
       extraRequestHeaders: extra ?? pendingExtra,
       extraResponseHeaders: null,
     };
@@ -307,7 +314,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         seq: tab.seq++,
         method: method.slice(0, 64),
         ...truncateUrl(request.url),
-        resourceType: (event.type ?? "Other").slice(0, 64),
+        resourceType: entry.resourceType,
         isPreflight,
         ...(preflightFor !== undefined ? { preflightFor } : {}),
         appOrigin: entry.appOrigin,
@@ -428,6 +435,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
             mimeType: null,
             contentType: null,
             hasRequestBody: false,
+            resourceType: "Other",
             extraRequestHeaders: headers,
             extraResponseHeaders: null,
           });
@@ -514,6 +522,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
 
   return {
     exchangeIdOf: (tabId, networkId) => tabs.get(tabId)?.current.get(networkId) ?? null,
+
+    resourceTypeOf: (tabId, networkId) => currentEntry(tabId, networkId)?.resourceType ?? null,
 
     effect(tabId, exchangeId, effect) {
       push(tabId, { id: exchangeId, kind: "effect", fields: {}, effect });

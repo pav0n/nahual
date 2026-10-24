@@ -4,7 +4,7 @@ import {
   callApi,
   openApp,
   openPanel,
-  openTab,
+  openSection,
   statusOf,
   tabIdOf,
   trafficRow,
@@ -35,7 +35,7 @@ async function ruleWithAction(
   stage: "request" | "response",
   configure: (editor: ReturnType<Page["locator"]>) => Promise<void>,
 ) {
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel.getByRole("button", { name: /^(Create your first rule|New rule)$/ }).click();
   const editor = panel.locator(".editor");
   await editor.getByLabel("Name", { exact: true }).fill(name);
@@ -53,7 +53,7 @@ test("US4-1/7: plantilla «Simular API caída» exige prefiltro y responde 503 s
   servers,
 }) => {
   const { app, panel } = await setup({ context, nahualWorker, extensionId, servers });
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel
     .getByRole("group", { name: "Templates" })
     .getByRole("button", { name: /Simulate API down/ })
@@ -88,7 +88,7 @@ test("US4-2: Fallar con cada error de red elegido", async ({
   });
   const result = await callApi(app, "items");
   expect(result.error).toContain("Failed to fetch");
-  await openTab(panel, "Traffic");
+  await openSection(panel, "Traffic");
   await expect(trafficRow(panel, "/api/items").last()).toContainText("Failed");
 });
 
@@ -100,7 +100,7 @@ test("US4-3/7: plantilla «Simular red lenta» retrasa ≥ 3 s sin retrasar otra
 }) => {
   const fx = { context, nahualWorker, extensionId, servers };
   const { app, panel } = await setup(fx);
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel
     .getByRole("group", { name: "Templates" })
     .getByRole("button", { name: /Simulate slow network/ })
@@ -134,7 +134,7 @@ test("US4-4: Solo registrar continúa sin cambios y marca la entrada con la regl
     await editor.getByLabel("Action").selectOption("log");
   });
   expect((await callApi(app, "items")).status).toBe(200);
-  await openTab(panel, "Traffic");
+  await openSection(panel, "Traffic");
   const row = trafficRow(panel, "/api/items").last();
   await expect(row).toContainText("Rule “Registrar items”: logged");
 });
@@ -185,7 +185,7 @@ test("US4-8: «Pausar Nahual» detiene todas las reglas, mantiene la captura y s
   await expect(statusOf(panel)).toContainText("Nahual is paused");
   await expect(panel.getByRole("switch", { name: "Pause Nahual" })).toBeChecked();
   expect((await callApi(app, "items")).status).toBe(200);
-  await openTab(panel, "Traffic");
+  await openSection(panel, "Traffic");
   await expect(trafficRow(panel, "/api/items").last()).toContainText("200");
   await panel.getByRole("switch", { name: "Pause Nahual" }).uncheck();
   expect((await callApi(app, "items")).status).toBe(201);

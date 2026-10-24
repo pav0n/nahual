@@ -3,7 +3,9 @@ import type { TestServers } from "./fixtures/servers.ts";
 import {
   addProductionOrigin,
   attachAndReload,
+  blurPanel,
   corsCall,
+  notices,
   openApp,
   openCorsDetail,
   openPanel,
@@ -154,7 +156,7 @@ test("FR-013/FR-020: apagar con Alt+Shift+R y repetir de inmediato vuelve a bloq
   await corsCall(app, "cors-preflight-401");
   await relaxFrom(panel, "/cors/preflight-401");
   expect((await corsCall(app, "cors-preflight-401")).status).toBe(200);
-  await panel.locator("h1").click();
+  await blurPanel(panel);
   await panel.keyboard.press("Alt+Shift+R");
   await expect(relaxIndicator(panel)).toHaveCount(0);
   expect((await corsCall(app, "cors-preflight-401")).error).toContain("Failed to fetch");
@@ -169,7 +171,7 @@ test("FR-025: pausar Nahual suspende la relajación", async ({
   const { app, panel } = await setup({ context, nahualWorker, extensionId, servers });
   await corsCall(app, "cors-none");
   await relaxFrom(panel, "/cors/none");
-  await panel.locator("h1").click();
+  await blurPanel(panel);
   await panel.keyboard.press("Alt+Shift+P");
   await expect(relaxIndicator(panel)).toContainText("suspended");
   expect((await corsCall(app, "cors-none")).error).toContain("Failed to fetch");
@@ -189,7 +191,7 @@ test("US2-7, FR-029/030: orígenes de producción bloquean y terminan relajacion
   await relaxFrom(panel, "/cors/none");
   await addProductionOrigin(panel, servers.apiOrigin);
   await expect(relaxIndicator(panel)).toHaveCount(0);
-  await expect(panel.locator(".notices")).toContainText("marked as production");
+  await expect(notices(panel)).toContainText("marked as production");
   expect((await corsCall(app, "cors-none")).error).toContain("Failed to fetch");
   const section = await openCorsDetail(panel, "/cors/none");
   await expect(section).toContainText(

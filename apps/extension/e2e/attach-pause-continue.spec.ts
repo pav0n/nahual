@@ -1,6 +1,7 @@
 import {
   attach,
   createRule,
+  detach,
   openApp,
   openPanel,
   openQueue,
@@ -66,7 +67,7 @@ test("adjuntar → pausar → continuar → soltar", async ({
   });
 
   await test.step("soltar", async () => {
-    await panel.getByRole("button", { name: /^Detach/ }).click();
+    await detach(panel);
     await expect(statusOf(panel)).toContainText("Disconnected");
     expect(await ownSessions(nahualWorker)).toEqual([]);
   });

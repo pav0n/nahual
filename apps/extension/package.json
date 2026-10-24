@@ -1,6 +1,6 @@
 {
   "name": "@nahual/extension",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "verify:dist": "vitest run --config vitest.dist.config.ts",
-    "e2e": "playwright test",
+    "e2e": "playwright test --project=chromium --project=perf",
+    "e2e:visual": "playwright test --project=visual",
     "fixture:serve": "node e2e/fixtures/serve.ts"
   },
   "dependencies": {

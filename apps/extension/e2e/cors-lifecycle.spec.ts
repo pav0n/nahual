@@ -3,7 +3,10 @@ import type { TestServers } from "./fixtures/servers.ts";
 import {
   attach,
   attachAndReload,
+  attachOrReconnect,
   corsCall,
+  detach,
+  notices,
   openApp,
   openPanel,
   relaxFrom,
@@ -56,7 +59,7 @@ test("(a) vence: indicador fuera, aviso y bloqueado de nuevo", async ({
   });
   expect((await corsCall(app, "cors-none")).status).toBe(200);
   await expect(relaxIndicator(panel)).toHaveCount(0, { timeout: 15_000 });
-  await expect(panel.locator(".notices")).toContainText("expired");
+  await expect(notices(panel)).toContainText("expired");
   await blocked(app);
 });
 
@@ -68,9 +71,9 @@ test("(b) soltar el debugger la termina con aviso", async ({
 }) => {
   const fx = { context, nahualWorker, extensionId, servers };
   const { app, panel } = await relaxed(fx);
-  await panel.getByRole("button", { name: /^Detach/ }).click();
+  await detach(panel);
   await expect(relaxIndicator(panel)).toHaveCount(0);
-  await expect(panel.locator(".notices")).toContainText("debugger was detached");
+  await expect(notices(panel)).toContainText("debugger was detached");
   await blocked(app);
 });
 
@@ -86,7 +89,7 @@ test("(c) cerrar el panel y reabrirlo: sin relajación", async ({
   const reopened = await openPanel(fx.context, fx.extensionId, tabId);
   // Cerrar el panel soltó el debugger; volver a adjuntar no restaura la relajación (FR-017).
   await expect(statusOf(reopened)).toContainText("Disconnected");
-  await reopened.getByRole("button", { name: /^(Attach|Reconnect)/ }).click();
+  await attachOrReconnect(reopened);
   await expect(statusOf(reopened)).toContainText("Attached");
   await expect(relaxIndicator(reopened)).toHaveCount(0);
   await blocked(app);
@@ -127,7 +130,7 @@ test("(e) reinicio del SW: aviso, sin indicador y bloqueado", async ({
     .toBe(true);
   const version = versions.find((v) => v.scriptURL.includes("service-worker-loader"));
   await cdp.send("ServiceWorker.stopWorker", { versionId: version?.versionId ?? "" });
-  await expect(panel.locator(".notices")).toContainText("Nahual restarted", { timeout: 10_000 });
+  await expect(notices(panel)).toContainText("Nahual restarted", { timeout: 10_000 });
   await expect(relaxIndicator(panel)).toHaveCount(0);
   await blocked(app);
 });

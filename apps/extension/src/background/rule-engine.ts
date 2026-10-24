@@ -42,6 +42,7 @@ export interface RuleEngineOptions {
   siteOf(tabId: number): string | null;
   capture: {
     exchangeIdOf(tabId: number, networkId: string): string | null;
+    resourceTypeOf(tabId: number, networkId: string): string | null;
     effect(tabId: number, exchangeId: string, effect: RuleEffect): void;
   };
   executor: ActionExecutor;
@@ -319,7 +320,10 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
     const view = (): ExchangeView => ({
       method: event.request.method,
       url: event.request.url,
-      resourceType: event.resourceType,
+      // El de Network si se conoce: la interceptación reporta los fetch() como "XHR".
+      resourceType:
+        (event.networkId ? capture.resourceTypeOf(tabId, event.networkId) : null) ??
+        event.resourceType,
       requestHeaders,
       requestBody: bodies.request,
       status: event.responseStatusCode ?? null,

@@ -1,4 +1,4 @@
-import { attach, createRule, openPanel, openTab, tabIdOf } from "../fixtures/panel.ts";
+import { attach, createRule, openPanel, openSection, tabIdOf } from "../fixtures/panel.ts";
 import { expect, test } from "../fixtures/extension.ts";
 import { percentile, saveResult } from "./cdp-lab.ts";
 
@@ -51,7 +51,7 @@ test("R20: overhead con reglas que no se cumplen", async ({
   });
   const r3 = await run();
 
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel.getByRole("switch", { name: /Request sin cumplir/ }).uncheck();
   await createRule(panel, {
     name: "Response sin cumplir",

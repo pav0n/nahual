@@ -1,12 +1,13 @@
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 import {
   attachAndReload,
+  attachOrReconnect,
   callApi,
   createRule,
   openApp,
   openPanel,
   openQueue,
-  openTab,
+  openSection,
   pausedEditor,
   pausedOption,
   setPauseTimeout,
@@ -63,8 +64,8 @@ test("US2-1/2: la regla persiste al reabrir el panel y no aplica en otro sitio",
 
   const reopened = await openPanel(context, extensionId, tabId);
   // El panel anterior se cerró con la sesión: el indicador ofrece reconectar.
-  await reopened.getByRole("button", { name: /^(Attach|Reconnect)/ }).click();
-  await openTab(reopened, "Rules");
+  await attachOrReconnect(reopened);
+  await openSection(reopened, "Rules");
   await expect(reopened.locator(".rule-item").filter({ hasText: "Errores" })).toBeVisible();
 
   // Otro sitio: la página inspeccionada pasa al origen de la API.
@@ -247,7 +248,7 @@ test("US2-9/10: cuenta regresiva, timeout y tres pausas resueltas en otro orden"
   await expect(pausedOption(panel, "/api/items")).toContainText("Continues automatically in 5 s");
   expect((await timed).status).toBe(200);
   await expect(options).toHaveCount(0);
-  await openTab(panel, "Traffic");
+  await openSection(panel, "Traffic");
   await panel.locator(".grid-row").filter({ hasText: "/api/items" }).last().click();
   await expect(panel.locator(".detail")).toContainText("continued after timeout");
 });
@@ -261,7 +262,7 @@ test("US2-12: una regex inválida se rechaza al guardar con el campo señalado",
   const fx = { context, nahualWorker, extensionId, servers };
   const { panel } = await setup(fx);
   await panel.bringToFront();
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel.getByRole("button", { name: "Create your first rule" }).click();
   const editor = panel.locator(".editor");
   await editor.getByLabel("Name", { exact: true }).fill("Mala");

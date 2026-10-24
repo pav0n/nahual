@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useId } from "react";
 import { t } from "../../../shared/i18n.ts";
+import { Dialog } from "./Dialog.tsx";
 
 interface Props {
   open: boolean;
@@ -10,29 +11,12 @@ interface Props {
   onCancel(): void;
 }
 
-/** Confirmación nativa con `<dialog>` modal: atrapa el foco y `Escape` cancela (research R15). */
+/** Confirmación modal sobre el `Dialog` común: atrapa el foco y `Escape` cancela (research R15). */
 export function ConfirmDialog({ open, title, body, confirmLabel, onConfirm, onCancel }: Props) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
+  const bodyId = useId();
   return (
-    <dialog
-      ref={ref}
-      aria-labelledby="confirm-title"
-      aria-describedby="confirm-body"
-      onCancel={(event) => {
-        event.preventDefault();
-        onCancel();
-      }}
-    >
-      <h2 id="confirm-title">{title}</h2>
-      <p id="confirm-body">{body}</p>
+    <Dialog open={open} title={title} onClose={onCancel} describedBy={bodyId} closeButton={false}>
+      <p id={bodyId}>{body}</p>
       <div className="row">
         <button type="button" className="primary" onClick={onConfirm}>
           {confirmLabel}
@@ -41,6 +25,6 @@ export function ConfirmDialog({ open, title, body, confirmLabel, onConfirm, onCa
           {t("action_cancel")}
         </button>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

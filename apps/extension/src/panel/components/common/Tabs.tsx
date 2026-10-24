@@ -12,6 +12,8 @@ interface Props<T extends string> {
   tabs: TabItem<T>[];
   selected: T;
   onSelect(id: T): void;
+  /** Vertical: también se recorren con flechas arriba y abajo (Ajustes). */
+  orientation?: "horizontal" | "vertical";
 }
 
 export const tabId = (prefix: string, id: string) => `${prefix}-tab-${id}`;
@@ -21,14 +23,24 @@ export const tabPanelId = (prefix: string, id: string) => `${prefix}-panel-${id}
  * Pestañas según el patrón APG (activación automática): flechas, Inicio y Fin mueven el foco y
  * la selección; solo la pestaña activa está en el orden de tabulación.
  */
-export function Tabs<T extends string>({ idPrefix, label, tabs, selected, onSelect }: Props<T>) {
+export function Tabs<T extends string>({
+  idPrefix,
+  label,
+  tabs,
+  selected,
+  onSelect,
+  orientation = "horizontal",
+}: Props<T>) {
   const refs = useRef(new Map<T, HTMLButtonElement>());
 
   const onKeyDown = (event: KeyboardEvent) => {
     const index = tabs.findIndex((t) => t.id === selected);
     let next: number;
-    if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-    else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+    const vertical = orientation === "vertical";
+    if (event.key === "ArrowRight" || (vertical && event.key === "ArrowDown"))
+      next = (index + 1) % tabs.length;
+    else if (event.key === "ArrowLeft" || (vertical && event.key === "ArrowUp"))
+      next = (index - 1 + tabs.length) % tabs.length;
     else if (event.key === "Home") next = 0;
     else if (event.key === "End") next = tabs.length - 1;
     else return;
@@ -40,7 +52,13 @@ export function Tabs<T extends string>({ idPrefix, label, tabs, selected, onSele
   };
 
   return (
-    <div role="tablist" aria-label={label} className="tabs" onKeyDown={onKeyDown}>
+    <div
+      role="tablist"
+      aria-label={label}
+      aria-orientation={orientation}
+      className="tabs"
+      onKeyDown={onKeyDown}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}

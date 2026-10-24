@@ -95,12 +95,6 @@
   "tab_rules": {
     "message": "Reglas"
   },
-  "tab_queue": {
-    "message": "Cola"
-  },
-  "tab_queue_count": {
-    "message": "Cola ($1)"
-  },
   "site_label": {
     "message": "Sitio: $1"
   },
@@ -382,9 +376,6 @@
   },
   "action_add_header": {
     "message": "Añadir header"
-  },
-  "action_apply": {
-    "message": "Aplicar"
   },
   "action_cancel": {
     "message": "Cancelar"
@@ -1399,5 +1390,146 @@
   },
   "cors_cause_name_unrecognized": {
     "message": "causa no reconocida"
+  },
+  "session_label": {
+    "message": "Sesión"
+  },
+  "shortcut_desc_toggle_attach": {
+    "message": "Adjuntar o soltar el debugger"
+  },
+  "shortcut_desc_continue": {
+    "message": "Continuar el pausado seleccionado"
+  },
+  "shortcut_desc_continue_all": {
+    "message": "Continuar todos los pausados"
+  },
+  "shortcut_desc_pause_nahual": {
+    "message": "Pausar o reanudar Nahual"
+  },
+  "shortcut_desc_end_relaxations": {
+    "message": "Apagar todas las relajaciones CORS"
+  },
+  "shortcut_desc_focus_search": {
+    "message": "Ir a la búsqueda de Tráfico"
+  },
+  "shortcut_desc_move_rule_up": {
+    "message": "Subir la regla enfocada"
+  },
+  "shortcut_desc_move_rule_down": {
+    "message": "Bajar la regla enfocada"
+  },
+  "traffic_col_name": {
+    "message": "Nombre"
+  },
+  "filter_text_placeholder": {
+    "message": "Filtrar"
+  },
+  "filter_regex_placeholder": {
+    "message": "/api/(items|users)"
+  },
+  "filter_use_regex": {
+    "message": "Usar expresión regular"
+  },
+  "filters_toolbar": {
+    "message": "Filtros"
+  },
+  "filter_types_count": {
+    "message": "Tipos ($1)"
+  },
+  "traffic_divider": {
+    "message": "Divisor entre la lista de tráfico y el detalle"
+  },
+  "paused_divider": {
+    "message": "Divisor entre la lista de pausados y el editor"
+  },
+  "traffic_paused": {
+    "message": "Pausado"
+  },
+  "tab_paused": {
+    "message": "Pausados"
+  },
+  "detail_tab_cors": {
+    "message": "CORS"
+  },
+  "detail_tab_edit": {
+    "message": "Editar"
+  },
+  "session_menu_hint": {
+    "message": "Estado de la sesión y acciones"
+  },
+  "strip_label": {
+    "message": "Indicadores"
+  },
+  "action_resume": {
+    "message": "Reanudar"
+  },
+  "notices_count": {
+    "message": "$1 avisos"
+  },
+  "cors_indicator_count": {
+    "message": "$1 orígenes de API"
+  },
+  "cors_indicator_origins": {
+    "message": "Orígenes ($1)"
+  },
+  "settings_saved": {
+    "message": "Guardado"
+  },
+  "settings_invalid": {
+    "message": "Valor no válido."
+  },
+  "settings_sections_label": {
+    "message": "Secciones de Ajustes"
+  },
+  "settings_section_general": {
+    "message": "General"
+  },
+  "settings_section_pause": {
+    "message": "Pausas"
+  },
+  "settings_section_cors": {
+    "message": "CORS de desarrollo"
+  },
+  "settings_section_shortcuts": {
+    "message": "Atajos"
+  },
+  "action_create_rule_from_request": {
+    "message": "Crear regla desde este request"
+  },
+  "request_actions_label": {
+    "message": "Acciones del request"
+  },
+  "request_menu_label": {
+    "message": "Acciones de $1"
+  },
+  "confirm_replace_draft_title": {
+    "message": "¿Reemplazar el borrador?"
+  },
+  "confirm_replace_draft_body": {
+    "message": "El editor tiene una regla con cambios sin guardar. Si continúas, se reemplaza por el borrador de este request."
+  },
+  "action_replace": {
+    "message": "Reemplazar"
+  },
+  "traffic_select_row": {
+    "message": "Seleccionar $1"
+  },
+  "traffic_selected_count": {
+    "message": "$1 seleccionados"
+  },
+  "traffic_batch_label": {
+    "message": "Acciones con los seleccionados"
+  },
+  "rules_divider": {
+    "message": "Divisor entre la lista de reglas y el editor"
+  },
+  "drawer_divider": {
+    "message": "Alto del cajón"
+  },
+  "drawer_collapse": {
+    "message": "Plegar el cajón"
+  },
+  "drawer_expand": {
+    "message": "Desplegar el cajón"
   }
 }

@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { t } from "../../shared/i18n.ts";
 import { userAttach } from "../attach-control.ts";
 import { command } from "../commands.ts";
+import { ShortcutsList } from "../settings/ShortcutsList.tsx";
 import { usePanelStore } from "../store/index.ts";
+import { Dialog } from "./common/Dialog.tsx";
 
 const STEPS = ["bar", "data", "local"] as const;
 
 /**
- * Primer uso (FR-027): tres pasos en un `<dialog>` modal (atrapa el foco, `Escape` omite). El
- * último ofrece "Adjuntar y empezar", que registra el consentimiento (FR-027a). Se reabre desde
- * "Ayuda".
+ * Primer uso (FR-027) y Ayuda (004 FR-019): tres pasos en el `Dialog` común (atrapa el foco,
+ * `Escape` omite). El último ofrece "Adjuntar y empezar", que registra el consentimiento
+ * (FR-027a). Desde "Ayuda" se reabre con la lista de atajos.
  */
 export function Onboarding() {
   const settings = usePanelStore((s) => s.settings);
@@ -17,19 +19,9 @@ export function Onboarding() {
   const setHelpOpen = usePanelStore((s) => s.setHelpOpen);
   const status = usePanelStore((s) => s.session?.status ?? "detached");
   const [step, setStep] = useState(0);
-  const ref = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const bodyId = useId();
   const open = helpOpen || settings?.onboardingSeen === false;
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      titleRef.current?.focus();
-    }
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -46,24 +38,27 @@ export function Onboarding() {
   const last = step === STEPS.length - 1;
 
   return (
-    <dialog
-      ref={ref}
+    <Dialog
+      open={open}
+      title={t(`onboarding_${current}_title`)}
+      onClose={close}
       className="onboarding"
-      aria-labelledby="onboarding-title"
-      aria-describedby="onboarding-body"
-      onCancel={(event) => {
-        event.preventDefault();
-        close();
-      }}
+      describedBy={bodyId}
+      closeButton={false}
+      focusTitle
+      titleRef={titleRef}
     >
       <p className="muted">{t("onboarding_step", [String(step + 1), String(STEPS.length)])}</p>
-      <h2 id="onboarding-title" ref={titleRef} tabIndex={-1}>
-        {t(`onboarding_${current}_title`)}
-      </h2>
-      <div id="onboarding-body">
+      <div id={bodyId}>
         <p>{t(`onboarding_${current}_body`)}</p>
         {current === "data" ? <p>{t("onboarding_data_mask")}</p> : null}
       </div>
+      {helpOpen ? (
+        <section aria-labelledby={`${bodyId}-shortcuts`}>
+          <h3 id={`${bodyId}-shortcuts`}>{t("settings_section_shortcuts")}</h3>
+          <ShortcutsList />
+        </section>
+      ) : null}
       <div className="row">
         {step > 0 ? (
           <button type="button" onClick={() => setStep(step - 1)}>
@@ -93,6 +88,6 @@ export function Onboarding() {
           </button>
         )}
       </div>
-    </dialog>
+    </Dialog>
   );
 }

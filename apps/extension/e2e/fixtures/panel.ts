@@ -39,22 +39,67 @@ export async function openApp(context: BrowserContext, appOrigin: string) {
   return app;
 }
 
+/*
+ * Helpers por rol y nombre accesible (004, research R16): sobreviven al rediseño del panel. Las
+ * pruebas de 002 y 003 solo los usan a ellos para llegar a cada parte de la interfaz.
+ */
+
+/** Estado de la sesión: región `status` con nombre "Session" (texto completo del estado). */
+export const sessionStatus = (panel: Page) => panel.getByRole("status", { name: "Session" });
+
+/** Alias de 002/003. */
+export const statusOf = sessionStatus;
+
 /** Abre el panel fuera de DevTools (solo build de pruebas, research D7). */
 export async function openPanel(context: BrowserContext, extensionId: string, tabId: number) {
   const panel = await context.newPage();
   await panel.goto(
     `chrome-extension://${extensionId}/src/panel/panel.html?__nahualTestTabId=${tabId}`,
   );
-  await expect(panel.locator(".status > [role=status]")).toBeVisible();
+  await expect(sessionStatus(panel)).toBeAttached();
   return panel;
 }
 
-export const statusOf = (panel: Page) => panel.locator(".status > [role=status]");
+/**
+ * Acción de la sesión (Adjuntar, Soltar, Reconectar): desde el menú del estado de sesión
+ * (clarificación 3 de 004) o, en la interfaz anterior, desde su botón directo.
+ */
+export async function sessionAction(panel: Page, name: RegExp) {
+  const trigger = panel.getByRole("button", { name: /^Session/ });
+  if ((await trigger.count()) > 0) {
+    await trigger.click();
+    await panel.getByRole("menuitem", { name }).click();
+  } else {
+    await panel.getByRole("button", { name }).click();
+  }
+}
 
 export async function attach(panel: Page) {
-  await panel.getByRole("button", { name: /^Attach/ }).click();
-  await expect(statusOf(panel)).toContainText("Attached");
+  await sessionAction(panel, /^Attach(?! and)/);
+  await expect(sessionStatus(panel)).toContainText("Attached");
 }
+
+export const detach = (panel: Page) => sessionAction(panel, /^Detach/);
+
+/** Comprueba que el estado de la sesión ofrece esa acción, sin ejecutarla. */
+export async function expectSessionAction(panel: Page, name: RegExp) {
+  const trigger = panel.getByRole("button", { name: /^Session/ });
+  if ((await trigger.count()) > 0) {
+    await trigger.click();
+    await expect(panel.getByRole("menuitem", { name })).toBeVisible();
+    await panel.keyboard.press("Escape");
+  } else {
+    await expect(panel.getByRole("button", { name })).toBeVisible();
+  }
+}
+
+/** Adjunta o reconecta, según lo que ofrezca el estado de la sesión. */
+export const attachOrReconnect = (panel: Page) =>
+  sessionAction(panel, /^(Attach(?! and)|Reconnect)/);
+
+/** Quita el foco de cualquier control, para que los atajos globales actúen. */
+export const blurPanel = (panel: Page) =>
+  panel.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
 export interface ConditionSpec {
   /** Texto de la opción de tipo, p. ej. "Status", "Header", "Body JSONPath". */
@@ -79,12 +124,17 @@ export interface RuleSpec {
   conditions?: ConditionSpec[];
 }
 
-export const openTab = (panel: Page, name: "Traffic" | "Rules" | "Queue") =>
-  panel.getByRole("tab", { name: new RegExp(`^${name}`) }).click();
+export type Section = "Traffic" | "Rules" | "Paused";
+
+/** Pestaña de una sección de la barra; "Paused" se llamaba "Queue" antes de 004. */
+export const sectionTab = (panel: Page, name: Section) =>
+  panel.getByRole("tab", { name: name === "Paused" ? /^(Paused|Queue)/ : new RegExp(`^${name}`) });
+
+export const openSection = (panel: Page, name: Section) => sectionTab(panel, name).click();
 
 /** Crea una regla desde el editor del panel (historia 2). */
 export async function createRule(panel: Page, spec: RuleSpec) {
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel.getByRole("button", { name: /^(Create your first rule|New rule)$/ }).click();
   const editor = panel.locator(".editor");
   await editor.getByLabel("Name", { exact: true }).fill(spec.name);
@@ -125,20 +175,57 @@ export async function createRule(panel: Page, spec: RuleSpec) {
   await expect(panel.locator(".rule-item").filter({ hasText: spec.name })).toBeVisible();
 }
 
-/** Ajusta el timeout de pausa desde los ajustes del panel. */
-export async function setPauseTimeout(panel: Page, seconds: number) {
-  const settings = panel.locator("details.settings");
-  if (!(await settings.getAttribute("open"))) await settings.locator("summary").click();
-  await settings.getByLabel(/Pause timeout/).fill(String(seconds));
-  await settings.getByRole("button", { name: "Apply" }).click();
+export type SettingsSection = "General" | "Pauses" | "Development CORS" | "Shortcuts";
+
+/**
+ * Abre Ajustes y devuelve su contenedor: el diálogo "Settings" con la sección pedida (004) o, en la
+ * interfaz anterior, el `<details>` abierto.
+ */
+export async function openSettings(panel: Page, section?: SettingsSection) {
+  const legacy = panel.locator("details.settings");
+  if ((await legacy.count()) > 0) {
+    if ((await legacy.getAttribute("open")) === null) await legacy.locator("summary").click();
+    return legacy;
+  }
+  const dialog = panel.getByRole("dialog", { name: "Settings" });
+  if (!(await dialog.isVisible())) {
+    await panel.getByRole("button", { name: "Settings", exact: true }).click();
+    await expect(dialog).toBeVisible();
+  }
+  if (section) await dialog.getByRole("tab", { name: section }).click();
+  return dialog;
 }
 
-/** Item de la cola (abre la pestaña Cola). */
+/** Cierra el diálogo de Ajustes si está abierto (la interfaz anterior no lo necesita). */
+export async function closeSettings(panel: Page) {
+  const dialog = panel.getByRole("dialog", { name: "Settings" });
+  if (await dialog.isVisible()) {
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(dialog).toBeHidden();
+  }
+}
+
+/** Ajusta el timeout de pausa desde los ajustes del panel. */
+export async function setPauseTimeout(panel: Page, seconds: number) {
+  const settings = await openSettings(panel, "Pauses");
+  const field = settings.getByLabel(/Pause timeout/);
+  await field.fill(String(seconds));
+  const apply = settings.getByRole("button", { name: "Apply" });
+  if ((await apply.count()) > 0) {
+    await apply.click();
+  } else {
+    await field.press("Enter");
+    await expect(settings.getByText("Saved")).toBeVisible();
+  }
+  await closeSettings(panel);
+}
+
+/** Item de la lista de pausados (abre la sección Pausados). */
 export const pausedOption = (panel: Page, text: string | RegExp) =>
   panel.locator(".queue").getByRole("option").filter({ hasText: text });
 
 export async function openQueue(panel: Page) {
-  await openTab(panel, "Queue");
+  await openSection(panel, "Paused");
 }
 
 export const pausedEditor = (panel: Page) => panel.locator(".paused-editor");
@@ -173,6 +260,26 @@ export const trafficGrid = (panel: Page) => panel.getByRole("grid", { name: /tra
 
 export const trafficRow = (panel: Page, text: string | RegExp) =>
   trafficGrid(panel).getByRole("row").filter({ hasText: text });
+
+/** Filtro de texto (con `regex`, el de expresión regular: alternador en 004, campo propio antes). */
+export async function filterTraffic(panel: Page, value: string, { regex = false } = {}) {
+  const toggle = panel.getByRole("button", { name: "Use regular expression" });
+  if ((await toggle.count()) > 0) {
+    if ((await toggle.getAttribute("aria-pressed")) !== String(regex)) await toggle.click();
+  }
+  await panel.getByLabel(regex ? "URL regex" : "Search URLs").fill(value);
+}
+
+/** Filtro por tipo: botón de selección (004) o casilla (antes). */
+export async function toggleTypeFilter(panel: Page, type: string) {
+  const filters = panel.getByRole("search");
+  const toggle = filters.getByRole("button", { name: type, exact: true });
+  if ((await toggle.count()) > 0) await toggle.click();
+  else await filters.getByRole("checkbox", { name: type, exact: true }).check();
+}
+
+/** Avisos del sistema con causa y solución (franja de indicadores en 004). */
+export const notices = (panel: Page) => panel.locator(".notices");
 
 /** Activa o desactiva un fallo inyectable del build de pruebas (test-hooks.ts). */
 export function setFault(worker: Worker, fault: string, on: boolean) {
@@ -210,18 +317,37 @@ export function corsCall(app: Page, id: string) {
   );
 }
 
-/** Fila de la lista con esa ruta que no es un preflight (la fila empieza por el método). */
+/** Fila de la lista con esa ruta que no es un preflight (su celda de método no es OPTIONS). */
 export const requestRow = (panel: Page, path: string) =>
-  trafficRow(panel, path).filter({ hasNotText: /^OPTIONS/ });
+  trafficRow(panel, path).filter({
+    hasNot: panel.getByRole("gridcell", { name: "OPTIONS", exact: true }),
+  });
+
+/** Muestra la sección CORS del detalle abierto (pestaña CORS en 004; siempre visible antes). */
+async function showCorsTab(panel: Page) {
+  const tab = panel.locator(".detail").getByRole("tab", { name: "CORS", exact: true });
+  if ((await tab.count()) > 0) await tab.click();
+  return panel.locator(".detail .cors");
+}
 
 /** Abre el detalle de la última fila (no preflight) con esa ruta. */
 export async function openCorsDetail(panel: Page, path: string) {
   await requestRow(panel, path).last().click();
   await expect(panel.locator(".detail h2")).toContainText(path);
-  return panel.locator(".detail .cors");
+  return showCorsTab(panel);
 }
 
 export const relaxIndicator = (panel: Page) => panel.locator(".relax-indicator");
+
+/** Relajaciones del indicador, una por origen (en 004 se despliegan desde "Origins"). */
+export async function relaxItems(panel: Page) {
+  const indicator = relaxIndicator(panel);
+  const toggle = indicator.getByRole("button", { name: /^Origins/ });
+  if ((await toggle.count()) > 0 && (await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click();
+  }
+  return indicator.locator(".relax-item");
+}
 
 /**
  * Relaja CORS desde el detalle de un request bloqueado: "Allow CORS for development" y
@@ -241,13 +367,13 @@ export async function relaxFrom(
   return section;
 }
 
-/** Añade una entrada a la lista de orígenes de producción desde los ajustes. */
+/** Añade una entrada a la lista de orígenes de producción desde los ajustes y los cierra. */
 export async function addProductionOrigin(panel: Page, entry: string) {
-  const settings = panel.locator("details.settings");
-  if (!(await settings.getAttribute("open"))) await settings.locator("summary").click();
+  const settings = await openSettings(panel, "Development CORS");
   await settings.getByLabel(/^Add origin or pattern/).fill(entry);
   await settings.getByRole("button", { name: "Add", exact: true }).click();
   await expect(settings.locator(".production-list")).toContainText(entry);
+  await closeSettings(panel);
 }
 
 /** Abre el detalle del último request relajado con esa ruta, esperando a que llegue su fila. */
@@ -256,7 +382,7 @@ export async function openRelaxedDetail(panel: Page, path: string) {
   await expect(row).toBeVisible();
   await row.click();
   await expect(panel.locator(".detail h2")).toContainText(path);
-  return panel.locator(".detail .cors");
+  return showCorsTab(panel);
 }
 
 /**

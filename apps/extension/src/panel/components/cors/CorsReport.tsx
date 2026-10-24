@@ -1,7 +1,8 @@
 import { FRAMEWORKS, buildCorsReport, renderCorsReport, type Framework } from "@nahual/domain";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { usePanelStore } from "../../store/index.ts";
+import { Dialog } from "../common/Dialog.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
 
 type CopyState = "idle" | "copied" | "manual";
@@ -36,24 +37,12 @@ export function CorsReportDialog() {
   const close = usePanelStore((s) => s.closeReport);
   const [framework, setFramework] = useState<Framework | "">("");
   const [copy, setCopy] = useState<CopyState>("idle");
-  const dialog = useRef<HTMLDialogElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
-  const opener = useRef<Element | null>(null);
-  const titleId = useId();
 
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-    if (apiOrigin !== null && !element.open) {
-      opener.current = document.activeElement;
-      setCopy("idle");
-      element.showModal();
-    }
-    if (apiOrigin === null && element.open) {
-      element.close();
-      if (opener.current instanceof HTMLElement) opener.current.focus();
-    }
-  }, [apiOrigin]);
+  const onClose = () => {
+    setCopy("idle");
+    close();
+  };
 
   const report = useMemo(
     () => (apiOrigin === null ? null : buildCorsReport(exchanges, apiOrigin)),
@@ -64,16 +53,13 @@ export function CorsReportDialog() {
     : "";
 
   return (
-    <dialog
-      ref={dialog}
+    <Dialog
+      open={apiOrigin !== null}
       className="report"
-      aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        close();
-      }}
+      title={t("cors_report_dialog_title", apiOrigin ?? "")}
+      onClose={onClose}
+      closeButton={false}
     >
-      <h2 id={titleId}>{t("cors_report_dialog_title", apiOrigin ?? "")}</h2>
       {report && report.exchangeCount > 0 ? (
         <>
           <p className="warning">{t("cors_report_warning")}</p>
@@ -116,10 +102,10 @@ export function CorsReportDialog() {
             {t("cors_report_copy")}
           </button>
         ) : null}
-        <button type="button" onClick={close}>
+        <button type="button" onClick={onClose}>
           {t("action_close")}
         </button>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

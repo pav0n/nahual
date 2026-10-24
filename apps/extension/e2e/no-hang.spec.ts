@@ -3,12 +3,14 @@ import type { TestServers } from "./fixtures/servers.ts";
 import {
   attachAndReload,
   createRule,
+  detach,
   openApp,
   openPanel,
   openQueue,
-  openTab,
+  openSection,
   ownSessions,
   pausedEditor,
+  sessionAction,
   setFault,
   statusOf,
   tabIdOf,
@@ -47,7 +49,7 @@ test.describe("captura (historia 1)", () => {
     const panel = await openPanel(context, extensionId, tabId);
     await attachAndReload(panel, app);
     const done = burst(app, servers.apiOrigin);
-    await panel.getByRole("button", { name: /^Detach/ }).click();
+    await detach(panel);
     expect(await done).toBe(30);
     await expect(statusOf(panel)).toContainText("Disconnected");
   });
@@ -162,7 +164,7 @@ test.describe("cola de pausados (historia 2)", () => {
   }) => {
     const fixtures = { context, nahualWorker, extensionId, servers };
     const { panel, done } = await withQueue(fixtures);
-    await panel.getByRole("button", { name: /^Detach/ }).click();
+    await detach(panel);
     expect(await done).toBe(3);
     await expect(panel.getByText("Nothing is paused")).toBeVisible();
     await expect(statusOf(panel)).toContainText("Disconnected");
@@ -244,8 +246,8 @@ test.describe("cola de pausados (historia 2)", () => {
     await appB.goto(`${servers.appOrigin}/next`);
     const tabB = await tabIdOf(nahualWorker, `${servers.appOrigin}/next`);
     const panelB = await openPanel(context, extensionId, tabB);
-    await panelB.getByRole("button", { name: /^Attach/ }).click();
-    await openTab(panelB, "Rules");
+    await sessionAction(panelB, /^Attach(?! and)/);
+    await openSection(panelB, "Rules");
     await expect(panelB.locator(".rule-item").filter({ hasText: "Data" })).toBeVisible();
 
     const doneA = startMany(appA, servers.apiOrigin, "/data", 1);
@@ -254,7 +256,7 @@ test.describe("cola de pausados (historia 2)", () => {
     await expect(panelA.locator(".queue").getByRole("option")).toHaveCount(1);
     await expect(panelB.getByText("Nothing is paused")).toBeVisible();
 
-    await panelB.getByRole("button", { name: /^Detach/ }).click();
+    await detach(panelB);
     await expect(statusOf(panelA)).toContainText("Attached");
     await expect(panelA.locator(".queue").getByRole("option")).toHaveCount(1);
     await panelA.keyboard.press("Alt+Shift+C");
@@ -328,7 +330,7 @@ test.describe("retrasos (historia 4)", () => {
     const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
     const panel = await openPanel(context, extensionId, tabId);
     await attachAndReload(panel, app);
-    await openTab(panel, "Rules");
+    await openSection(panel, "Rules");
     await panel.getByRole("button", { name: "Create your first rule" }).click();
     const editor = panel.locator(".editor");
     await editor.getByLabel("Name", { exact: true }).fill("Retraso largo");
@@ -368,7 +370,7 @@ test.describe("retrasos (historia 4)", () => {
   }) => {
     const fixtures = { context, nahualWorker, extensionId, servers };
     const { panel, done, started } = await withDelay(fixtures);
-    await panel.getByRole("button", { name: /^Detach/ }).click();
+    await detach(panel);
     expect(await done).toBe(2);
     expect(Date.now() - started).toBeLessThan(10_000);
   });

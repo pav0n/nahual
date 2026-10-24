@@ -18,12 +18,12 @@ export function dispatchSwEvent(message: SwMessage): void {
       break;
     case "paused":
       store.addPaused(message.payload);
-      if (store.tab !== "queue") {
+      if (store.section !== "paused") {
         store.pushToast({
           messageKey: "toast_paused",
           params: [message.payload.request.url.slice(0, 80)],
           actionKey: "action_view_queue",
-          onAction: () => usePanelStore.getState().setTab("queue"),
+          onAction: () => usePanelStore.getState().setSection("paused"),
         });
       }
       break;

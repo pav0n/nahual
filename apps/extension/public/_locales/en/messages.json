@@ -95,12 +95,6 @@
   "tab_rules": {
     "message": "Rules"
   },
-  "tab_queue": {
-    "message": "Queue"
-  },
-  "tab_queue_count": {
-    "message": "Queue ($1)"
-  },
   "site_label": {
     "message": "Site: $1"
   },
@@ -382,9 +376,6 @@
   },
   "action_add_header": {
     "message": "Add header"
-  },
-  "action_apply": {
-    "message": "Apply"
   },
   "action_cancel": {
     "message": "Cancel"
@@ -1399,5 +1390,146 @@
   },
   "cors_cause_name_unrecognized": {
     "message": "unrecognized cause"
+  },
+  "session_label": {
+    "message": "Session"
+  },
+  "shortcut_desc_toggle_attach": {
+    "message": "Attach or detach the debugger"
+  },
+  "shortcut_desc_continue": {
+    "message": "Continue the selected paused request"
+  },
+  "shortcut_desc_continue_all": {
+    "message": "Continue all paused requests"
+  },
+  "shortcut_desc_pause_nahual": {
+    "message": "Pause or resume Nahual"
+  },
+  "shortcut_desc_end_relaxations": {
+    "message": "Turn off all CORS relaxations"
+  },
+  "shortcut_desc_focus_search": {
+    "message": "Go to the Traffic search"
+  },
+  "shortcut_desc_move_rule_up": {
+    "message": "Move the focused rule up"
+  },
+  "shortcut_desc_move_rule_down": {
+    "message": "Move the focused rule down"
+  },
+  "traffic_col_name": {
+    "message": "Name"
+  },
+  "filter_text_placeholder": {
+    "message": "Filter"
+  },
+  "filter_regex_placeholder": {
+    "message": "/api/(items|users)"
+  },
+  "filter_use_regex": {
+    "message": "Use regular expression"
+  },
+  "filters_toolbar": {
+    "message": "Filters"
+  },
+  "filter_types_count": {
+    "message": "Types ($1)"
+  },
+  "traffic_divider": {
+    "message": "Traffic list and detail divider"
+  },
+  "paused_divider": {
+    "message": "Paused list and editor divider"
+  },
+  "traffic_paused": {
+    "message": "Paused"
+  },
+  "tab_paused": {
+    "message": "Paused"
+  },
+  "detail_tab_cors": {
+    "message": "CORS"
+  },
+  "detail_tab_edit": {
+    "message": "Edit"
+  },
+  "session_menu_hint": {
+    "message": "Session status and actions"
+  },
+  "strip_label": {
+    "message": "Indicators"
+  },
+  "action_resume": {
+    "message": "Resume"
+  },
+  "notices_count": {
+    "message": "$1 notices"
+  },
+  "cors_indicator_count": {
+    "message": "$1 API origins"
+  },
+  "cors_indicator_origins": {
+    "message": "Origins ($1)"
+  },
+  "settings_saved": {
+    "message": "Saved"
+  },
+  "settings_invalid": {
+    "message": "Invalid value."
+  },
+  "settings_sections_label": {
+    "message": "Settings sections"
+  },
+  "settings_section_general": {
+    "message": "General"
+  },
+  "settings_section_pause": {
+    "message": "Pauses"
+  },
+  "settings_section_cors": {
+    "message": "Development CORS"
+  },
+  "settings_section_shortcuts": {
+    "message": "Shortcuts"
+  },
+  "action_create_rule_from_request": {
+    "message": "Create rule from this request"
+  },
+  "request_actions_label": {
+    "message": "Request actions"
+  },
+  "request_menu_label": {
+    "message": "Actions for $1"
+  },
+  "confirm_replace_draft_title": {
+    "message": "Replace the draft?"
+  },
+  "confirm_replace_draft_body": {
+    "message": "The editor has a rule with unsaved changes. If you continue, it is replaced by the draft from this request."
+  },
+  "action_replace": {
+    "message": "Replace"
+  },
+  "traffic_select_row": {
+    "message": "Select $1"
+  },
+  "traffic_selected_count": {
+    "message": "$1 selected"
+  },
+  "traffic_batch_label": {
+    "message": "Actions for the selected requests"
+  },
+  "rules_divider": {
+    "message": "Rules list and editor divider"
+  },
+  "drawer_divider": {
+    "message": "Drawer height"
+  },
+  "drawer_collapse": {
+    "message": "Collapse the drawer"
+  },
+  "drawer_expand": {
+    "message": "Expand the drawer"
   }
 }

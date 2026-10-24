@@ -60,8 +60,15 @@ describe("computeFetchPatterns (research R3)", () => {
     ];
     expect(computeFetchPatterns(rules, ctx)).toEqual([
       { urlPattern: "*", requestStage: "Request", resourceType: "Fetch" },
-      { urlPattern: "*/z/*", requestStage: "Request", resourceType: "XHR" },
+      { urlPattern: "*", requestStage: "Request", resourceType: "XHR" },
       { urlPattern: "*", requestStage: "Response" },
+    ]);
+  });
+
+  it("Fetch también intercepta XHR: así reporta Chrome los fetch() al pausarlos", () => {
+    expect(computeFetchPatterns([rule({ resourceTypes: ["Fetch"] })], ctx)).toEqual([
+      { urlPattern: "*/api/*", requestStage: "Response", resourceType: "Fetch" },
+      { urlPattern: "*/api/*", requestStage: "Response", resourceType: "XHR" },
     ]);
   });
 

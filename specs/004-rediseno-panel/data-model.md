@@ -15,7 +15,7 @@ una función pura del dominio.
 | `prefilter` | `{ kind: "glob", pattern: "<origen><ruta>*" }`; los caracteres especiales del glob de 002 (`*`, `?`, `\`) en la URL se escapan con `\`; sin la query (la cubre el `*` final); longitud ≤ `LIMITS.globMax` (si no cabe, se recorta la ruta y se termina en `*`) |
 | `methods` | `[exchange.method]` |
 | `resourceTypes` | `[exchange.resourceType]` si es uno de `RESOURCE_TYPES`, si no `[]` |
-| `stage` | `"request"` |
+| `stage` | `"response"` si el request no lleva body (`requestBody` sin body: `reason` `none`) y tuvo respuesta (`status` no nulo); si no, `"request"` |
 | `conditions` | `[]` |
 | `action` | `{ kind: "pause" }` |
 

@@ -11,7 +11,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="empty-state">
+    <div className="empty-state" tabIndex={-1}>
       <p className="empty-title">{title}</p>
       {children ? <div className="muted">{children}</div> : null}
       {action ? <div className="row">{action}</div> : null}

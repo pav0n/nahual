@@ -99,7 +99,11 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
         )
       : undefined,
   );
-  const [relaxing, setRelaxing] = useState(false);
+  const [relaxingHere, setRelaxing] = useState(false);
+  // "Permitir CORS para desarrollo" desde el menú contextual o la cabecera (004 FR-024).
+  const requested = usePanelStore((s) => s.relaxRequestFor === exchange.id);
+  const clearRequest = usePanelStore((s) => s.requestRelax);
+  const relaxing = relaxingHere || requested;
   const openReport = usePanelStore((s) => s.openReport);
   const relaxButton = useRef<HTMLButtonElement>(null);
   const activeText = useRef<HTMLParagraphElement>(null);
@@ -223,6 +227,7 @@ export function CorsSection({ exchange, relatedId, onOpen, children }: Props) {
               diagnosis={diagnosis}
               onDone={(created) => {
                 setRelaxing(false);
+                clearRequest(null);
                 focusAfter.current = created ? "active" : "button";
               }}
             />

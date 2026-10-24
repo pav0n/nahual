@@ -6,41 +6,61 @@
 Extensión de Chrome para desarrolladores frontend: intercept condicional, CORS de desarrollo
 seguro, repeater + diff, hooks en TypeScript y exportación al código. Todo local, sin cuenta.
 
-**Estado:** features `002-captura-intercept` y `003-cors-desarrollo`: ver el tráfico de la pestaña,
-crear reglas y pausar, simular o retrasar solo lo que cumple una condición, y entender y relajar
-CORS de desarrollo de forma acotada. Ver
+**Estado:** features `002-captura-intercept`, `003-cors-desarrollo` y `004-rediseno-panel`: ver el
+tráfico de la pestaña, crear reglas y pausar, simular o retrasar solo lo que cumple una condición,
+entender y relajar CORS de desarrollo de forma acotada, en un panel con el aspecto de DevTools. Ver
 `.specify/memory/constitution.md`, `docs/speckit-inputs/` y `specs/`.
 
 ## Qué hace
 
-- **Tráfico**: lista de los requests de la pestaña con método, URL, status, tipo, tamaño y tiempo;
-  filtros por texto, regex, status y tipo; detalle con headers (los sensibles, enmascarados) y
-  bodies; historial de 2,000 entradas que se puede limpiar con deshacer.
+- **Panel integrado en DevTools**: mismos colores, tipografía y densidad que los paneles nativos,
+  en tema claro y oscuro (sigue al de DevTools en vivo). Una barra con las secciones **Tráfico**,
+  **Reglas** (con el número de reglas activas) y **Pausados** (resaltado si hay alguno); a la
+  derecha, el estado de la sesión (un clic abre un menú con la causa, la solución y
+  Soltar/Adjuntar/Reconectar), "Pausar Nahual", **Ajustes** y **Ayuda**. Bajo la barra, una línea
+  por cada indicador: Nahual en pausa, CORS relajado y avisos del sistema (con más de 2, "N
+  avisos" se despliega encima). Ajustes es un diálogo con secciones (General, Pausas, CORS de
+  desarrollo, Atajos) que guarda cada campo al confirmarlo.
+- **Tráfico**: filtros en una barra (búsqueda con alternador de regex, tipos, CORS, status,
+  contador y limpiar con deshacer); lista con Nombre (ruta y host, marcas de CORS, pausado y
+  preflight), Método, Status, Tipo, Tamaño y Tiempo; detalle a la derecha con un divisor que se
+  arrastra o se mueve con flechas (debajo de la lista a menos de 600 px). El detalle abre en la
+  pestaña que corresponde: CORS si fue bloqueado, Editar si está pausado, Headers si no. Headers
+  sensibles enmascarados; historial de 2,000 entradas.
+- **Acciones de un request**: la cabecera del detalle y el menú contextual de la lista (clic
+  derecho, tecla de menú o `Shift+F10`) ofrecen las mismas acciones: "Crear regla desde este
+  request" (abre Reglas con un borrador prellenado que no se guarda hasta confirmarlo) y
+  "Permitir CORS para desarrollo".
 - **Reglas por sitio**: prefiltro de URL (glob o regex), métodos, tipos de recurso, etapa (Request
   o Response) y condiciones (status, header, query param, JSONPath, GraphQL). La primera de la
   lista gana; se reordenan con `Alt+↑`/`Alt+↓`.
-- **Acciones**: Pausar (cola editable con cuenta regresiva), Mock, Fallar, Retrasar y Solo
-  registrar. Plantillas: pausar respuestas con error o vacías, simular API caída o red lenta.
+- **Acciones de las reglas**: Pausar (editable desde el detalle en Tráfico o desde Pausados, con
+  cuenta regresiva), Mock, Fallar, Retrasar y Solo registrar. Plantillas: pausar respuestas con error o vacías, simular API caída o red lenta.
 - **CORS de desarrollo**: los requests bloqueados por CORS se marcan en la lista y el detalle
   explica la causa, qué pidió la app y qué respondió el servidor. "Permitir CORS para desarrollo"
   relaja CORS solo en esa pestaña, para el origen de la app y el de la API (origen exacto, nunca
   `*`), con un indicador permanente, cuenta regresiva (8 h como máximo) y fin al soltar el
-  debugger o reiniciar Nahual. Los orígenes de producción se marcan en Ajustes y nunca se
-  relajan. "Generar reporte para backend" produce un texto copiable con lo que el servidor debe
+  debugger o reiniciar Nahual. Los orígenes de producción se marcan en Ajustes ⇒ CORS de
+  desarrollo y nunca se relajan. "Generar reporte para backend" produce un texto copiable con lo que el servidor debe
   configurar y ejemplos para Express, NestJS, AWS API Gateway y Google Cloud Run.
 - **Seguro por defecto**: nada sale del navegador; el historial vive en memoria; todo request
   pausado continúa sin cambios si vence su timeout, si Nahual falla o si se suelta el debugger.
 
 ## Atajos
 
+Declarados en un solo lugar (`apps/extension/src/panel/shortcuts.ts`); Ajustes ⇒ Atajos y la Ayuda
+los listan desde ahí.
+
 | Atajo | Acción |
 |---|---|
 | `Alt+Shift+A` | Adjuntar / soltar el debugger |
 | `Alt+Shift+P` | Pausar / reanudar Nahual |
-| `Alt+Shift+C` | Continuar el item seleccionado de la cola |
-| `Alt+Shift+K` | Continuar todos |
-| `/` o `Alt+Shift+F` | Ir al buscador del tráfico |
+| `Alt+Shift+C` | Continuar el pausado seleccionado |
+| `Alt+Shift+K` | Continuar todos los pausados |
+| `/` o `Alt+Shift+F` | Ir a la búsqueda de Tráfico |
 | `Alt+Shift+R` | Apagar todas las relajaciones de CORS de la pestaña |
+| `Alt+↑` / `Alt+↓` | Subir / bajar la regla enfocada |
+| `Shift+F10` o tecla de menú | Menú de acciones de la fila enfocada |
 
 ## Requisitos
 
@@ -55,7 +75,9 @@ pnpm lint && pnpm typecheck && pnpm test   # unitarias + integración con CDP si
 pnpm build                                 # apps/extension/dist
 pnpm verify:dist                           # manifest, sin red propia, sin código evaluado
 pnpm --filter @nahual/extension exec playwright install chromium
-pnpm e2e                                   # Playwright con la extensión cargada
+pnpm e2e                                   # Playwright con la extensión cargada (workers: la mitad de los núcleos)
+E2E_WORKERS=1 pnpm e2e                     # en serie (depurar); otro número fija los workers
+pnpm --filter @nahual/extension e2e:visual  # capturas de regresión visual (claro/oscuro, 320/800/1280 px)
 EXPERIMENTS=1 pnpm --filter @nahual/extension e2e   # experimentos de research.md
 ```
 

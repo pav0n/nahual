@@ -41,13 +41,21 @@ function localIssues(item: PausedItemView, draft: PausedDraft): Issue[] {
  * Item pausado editable (FR-020, FR-021). Request: método, URL, headers y body; Response: status,
  * headers y body. La edición se guarda como borrador por item mientras la cuenta regresiva sigue.
  */
-export function PausedEditor({ item }: { item: PausedItemView }) {
+export function PausedEditor({
+  item,
+  inDetail = false,
+}: {
+  item: PausedItemView;
+  /** Dentro de la pestaña "Editar" del detalle de Tráfico (004): el título es de nivel 3. */
+  inDetail?: boolean;
+}) {
   const draft = usePanelStore((s) => s.drafts[item.pausedId]) ?? {};
   const setDraft = usePanelStore((s) => s.setDraft);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [mock, setMock] = useState<MockFormValue | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const Heading = inDetail ? "h3" : "h2";
   const isRequest = item.stage === "request";
   const original = isRequest ? item.request : item.response;
   const originalHeaders = (isRequest ? item.request.headers : item.response?.headers) ?? [];
@@ -81,10 +89,10 @@ export function PausedEditor({ item }: { item: PausedItemView }) {
 
   return (
     <section className="paused-editor" aria-labelledby="paused-editor-title">
-      <h2 id="paused-editor-title" className="mono">
+      <Heading id="paused-editor-title" className="mono">
         {t(isRequest ? "paused_editor_request" : "paused_editor_response")}: {item.request.method}{" "}
         {item.request.url}
-      </h2>
+      </Heading>
       <p className="muted">
         {t("paused_rule", item.ruleName)} ·{" "}
         <Countdown expiresAt={item.expiresAt} totalMs={item.expiresAt - item.pausedAt} />

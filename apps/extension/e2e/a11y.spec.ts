@@ -3,19 +3,27 @@ import type { Page } from "@playwright/test";
 import {
   addProductionOrigin,
   attach,
+  blurPanel,
   callApi,
+  closeSettings,
   corsCall,
   createRule,
+  filterTraffic,
   openApp,
   openCorsDetail,
   openPanel,
-  openRelaxedDetail,
   openQueue,
+  openRelaxedDetail,
+  openSection,
+  openSettings,
   pausedEditor,
   pausedOption,
   relaxExtraOrigins,
+  relaxFrom,
   relaxIndicator,
+  relaxItems,
   requestRow,
+  sectionTab,
   statusOf,
   tabIdOf,
   trafficRow,
@@ -52,8 +60,8 @@ for (const colorScheme of ["light", "dark"] as const) {
     await panel.setViewportSize({ width: 320, height: 900 });
     await expect(panel.locator("html")).toHaveAttribute("data-theme", colorScheme);
 
-    for (const tab of ["Traffic", "Rules", "Queue"]) {
-      await panel.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+    for (const tab of ["Traffic", "Rules", "Paused"] as const) {
+      await openSection(panel, tab);
       await expectNoSeriousViolations(panel, `vacío: ${tab}`);
       await expectNoHorizontalScroll(panel);
     }
@@ -63,15 +71,15 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoHorizontalScroll(panel);
 
     // Historia 1: lista, filtros con error, detalle con headers y body.
-    await panel.getByRole("tab", { name: "Traffic" }).click();
+    await openSection(panel, "Traffic");
     await app.reload();
     await callApi(app, "items");
     await expect(trafficRow(panel, "/api/items")).toBeVisible();
     await expectNoSeriousViolations(panel, "tráfico");
     await expectNoHorizontalScroll(panel);
-    await panel.getByLabel("URL regex").fill("([a-z");
+    await filterTraffic(panel, "([a-z", { regex: true });
     await expectNoSeriousViolations(panel, "filtro inválido");
-    await panel.getByLabel("URL regex").fill("");
+    await filterTraffic(panel, "", { regex: true });
     await trafficRow(panel, "/api/items").click();
     await expectNoSeriousViolations(panel, "detalle: headers");
     await expectNoHorizontalScroll(panel);
@@ -112,7 +120,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect((await error).status).toBe(500);
 
     // Historia 4: editor de acciones (mock, fallar, retrasar) y lista reordenable.
-    await panel.getByRole("tab", { name: "Rules" }).click();
+    await openSection(panel, "Rules");
     await panel.getByRole("button", { name: "New rule" }).click();
     const editor = panel.locator(".editor");
     for (const action of ["mock", "fail", "delay"]) {
@@ -142,17 +150,14 @@ test("pestañas y adjuntar solo con teclado", async ({
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Attached");
 
-  await panel.getByRole("tab", { name: "Traffic" }).focus();
+  await sectionTab(panel, "Traffic").focus();
   await panel.keyboard.press("ArrowRight");
-  await expect(panel.getByRole("tab", { name: "Rules" })).toHaveAttribute("aria-selected", "true");
-  await expect(panel.getByRole("tab", { name: "Rules" })).toBeFocused();
+  await expect(sectionTab(panel, "Rules")).toHaveAttribute("aria-selected", "true");
+  await expect(sectionTab(panel, "Rules")).toBeFocused();
   await panel.keyboard.press("End");
-  await expect(panel.getByRole("tab", { name: /^Queue/ })).toHaveAttribute("aria-selected", "true");
+  await expect(sectionTab(panel, "Paused")).toHaveAttribute("aria-selected", "true");
   await panel.keyboard.press("Home");
-  await expect(panel.getByRole("tab", { name: "Traffic" })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
+  await expect(sectionTab(panel, "Traffic")).toHaveAttribute("aria-selected", "true");
 
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Disconnected");
@@ -263,7 +268,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoHorizontalScroll(panel);
 
     // Suspendida y sin efecto.
-    await panel.locator("h1").click();
+    await blurPanel(panel);
     await panel.keyboard.press("Alt+Shift+P");
     await expect(indicator).toContainText("suspended");
     await expectNoSeriousViolations(panel, "indicador suspendido");
@@ -278,7 +283,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect(await relaxExtraOrigins(panel, tabId, servers.appOrigin, 9)).toEqual(
       Array.from({ length: 9 }, () => true),
     );
-    await expect(indicator.locator(".relax-item")).toHaveCount(10, { timeout: 5_000 });
+    await expect.poll(async () => (await relaxItems(panel)).count(), { timeout: 5_000 }).toBe(10);
     await expectNoSeriousViolations(panel, "indicador con 10 orígenes");
     await expectNoHorizontalScroll(panel);
 
@@ -287,16 +292,16 @@ for (const colorScheme of ["light", "dark"] as const) {
       .getByRole("button", { name: "Turn off the relaxation for https://extra0.test" })
       .focus();
     await panel.keyboard.press("Enter");
-    await expect(indicator.locator(".relax-item")).toHaveCount(9);
+    await expect(await relaxItems(panel)).toHaveCount(9);
     await indicator.getByRole("button", { name: /^Turn all off/ }).focus();
     await panel.keyboard.press("Enter");
     await expect(indicator).toHaveCount(0);
 
     // Ajustes de producción.
     await addProductionOrigin(panel, "https://*.empresa.com");
+    const settings = await openSettings(panel, "Development CORS");
     await expectNoSeriousViolations(panel, "ajustes de producción");
     await expectNoHorizontalScroll(panel);
-    const settings = panel.locator("details.settings");
     await settings.getByLabel(/^Add origin or pattern/).fill("no es un origen");
     await settings.getByRole("button", { name: "Add", exact: true }).click();
     await expect(settings).toContainText("Invalid entry");
@@ -348,5 +353,163 @@ for (const colorScheme of ["light", "dark"] as const) {
     await relaxIndicator(panel).getByRole("button", { name: "Report" }).click();
     await expect(dialog).toContainText("No blocked requests");
     await expectNoSeriousViolations(panel, "reporte vacío");
+  });
+}
+
+/** Ningún elemento del contenedor desborda en horizontal (004 SC-002). */
+async function expectNoInnerOverflow(container: ReturnType<Page["locator"]>) {
+  const overflowing = await container.evaluate((root) =>
+    [root, ...root.querySelectorAll("*")]
+      .filter(
+        (el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== "auto",
+      )
+      .map((el) => el.className || el.tagName),
+  );
+  expect(overflowing).toEqual([]);
+}
+
+/** El foco no sale del diálogo con Tab (patrón de 002 y 003). */
+async function expectFocusTrapped(panel: Page) {
+  for (let i = 0; i < 8; i++) {
+    await panel.keyboard.press("Tab");
+    const outside = await panel.evaluate(() => {
+      const el = document.activeElement;
+      return el !== null && el !== document.body && !el.closest("dialog");
+    });
+    expect(outside).toBe(false);
+  }
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`004 US1: Tráfico con detalle, filtros y divisor, tema ${colorScheme}, a 320/800/1280 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await attach(panel);
+    await app.reload();
+    await callApi(app, "items");
+    await callApi(app, "error");
+    await trafficRow(panel, "/api/items").click();
+    for (const width of [320, 800, 1280]) {
+      await panel.setViewportSize({ width, height: 800 });
+      await expect(panel.getByRole("separator", { name: /divider/i })).toBeVisible();
+      await expectNoSeriousViolations(panel, `tráfico con detalle a ${width} px`);
+      await expectNoHorizontalScroll(panel);
+    }
+    await filterTraffic(panel, "([a-z", { regex: true });
+    await expectNoSeriousViolations(panel, "filtro regex inválido");
+  });
+
+  test(`004 US2: barra, menú de sesión, franja, Ajustes, Ayuda y pausados, tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+
+    await panel.getByRole("button", { name: /^Session/ }).click();
+    await expect(panel.getByRole("menu")).toBeVisible();
+    await expectNoSeriousViolations(panel, "menú de sesión");
+    await panel.keyboard.press("Escape");
+
+    // Franja: pausa, CORS relajado y "N avisos" desplegado.
+    await corsCall(app, "cors-none");
+    await relaxFrom(panel, "/cors/none");
+    await panel.getByRole("switch", { name: "Pause Nahual" }).click();
+    await panel.evaluate(() => {
+      const slots = (window as { __nahualUiSlots?: { pushNotice(key: string): void } })
+        .__nahualUiSlots;
+      for (const key of ["notice_settings_reset", "notice_rules_version", "cors_ended_restart"])
+        slots?.pushNotice(key);
+    });
+    await panel.getByRole("button", { name: /^3 notices/ }).click();
+    await expectNoSeriousViolations(panel, "franja con pausa, CORS y avisos");
+    await expectNoHorizontalScroll(panel);
+    await panel.getByRole("button", { name: /^3 notices/ }).click();
+    await panel.getByRole("switch", { name: "Pause Nahual" }).click();
+
+    // Ajustes, cada sección; foco atrapado y devuelto al botón.
+    for (const section of ["General", "Pauses", "Development CORS", "Shortcuts"] as const) {
+      const settings = await openSettings(panel, section);
+      await expectNoSeriousViolations(panel, `Ajustes: ${section}`);
+      await expectNoInnerOverflow(settings);
+    }
+    await expectFocusTrapped(panel);
+    await closeSettings(panel);
+    await expect(panel.getByRole("button", { name: "Settings", exact: true })).toBeFocused();
+
+    // Ayuda con atajos.
+    await panel.getByRole("button", { name: "Help", exact: true }).click();
+    const help = panel.getByRole("dialog");
+    await expect(help).toBeVisible();
+    await expectNoSeriousViolations(panel, "Ayuda");
+    await expectNoInnerOverflow(help);
+    await expectFocusTrapped(panel);
+    await panel.keyboard.press("Escape");
+    await expect(help).toBeHidden();
+    await expect(panel.getByRole("button", { name: "Help", exact: true })).toBeFocused();
+
+    // Pausados y detalle de un pausado en Tráfico.
+    await createRule(panel, {
+      name: "Errores",
+      pattern: "*/api/*",
+      stage: "response",
+      conditions: [{ kind: "Status", op: "≥", fields: { Value: "500" } }],
+    });
+    const error = callApi(app, "error");
+    await openQueue(panel);
+    await expect(pausedOption(panel, "/api/error")).toBeVisible();
+    await expectNoSeriousViolations(panel, "Pausados");
+    await expectNoHorizontalScroll(panel);
+    await openSection(panel, "Traffic");
+    await trafficRow(panel, "/api/error").last().click();
+    await expect(panel.locator(".detail").getByRole("tab", { name: "Edit" })).toBeVisible();
+    await expectNoSeriousViolations(panel, "detalle de un pausado en Tráfico");
+    await expectNoHorizontalScroll(panel);
+    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
+    expect((await error).status).toBe(500);
+  });
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`004 US3: menú contextual y cabecera de acciones, tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await corsCall(app, "cors-none");
+    const row = requestRow(panel, "/cors/none").last();
+    await row.click();
+    await expect(
+      panel.locator(".detail").getByRole("toolbar", { name: "Request actions" }),
+    ).toBeVisible();
+    await expectNoSeriousViolations(panel, "cabecera de acciones");
+    await expectNoHorizontalScroll(panel);
+    await row.click({ button: "right" });
+    await expect(panel.getByRole("menu")).toBeVisible();
+    await expectNoSeriousViolations(panel, "menú contextual");
+    await expectNoHorizontalScroll(panel);
+    await panel.keyboard.press("Escape");
   });
 }
