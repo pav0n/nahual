@@ -284,4 +284,46 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 ## Resultados
 
-*Por registrar durante la implementación: X1, X2, X3, mediciones de R18 y tamaño de los bundles.*
+### Experimento X1 — envío desde un mundo aislado (2026-10-24, Chromium de Playwright 1.64)
+
+`e2e/experiments/x1-isolated-send.spec.ts`, con el laboratorio CDP de 003 dentro del SW
+(`chrome.debugger`):
+
+| Pregunta | Resultado |
+|---|---|
+| (a) Cookies y origen de la app | Sí: el eco recibió `cookie: nahual_session=…` y `origin` de la app (`credentials: "include"`) |
+| (b) Network y Fetch | Sí: `Network.requestWillBeSent` y `Fetch.requestPaused` en etapa Response |
+| (c) `window.fetch` reemplazado por la página | No se usó (`__hijacked` falso) |
+| (d) `initiator` reconocible | Sí: `type: "script"`, `stack.callFrames[0].url === "nahual-repeater"` |
+| Inyección en la URL | Llegó literal al servidor (`/echo?q=%22);globalThis.__pwned=1;(%22`); `__pwned` no existe |
+
+Se usa el camino principal de R1 y R2 (sin respaldo). Detalle: `callFunctionOn` envuelve la
+declaración entre paréntesis, así que el `//# sourceURL=nahual-repeater` final debe ir seguido de
+un salto de línea; sin él, el `)` queda comentado y la llamada falla con `SyntaxError`.
+
+### Experimento X2 — permiso opcional y `fetch` del SW (2026-10-24)
+
+`e2e/experiments/x2-clean-send.spec.ts`:
+
+| Pregunta | Resultado |
+|---|---|
+| (a) `chrome.permissions.request` en un clic del panel | Abre el diálogo del navegador; Playwright **no puede contestarlo** y la promesa queda pendiente. Aceptarlo dentro de DevTools se comprueba a mano (quickstart, paso 3) |
+| (b) Con el host concedido, lectura sin CORS | Sí: `fetch` del SW a `/no-cors` responde 200 con el body |
+| (c) Sin cookies heredadas | Sí: el eco no trae `cookie` (la cookie de la app existe para 127.0.0.1); sí trae el `authorization` escrito por el dev |
+| (d) `Origin` en un GET | No se envía |
+| Sin host concedido | `TypeError: Failed to fetch` (como esperaba R5) |
+
+**Desvío para las pruebas**: el build de pruebas (`--mode test`) declara además
+`host_permissions: ["http://127.0.0.1/*"]` (los servidores locales, cualquier puerto) para que
+las E2E envíen en contexto limpio de verdad; el flujo de pedir el permiso se prueba contra
+`localhost` (no concedido) con el espía `__nahualPermissionsSpy`, que en el build de pruebas
+sustituye la respuesta del diálogo. El build de producción no tiene `host_permissions`
+(`tests/dist/manifest.test.ts`).
+
+### Experimento X3 — worker del diff (2026-10-24)
+
+`e2e/experiments/x3-worker.spec.ts`: Vite emite `assets/diff.worker-*.js` y el worker creado con
+`new Worker(new URL("./diff.worker.ts", import.meta.url), { type: "module" })` responde al ping
+sin violaciones de CSP. Sin respaldo.
+
+*Por registrar durante la implementación: mediciones de R18 y tamaño de los bundles.*

@@ -25,6 +25,10 @@ Cambio respecto a [004](../../004-rediseno-panel/contracts/manifest.md): un perm
 | `chrome.permissions.request/remove/getAll/contains` | Ninguno (API base) | Contexto limpio (R5, X2) |
 | `fetch` en el SW | El host opcional concedido | Único uso de red propia; `verify:dist` lo acota (R14) |
 
+**Solo el build de pruebas** (`dist-test`, research X2) declara además `host_permissions:
+["http://127.0.0.1/*"]`, porque Playwright no puede contestar el diálogo del permiso; nunca llega
+al build de producción.
+
 `verify:dist` comprueba: `permissions` exactamente `["debugger", "storage"]`,
 `optional_host_permissions` exactamente los dos patrones, sin `host_permissions`, y que el único
 `fetch(` del build es el marcado en el chunk del SW.

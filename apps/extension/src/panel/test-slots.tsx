@@ -1,5 +1,6 @@
 import { BATCH_ACTIONS } from "./actions/batch-actions.ts";
 import { RULE_EDITOR_SLOTS } from "./components/rules/editor-slots.ts";
+import { createDiffWorker } from "./repeater/diff-client.ts";
 import { SETTINGS_SECTIONS } from "./settings/sections.ts";
 import { DRAWER_SLOT } from "./shell/Drawer.tsx";
 import { SECTIONS } from "./shell/sections.ts";
@@ -38,6 +39,19 @@ const SlotSettings = () => <p>Slot settings</p>;
  */
 export function installTestSlots(): void {
   if (import.meta.env.MODE !== "test") return;
+  // 005-X3: el worker del diff carga bajo la CSP del panel y responde.
+  (window as { __nahualDiffWorkerPing?: unknown }).__nahualDiffWorkerPing = () =>
+    new Promise<string>((resolve) => {
+      const worker = createDiffWorker();
+      const timer = setTimeout(() => resolve("timeout"), 3000);
+      worker.addEventListener("message", (event: MessageEvent<{ type: string }>) => {
+        clearTimeout(timer);
+        worker.terminate();
+        resolve(event.data.type);
+      });
+      worker.addEventListener("error", (event) => resolve(`error: ${event.message}`));
+      worker.postMessage({ type: "ping" });
+    });
   let enabled = false;
   (window as { __nahualUiSlots?: unknown }).__nahualUiSlots = {
     pushNotice: (messageKey: string, params?: string[]) =>
