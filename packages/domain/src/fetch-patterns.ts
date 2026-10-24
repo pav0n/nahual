@@ -20,6 +20,12 @@ export const MAX_FETCH_PATTERNS = 50;
 const STAGES = { request: "Request", response: "Response" } as const;
 
 /**
+ * Tipos con los que `Fetch.requestPaused` reporta los de la regla: Network distingue `fetch()`
+ * ("Fetch") de `XMLHttpRequest`, pero la interceptación reporta los dos como "XHR".
+ */
+const interceptedTypes = (type: string) => (type === "Fetch" ? ["Fetch", "XHR"] : [type]);
+
+/**
  * Patrones mínimos de `Fetch.enable` para las reglas activas del sitio (principio VI, research
  * R3). Un patrón más amplio nunca cambia el resultado: el RuleEngine vuelve a evaluar el
  * prefiltro exacto; solo cambia el costo.
@@ -42,7 +48,7 @@ export function computeFetchPatterns(
       const urlPattern = rule.prefilter.kind === "glob" ? rule.prefilter.pattern : "*";
       if (rule.resourceTypes.length === 0) patterns.push({ urlPattern, requestStage });
       else
-        for (const resourceType of rule.resourceTypes)
+        for (const resourceType of rule.resourceTypes.flatMap(interceptedTypes))
           patterns.push({ urlPattern, requestStage, resourceType });
     }
     for (const { origin, requestStage: atRequest } of relaxed)

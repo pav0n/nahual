@@ -143,7 +143,7 @@ calculados. Los resultados se copian a la tabla.
 - **Decision**: función pura nueva en el dominio, `ruleDraftFromExchange(exchange)` (TDD), que
   devuelve un `RuleDraft` válido con: nombre `MÉTODO /ruta`, prefiltro glob con el origen y la
   ruta del request seguida de `*` (para cubrir la query), el método del request, el tipo de
-  recurso del request, etapa `request`, sin condiciones y acción `pause`. Los caracteres especiales del
+  recurso del request, etapa `response` si el request no lleva body y tuvo respuesta (en un GET la response es lo único que hay que editar) y `request` si lleva body o nunca respondió, sin condiciones y acción `pause`. Los caracteres especiales del
   glob en la URL se escapan con `\` (ya soportado por `globToRegExp`) para no ampliar el patrón;
   si no cabe en `LIMITS.globMax`, se recorta la ruta y se termina en `*`. El panel abre el editor de reglas con ese borrador; nada se guarda hasta "Guardar
   regla" (FR-023). Para un preflight, el método es `OPTIONS`.
@@ -354,3 +354,11 @@ Escape sigue cerrando el diálogo de Nahual (patrón APG) y se documenta el efec
   catálogo a la franja, para probar "N avisos" sin provocar 3 fallos reales del SW.
 - **Divisores**: sin márgenes negativos (un divisor encima del borde de una fila tapaba el clic,
   SC-009); cada parte del `SplitPane` hace su propio scroll.
+- **Regla desde un GET (corrección tras la implementación)**: con etapa `request` y tipo
+  "Fetch" el borrador no servía para editar la response. Dos causas: la etapa (un GET no tiene
+  nada que editar antes de la respuesta; ahora es `response` si el request no lleva body y tuvo
+  respuesta) y un bug de 002 que el borrador destapó: `Fetch.requestPaused` reporta las llamadas
+  `fetch()` como "XHR", aunque Network las reporta como "Fetch", así que una regla con tipo
+  "Fetch" nunca pausaba. El motor evalúa ahora el tipo de Network (`resourceTypeOf` de la
+  captura) y los patrones de `Fetch.enable` de "Fetch" incluyen "XHR" (verificado en Chrome con la
+  E2E de FR-023).

@@ -302,7 +302,8 @@ visible.
   request) y "Permitir CORS para desarrollo" (para requests bloqueados por CORS sin relajación
   activa que cubra su origen).
 - **FR-023**: "Crear regla desde este request" MUST abrir el editor de reglas con un borrador
-  prellenado (patrón de URL que coincide con ese request, su método y la etapa de request) que no
+  prellenado (patrón de URL que coincide con ese request, su método y la etapa con algo que
+  editar: la response si el request no lleva body y tuvo respuesta, si no la de request) que no
   se guarda ni se activa hasta que el dev lo confirma. Si el editor de reglas ya tiene un
   borrador con cambios sin guardar, MUST pedir confirmación antes de reemplazarlo; si el dev
   cancela, conserva el borrador anterior.

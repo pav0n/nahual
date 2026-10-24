@@ -5,8 +5,11 @@ import {
   corsCall,
   openApp,
   openPanel,
+  openSection,
+  pausedEditor,
   relaxIndicator,
   requestRow,
+  startFetch,
   tabIdOf,
   trafficGrid,
   trafficRow,
@@ -143,10 +146,23 @@ test("FR-023: crear regla desde un request abre Reglas con el borrador sin guard
   await expect(editor.getByLabel("Name", { exact: true })).toHaveValue("GET /api/items");
   await expect(editor.getByLabel("URL prefilter")).toHaveValue(`${servers.apiOrigin}/api/items*`);
   await expect(editor.getByRole("checkbox", { name: "GET", exact: true })).toBeChecked();
-  await expect(editor.getByLabel("Stage")).toHaveValue("request");
+  // Un GET no lleva body: se pausa la response, que es lo que hay que editar.
+  await expect(editor.getByLabel("Stage")).toHaveValue("response");
   await expect(panel.locator(".rule-item")).toHaveCount(0);
   await editor.getByRole("button", { name: "Save rule" }).click();
   await expect(panel.locator(".rule-item").filter({ hasText: "GET /api/items" })).toBeVisible();
+
+  // La regla guardada pausa el siguiente GET con su response editable.
+  const call = startFetch(app, `${servers.apiOrigin}/api/items`);
+  await openSection(panel, "Paused");
+  const paused = pausedEditor(panel);
+  await expect(paused.getByLabel("Response body")).toHaveValue(/"items":\[1,2\]/);
+  await paused.getByLabel("Response body").fill('{"items":[]}');
+  await paused
+    .getByRole("button", { name: /^Continue/ })
+    .first()
+    .click();
+  expect((await call).body).toBe('{"items":[]}');
 });
 
 test("FR-024, SC-003: permitir CORS desde el menú lleva a la confirmación de 003", async ({

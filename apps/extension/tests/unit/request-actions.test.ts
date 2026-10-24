@@ -92,7 +92,7 @@ describe("catálogo de acciones del request (004, research R6, FR-020/022)", () 
     const [createRule, relaxCors] = REQUEST_ACTIONS;
     createRule?.run(exchange(), effects);
     expect(effects.openRuleDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "GET /items", stage: "request" }),
+      expect.objectContaining({ name: "GET /items", stage: "response" }),
     );
     relaxCors?.run(blocked(), effects);
     expect(effects.openDetail).toHaveBeenCalledWith("ex-1", "cors");

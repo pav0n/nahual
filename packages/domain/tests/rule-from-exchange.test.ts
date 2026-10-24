@@ -38,10 +38,34 @@ describe("regla a partir de un request (004, research R7, data-model)", () => {
       prefilter: { kind: "glob", pattern: "https://api.test/items*" },
       methods: ["GET"],
       resourceTypes: ["Fetch"],
-      stage: "request",
+      stage: "response",
       conditions: [],
       action: { kind: "pause" },
     });
+  });
+
+  it("etapa response si el request no lleva body y tuvo respuesta: es lo que hay que editar", () => {
+    expect(ruleDraftFromExchange(exchange()).stage).toBe("response");
+    expect(ruleDraftFromExchange(exchange({ method: "OPTIONS", isPreflight: true })).stage).toBe(
+      "response",
+    );
+  });
+
+  it.each([
+    ["con body de texto", { available: true, size: 12 }],
+    ["con body binario", { available: false, size: null, reason: "binary" as const }],
+    ["con body demasiado grande", { available: false, size: null, reason: "tooLarge" as const }],
+  ])("etapa request si el request lleva body (%s)", (_name, requestBody) => {
+    expect(ruleDraftFromExchange(exchange({ method: "POST", requestBody })).stage).toBe("request");
+  });
+
+  it("etapa request si nunca hubo respuesta (falló la red o sigue pendiente)", () => {
+    expect(ruleDraftFromExchange(exchange({ status: null, state: "failed" })).stage).toBe(
+      "request",
+    );
+    expect(ruleDraftFromExchange(exchange({ status: null, state: "pending" })).stage).toBe(
+      "request",
+    );
   });
 
   it("el prefiltro no incluye la query: la cubre el `*` final", () => {

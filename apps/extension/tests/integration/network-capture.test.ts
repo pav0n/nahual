@@ -252,6 +252,12 @@ describe("NetworkCapture: lotes (research R11)", () => {
     expect(batches).toHaveLength(1);
     expect(capture.exchangeIdOf(1, "r1")).toBeNull();
   });
+
+  it("recuerda el tipo de recurso de Network para el motor de reglas", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { type: "Fetch" }));
+    expect(capture.resourceTypeOf(1, "r1")).toBe("Fetch");
+    expect(capture.resourceTypeOf(1, "r2")).toBeNull();
+  });
 });
 
 describe("NetworkCapture: getBody bajo demanda", () => {

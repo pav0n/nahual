@@ -4,6 +4,7 @@ import {
   RESOURCE_TYPES,
   type HttpMethod,
   type ResourceType,
+  type Stage,
 } from "./schemas/common.ts";
 import { LIMITS } from "./schemas/limits.ts";
 import type { RuleDraft } from "./schemas/rule.ts";
@@ -40,8 +41,18 @@ function globFor(url: string): string {
 }
 
 /**
+ * Etapa del borrador: la response si el request no lleva body y tuvo respuesta (en un GET no hay
+ * nada más que editar); la de request si lleva body o nunca hubo respuesta.
+ */
+function stageFor(exchange: CapturedExchange): Stage {
+  const { requestBody } = exchange;
+  const hasBody = requestBody.available || (requestBody.reason ?? "none") !== "none";
+  return hasBody || exchange.status === null ? "request" : "response";
+}
+
+/**
  * Borrador de regla a partir de un request capturado (004, research R7): pausa ese request en la
- * etapa de request. Solo prellena el editor; la regla se valida y se guarda por el camino de 002
+ * etapa que tiene algo que editar (`stageFor`). Solo prellena el editor; la regla se valida y se guarda por el camino de 002
  * cuando el dev la confirma (FR-023). El resultado pasa `RuleDraftSchema` para cualquier
  * intercambio válido y su prefiltro coincide con la URL de origen.
  */
@@ -61,7 +72,7 @@ export function ruleDraftFromExchange(exchange: CapturedExchange): RuleDraft {
     prefilter: { kind: "glob", pattern: globFor(exchange.url) },
     methods,
     resourceTypes,
-    stage: "request",
+    stage: stageFor(exchange),
     conditions: [],
     action: { kind: "pause" },
   };

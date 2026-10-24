@@ -26,6 +26,8 @@ let settings: Settings;
 let effects: { exchangeId: string; effect: RuleEffect }[];
 let paused: PausedItemView[];
 let resolved: { pausedId: string; outcome: string; errorKey?: string }[];
+/** Tipo de recurso que la captura de Network conoce por `networkId`. */
+let networkTypes: Map<string, string>;
 
 const flush = async () => {
   for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -48,6 +50,7 @@ beforeEach(async () => {
   await cdp.attach(1);
   cdp.respond("Fetch.getResponseBody", () => ({ body: '{"items":[]}', base64Encoded: false }));
   rules = [rule()];
+  networkTypes = new Map();
   settings = { ...DEFAULT_SETTINGS };
   effects = [];
   paused = [];
@@ -59,6 +62,7 @@ beforeEach(async () => {
     siteOf: () => SITE,
     capture: {
       exchangeIdOf: (_tab, networkId) => networkId,
+      resourceTypeOf: (_tab, networkId) => networkTypes.get(networkId) ?? null,
       effect: (_tab, exchangeId, effect) => void effects.push({ exchangeId, effect }),
     },
     executor: createActionExecutor({ debugger: cdp }),
@@ -96,6 +100,21 @@ describe("RuleEngine: requestPaused ⇒ acción", () => {
       { exchangeId: "net-1", effect: expect.objectContaining({ result: "paused" }) },
     ]);
     expect(cdp.calls("Fetch.continueResponse")).toEqual([]);
+  });
+
+  it("el tipo de recurso es el de Network: la interceptación reporta los fetch() como XHR", async () => {
+    networkTypes.set("net-1", "Fetch");
+    networkTypes.set("net-2", "XHR");
+    rules = [rule({ resourceTypes: ["Fetch"] })];
+    await engine.handle(1, { ...response500("fetch-1"), resourceType: "XHR" });
+    await engine.handle(1, { ...response500("fetch-2"), resourceType: "XHR" });
+    expect(paused.map((p) => p.pausedId)).toEqual(["fetch-1"]);
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-2" }]);
+
+    // Sin dato de Network se usa el de la interceptación.
+    rules = [rule({ resourceTypes: ["XHR"] })];
+    await engine.handle(1, { ...response500("fetch-3"), resourceType: "XHR" });
+    expect(paused.map((p) => p.pausedId)).toEqual(["fetch-1", "fetch-3"]);
   });
 
   it("pide el body una sola vez y solo si una regla lo necesita", async () => {
@@ -470,6 +489,7 @@ describe("RuleEngine + relajación CORS como último paso (003, research R9)", (
       siteOf: () => SITE,
       capture: {
         exchangeIdOf: (_tab, networkId) => networkId,
+        resourceTypeOf: () => null,
         effect: (_tab, exchangeId, effect) => void effects.push({ exchangeId, effect }),
       },
       executor: createRelaxingExecutor({
