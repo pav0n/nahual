@@ -318,6 +318,12 @@ Escape sigue cerrando el diálogo de Nahual (patrón APG) y se documenta el efec
   con gzip) y CSS 8,471 B (2,285 B); después (0.4.0) JS 351,626 B (106,399 B) y CSS 17,807 B
   (4,138 B). +27 KB de JS sin dependencias nuevas: estructura (`shell/`, `settings/`, `actions/`)
   y componentes compartidos.
+- **Estabilidad de la E2E** (T068, 2026-10-24, Linux, Chromium 156 headless): 10 ejecuciones
+  seguidas de la suite completa, **114/114 en cada una** (≈ 5 min por ejecución), sin pruebas
+  inestables. Antes de esas 10, dos fallos intermitentes que se corrigieron en el código: el menú
+  tomaba el foco en el siguiente cuadro y un Escape inmediato no lo cerraba (ahora toma el foco al
+  colocarse y escucha Escape en captura), y el hover del botón primario le quitaba el fondo
+  (texto blanco sobre gris, 1,1:1).
 - **SC-005** (prueba de comprensión): por registrar en la validación manual (T071).
 
 ### Decisiones tomadas al implementar
