@@ -14,7 +14,15 @@ const isEditable = (target: EventTarget | null) =>
 
 /** Atajos de ámbito global, con su acción. */
 export type GlobalShortcutHandlers = Record<
-  Exclude<ShortcutId, "focusSearchSlash" | "moveRuleUp" | "moveRuleDown">,
+  Exclude<
+    ShortcutId,
+    | "focusSearchSlash"
+    | "moveRuleUp"
+    | "moveRuleDown"
+    | "repeaterSend"
+    | "nextChange"
+    | "prevChange"
+  >,
   () => void
 >;
 
@@ -37,8 +45,8 @@ export function useShortcuts(handlers: GlobalShortcutHandlers) {
       event.preventDefault();
       // `/` y `Alt+Shift+F` hacen lo mismo: ir al buscador (research R16 de 002).
       const id = shortcut.id === "focusSearchSlash" ? "focusSearch" : shortcut.id;
-      if (id === "moveRuleUp" || id === "moveRuleDown") return;
-      ref.current[id]();
+      if (shortcut.scope !== "global") return;
+      ref.current[id as keyof GlobalShortcutHandlers]();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

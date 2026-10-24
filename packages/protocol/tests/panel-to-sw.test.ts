@@ -78,8 +78,8 @@ describe("PanelMessageSchema (comandos de 002)", () => {
     bad("getBody", { exchangeId: "net-1", side: "both" });
   });
 
-  it("límite de tamaño de un mensaje del panel: 6 MB", () => {
-    expect(MAX_PANEL_MESSAGE_CHARS).toBe(6 * 1024 * 1024);
+  it("límite de tamaño de un mensaje del panel: 8 MB (005: body original en base64)", () => {
+    expect(MAX_PANEL_MESSAGE_CHARS).toBe(8 * 1024 * 1024);
   });
 
   it("rechaza type desconocido", () => {
@@ -125,5 +125,59 @@ describe("PanelMessageSchema v3 (003, contracts/panel-protocol.md)", () => {
       productionOrigins: Array.from({ length: 101 }, (_, i) => `https://a${i}.test`),
     });
     bad("updateSettings", { productionOrigins: ["x".repeat(300)] });
+  });
+});
+
+describe("PanelMessageSchema (comandos de 005, contracts/panel-protocol.md)", () => {
+  const request = {
+    method: "GET",
+    url: "https://api.test/items",
+    headers: [{ name: "accept", value: "*/*", enabled: true }],
+    body: { kind: "none" },
+  };
+
+  it("repeaterSend { sendId, mode, request }", () => {
+    ok("repeaterSend", { sendId: UUID, mode: "page", request });
+    ok("repeaterSend", { sendId: UUID, mode: "clean", request });
+    bad("repeaterSend", { sendId: "x", mode: "page", request });
+    bad("repeaterSend", { sendId: UUID, mode: "remote", request });
+    bad("repeaterSend", { sendId: UUID, mode: "page", request, tabId: 3 });
+    bad("repeaterSend", { sendId: UUID, mode: "page" });
+  });
+
+  it("repeaterSend llega sin validar campo por campo: el SW responde los issues", () => {
+    ok("repeaterSend", { sendId: UUID, mode: "page", request: { ...request, url: "nope" } });
+  });
+
+  it("repeaterCancel { sendId }", () => {
+    ok("repeaterCancel", { sendId: UUID2 });
+    bad("repeaterCancel", {});
+  });
+
+  it("getIgnores y setIgnores por método y URL, sin valores", () => {
+    ok("getIgnores", { method: "GET", url: "https://api.test/items?x=1" });
+    ok("setIgnores", {
+      method: "GET",
+      url: "https://api.test/items",
+      paths: [
+        [{ key: "meta" }, { key: "timestamp" }],
+        [{ key: "items" }, { any: true }],
+      ],
+      headers: ["date"],
+    });
+    bad("setIgnores", {
+      method: "GET",
+      url: "https://api.test/items",
+      paths: [],
+      headers: [],
+      values: [],
+    });
+    bad("getIgnores", { method: "GET" });
+  });
+
+  it("el tamaño máximo admite un body original de 5 MB en base64", () => {
+    expect(MAX_PANEL_MESSAGE_CHARS).toBeGreaterThanOrEqual(
+      Math.ceil((5 * 1024 * 1024) / 3) * 4 + 64 * 1024,
+    );
   });
 });

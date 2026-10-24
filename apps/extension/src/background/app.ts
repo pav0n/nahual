@@ -235,6 +235,12 @@ export function createBackground(deps: BackgroundDeps) {
         );
         return { ok: true };
       }
+      // 005: el servicio del repeater y la lista de ignorados llegan en US1 y US2.
+      case "repeaterSend":
+      case "repeaterCancel":
+      case "getIgnores":
+      case "setIgnores":
+        return { ok: false, code: "invalid_message" };
     }
   }
 

@@ -1531,5 +1531,26 @@
   },
   "drawer_expand": {
     "message": "Desplegar el cajón"
+  },
+  "tab_repeater": {
+    "message": "Repeater"
+  },
+  "repeater_empty_title": {
+    "message": "Aún no hay pestañas del repeater"
+  },
+  "repeater_empty_body": {
+    "message": "Haz clic derecho en un request de Tráfico y elige «Enviar al repeater», o crea una pestaña vacía. Las pestañas viven mientras DevTools está abierto: al cerrarlo se pierden."
+  },
+  "repeater_new_tab": {
+    "message": "Nueva pestaña"
+  },
+  "shortcut_desc_repeater_send": {
+    "message": "Enviar el request del repeater"
+  },
+  "shortcut_desc_next_change": {
+    "message": "Ir al cambio siguiente del diff"
+  },
+  "shortcut_desc_prev_change": {
+    "message": "Ir al cambio anterior del diff"
   }
 }

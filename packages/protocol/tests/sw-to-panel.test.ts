@@ -68,6 +68,7 @@ describe("SwMessageSchema (eventos de 002)", () => {
       "body_unavailable",
       "no_site",
       "relaxation_invalid",
+      "ignores_invalid",
     ]);
     for (const code of ERROR_CODES) ok("error", { code, messageKey: `error_${code}` });
     ok("error", {
@@ -190,6 +191,68 @@ describe("SwMessageSchema v3 (003)", () => {
           },
         },
       ],
+    });
+  });
+});
+
+describe("SwMessageSchema v4 (005)", () => {
+  const outcome = {
+    response: {
+      status: 200,
+      headers: [{ name: "content-type", value: "application/json" }],
+      body: { encoding: "text", text: "{}" },
+      mimeType: "application/json",
+    },
+    error: null,
+    durationMs: 12,
+    size: 2,
+    preflight: null,
+    ruleEffects: [],
+    relaxed: false,
+    cors: null,
+    notSentHeaders: [],
+    exchangeId: "net-1",
+  };
+
+  it("repeaterResult con su estado", () => {
+    ok("repeaterResult", { sendId: UUID, state: "done", ...outcome });
+    ok("repeaterResult", {
+      sendId: UUID,
+      state: "failed",
+      ...outcome,
+      response: null,
+      error: {
+        code: "permission_required",
+        messageKey: "repeater_error_permission_required",
+        params: ["https://api.test"],
+      },
+    });
+    bad("repeaterResult", { sendId: UUID, state: "pending", ...outcome });
+    bad("repeaterResult", { sendId: UUID, state: "done" });
+  });
+
+  it("ignores por endpoint", () => {
+    ok("ignores", {
+      method: "GET",
+      url: "https://api.test/x",
+      paths: [[{ key: "a" }]],
+      headers: [],
+    });
+    bad("ignores", {
+      method: "GET",
+      url: "https://api.test/x",
+      paths: [],
+      headers: [],
+      values: [],
+    });
+  });
+
+  it("exchanges admite la marca repeater", () => {
+    ok("exchanges", {
+      updates: [{ id: "net-1", kind: "headers", fields: { repeater: { sendId: UUID2 } } }],
+    });
+    bad("exchanges", {
+      updates: [{ id: "net-1", kind: "headers", fields: { repeater: { sendId: "x" } } }],
     });
   });
 });

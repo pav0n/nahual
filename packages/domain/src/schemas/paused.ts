@@ -37,7 +37,7 @@ export type PausedItemView = z.infer<typeof PausedItemViewSchema>;
  * Header de una edición. Los valores reales de la página pueden superar el límite de los headers
  * de un mock (p. ej. una `Cookie` larga) y viajan completos (FR-004b).
  */
-const EditHeaderSchema = z.strictObject({
+export const EditHeaderSchema = z.strictObject({
   name: z
     .string()
     .min(1, { error: "rule_error_required" })
@@ -49,7 +49,7 @@ const EditHeaderSchema = z.strictObject({
     .regex(/^[^\r\n]*$/, { error: "rule_error_header_value" }),
 });
 
-const isAbsoluteHttpUrl = (value: string) => {
+export const isAbsoluteHttpUrl = (value: string) => {
   try {
     const { protocol } = new URL(value);
     return protocol === "http:" || protocol === "https:";

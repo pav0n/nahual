@@ -6,6 +6,7 @@ import {
   DEVTOOLS_RESERVED,
   SHORTCUTS,
   matchesShortcut,
+  shortcutAria,
   shortcutLabel,
   type ShortcutKeys,
 } from "../../src/panel/shortcuts.ts";
@@ -22,7 +23,7 @@ const combo = (keys: ShortcutKeys) =>
   "key" in keys
     ? `key:${keys.key}`
     : [
-        keys.ctrl || keys.meta ? "mod" : "",
+        keys.ctrl || keys.meta || keys.mod ? "mod" : "",
         keys.alt ? "alt" : "",
         keys.shift ? "shift" : "",
         keys.code,
@@ -43,6 +44,10 @@ describe("inventario de atajos (004, research R12, FR-030)", () => {
         "/",
         "Alt+↑",
         "Alt+↓",
+        // 005 (research R17): repeater y diff.
+        "Ctrl/Cmd+Enter",
+        "J",
+        "K",
       ].sort(),
     );
   });
@@ -79,6 +84,40 @@ describe("inventario de atajos (004, research R12, FR-030)", () => {
     expect(matchesShortcut(attach, event)).toBe(true);
     expect(matchesShortcut(attach, { ...event, ctrlKey: true })).toBe(false);
     expect(matchesShortcut(attach, { ...event, shiftKey: false })).toBe(false);
+  });
+
+  it("Ctrl/Cmd+Enter acepta Ctrl o Cmd, con aria-keyshortcuts para los dos (005)", () => {
+    const send = SHORTCUTS.find((s) => s.id === "repeaterSend");
+    if (!send) throw new Error("falta repeaterSend");
+    const event = {
+      code: "Enter",
+      key: "Enter",
+      altKey: false,
+      shiftKey: false,
+      ctrlKey: true,
+      metaKey: false,
+    };
+    expect(matchesShortcut(send, event)).toBe(true);
+    expect(matchesShortcut(send, { ...event, ctrlKey: false, metaKey: true })).toBe(true);
+    expect(matchesShortcut(send, { ...event, ctrlKey: false })).toBe(false);
+    expect(matchesShortcut(send, { ...event, shiftKey: true })).toBe(false);
+    expect(shortcutAria(send)).toBe("Control+Enter Meta+Enter");
+  });
+
+  it("J y K del diff se reconocen sin modificadores y en mayúscula sin Shift no", () => {
+    const next = SHORTCUTS.find((s) => s.id === "nextChange");
+    if (!next) throw new Error("falta nextChange");
+    const event = {
+      code: "KeyJ",
+      key: "j",
+      altKey: false,
+      shiftKey: false,
+      ctrlKey: false,
+      metaKey: false,
+    };
+    expect(matchesShortcut(next, event)).toBe(true);
+    expect(matchesShortcut(next, { ...event, ctrlKey: true })).toBe(false);
+    expect(next.scope).toBe("diff");
   });
 
   it("la barra se reconoce por `key`, sin modificadores", () => {

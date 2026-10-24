@@ -4,7 +4,7 @@ import { z } from "zod";
 // por la constitución (sin código evaluado fuera del sandbox).
 z.config({ jitless: true });
 
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 
 const Uuid = z.uuidv4();
 

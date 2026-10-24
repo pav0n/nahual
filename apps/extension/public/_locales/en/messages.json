@@ -1531,5 +1531,26 @@
   },
   "drawer_expand": {
     "message": "Expand the drawer"
+  },
+  "tab_repeater": {
+    "message": "Repeater"
+  },
+  "repeater_empty_title": {
+    "message": "No repeater tabs yet"
+  },
+  "repeater_empty_body": {
+    "message": "Right-click a request in Traffic and choose \"Send to repeater\", or create an empty tab. Tabs live while DevTools is open: closing it discards them."
+  },
+  "repeater_new_tab": {
+    "message": "New tab"
+  },
+  "shortcut_desc_repeater_send": {
+    "message": "Send the repeater request"
+  },
+  "shortcut_desc_next_change": {
+    "message": "Go to the next diff change"
+  },
+  "shortcut_desc_prev_change": {
+    "message": "Go to the previous diff change"
   }
 }

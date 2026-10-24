@@ -8,6 +8,8 @@ export * from "./schemas/condition.ts";
 export * from "./schemas/exchange.ts";
 export * from "./schemas/limits.ts";
 export * from "./schemas/paused.ts";
+export * from "./schemas/repeater.ts";
+export * from "./schemas/diff.ts";
 export * from "./schemas/rule.ts";
 export * from "./schemas/settings.ts";
 export * from "./sensitive.ts";
