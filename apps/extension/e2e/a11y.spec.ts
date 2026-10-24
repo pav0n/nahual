@@ -3,19 +3,25 @@ import type { Page } from "@playwright/test";
 import {
   addProductionOrigin,
   attach,
+  blurPanel,
   callApi,
   corsCall,
   createRule,
+  filterTraffic,
   openApp,
   openCorsDetail,
   openPanel,
-  openRelaxedDetail,
   openQueue,
+  openRelaxedDetail,
+  openSection,
+  openSettings,
   pausedEditor,
   pausedOption,
   relaxExtraOrigins,
   relaxIndicator,
+  relaxItems,
   requestRow,
+  sectionTab,
   statusOf,
   tabIdOf,
   trafficRow,
@@ -52,8 +58,8 @@ for (const colorScheme of ["light", "dark"] as const) {
     await panel.setViewportSize({ width: 320, height: 900 });
     await expect(panel.locator("html")).toHaveAttribute("data-theme", colorScheme);
 
-    for (const tab of ["Traffic", "Rules", "Queue"]) {
-      await panel.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+    for (const tab of ["Traffic", "Rules", "Paused"] as const) {
+      await openSection(panel, tab);
       await expectNoSeriousViolations(panel, `vacío: ${tab}`);
       await expectNoHorizontalScroll(panel);
     }
@@ -63,15 +69,15 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoHorizontalScroll(panel);
 
     // Historia 1: lista, filtros con error, detalle con headers y body.
-    await panel.getByRole("tab", { name: "Traffic" }).click();
+    await openSection(panel, "Traffic");
     await app.reload();
     await callApi(app, "items");
     await expect(trafficRow(panel, "/api/items")).toBeVisible();
     await expectNoSeriousViolations(panel, "tráfico");
     await expectNoHorizontalScroll(panel);
-    await panel.getByLabel("URL regex").fill("([a-z");
+    await filterTraffic(panel, "([a-z", { regex: true });
     await expectNoSeriousViolations(panel, "filtro inválido");
-    await panel.getByLabel("URL regex").fill("");
+    await filterTraffic(panel, "", { regex: true });
     await trafficRow(panel, "/api/items").click();
     await expectNoSeriousViolations(panel, "detalle: headers");
     await expectNoHorizontalScroll(panel);
@@ -112,7 +118,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect((await error).status).toBe(500);
 
     // Historia 4: editor de acciones (mock, fallar, retrasar) y lista reordenable.
-    await panel.getByRole("tab", { name: "Rules" }).click();
+    await openSection(panel, "Rules");
     await panel.getByRole("button", { name: "New rule" }).click();
     const editor = panel.locator(".editor");
     for (const action of ["mock", "fail", "delay"]) {
@@ -142,17 +148,14 @@ test("pestañas y adjuntar solo con teclado", async ({
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Attached");
 
-  await panel.getByRole("tab", { name: "Traffic" }).focus();
+  await sectionTab(panel, "Traffic").focus();
   await panel.keyboard.press("ArrowRight");
-  await expect(panel.getByRole("tab", { name: "Rules" })).toHaveAttribute("aria-selected", "true");
-  await expect(panel.getByRole("tab", { name: "Rules" })).toBeFocused();
+  await expect(sectionTab(panel, "Rules")).toHaveAttribute("aria-selected", "true");
+  await expect(sectionTab(panel, "Rules")).toBeFocused();
   await panel.keyboard.press("End");
-  await expect(panel.getByRole("tab", { name: /^Queue/ })).toHaveAttribute("aria-selected", "true");
+  await expect(sectionTab(panel, "Paused")).toHaveAttribute("aria-selected", "true");
   await panel.keyboard.press("Home");
-  await expect(panel.getByRole("tab", { name: "Traffic" })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
+  await expect(sectionTab(panel, "Traffic")).toHaveAttribute("aria-selected", "true");
 
   await panel.keyboard.press("Alt+Shift+A");
   await expect(statusOf(panel)).toContainText("Disconnected");
@@ -263,7 +266,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoHorizontalScroll(panel);
 
     // Suspendida y sin efecto.
-    await panel.locator("h1").click();
+    await blurPanel(panel);
     await panel.keyboard.press("Alt+Shift+P");
     await expect(indicator).toContainText("suspended");
     await expectNoSeriousViolations(panel, "indicador suspendido");
@@ -278,7 +281,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect(await relaxExtraOrigins(panel, tabId, servers.appOrigin, 9)).toEqual(
       Array.from({ length: 9 }, () => true),
     );
-    await expect(indicator.locator(".relax-item")).toHaveCount(10, { timeout: 5_000 });
+    await expect.poll(async () => (await relaxItems(panel)).count(), { timeout: 5_000 }).toBe(10);
     await expectNoSeriousViolations(panel, "indicador con 10 orígenes");
     await expectNoHorizontalScroll(panel);
 
@@ -287,16 +290,16 @@ for (const colorScheme of ["light", "dark"] as const) {
       .getByRole("button", { name: "Turn off the relaxation for https://extra0.test" })
       .focus();
     await panel.keyboard.press("Enter");
-    await expect(indicator.locator(".relax-item")).toHaveCount(9);
+    await expect(await relaxItems(panel)).toHaveCount(9);
     await indicator.getByRole("button", { name: /^Turn all off/ }).focus();
     await panel.keyboard.press("Enter");
     await expect(indicator).toHaveCount(0);
 
     // Ajustes de producción.
     await addProductionOrigin(panel, "https://*.empresa.com");
+    const settings = await openSettings(panel, "Development CORS");
     await expectNoSeriousViolations(panel, "ajustes de producción");
     await expectNoHorizontalScroll(panel);
-    const settings = panel.locator("details.settings");
     await settings.getByLabel(/^Add origin or pattern/).fill("no es un origen");
     await settings.getByRole("button", { name: "Add", exact: true }).click();
     await expect(settings).toContainText("Invalid entry");

@@ -19,7 +19,8 @@ export function TrafficView() {
   const undo = usePanelStore((s) => s.undoClearTraffic);
   const pushToast = usePanelStore((s) => s.pushToast);
   const [filter, setFilter] = useState<ValidFilter>(NO_FILTER);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedId = usePanelStore((s) => s.selectedExchangeId);
+  const setSelectedId = usePanelStore((s) => s.selectExchange);
 
   const shown = useMemo(() => exchanges.filter((e) => filter.matches(e)), [exchanges, filter]);
   const selected =

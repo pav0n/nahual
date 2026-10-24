@@ -18,7 +18,7 @@ import { StatusBar } from "./components/StatusBar.tsx";
 import { SEARCH_INPUT_ID } from "./components/traffic/Filters.tsx";
 import { TrafficView } from "./components/traffic/TrafficView.tsx";
 import { usePanelStore } from "./store/index.ts";
-import type { PanelTab } from "./store/ui.ts";
+import type { PanelSection } from "./store/ui.ts";
 import "./theme.css";
 import { applyTheme } from "./theme.ts";
 import { useShortcuts } from "./use-shortcuts.ts";
@@ -29,8 +29,8 @@ const TABS = "nahual";
 export function App({ tabId }: { tabId: number | null }) {
   useSwConnection(tabId);
   useEffect(applyTheme, []);
-  const tab = usePanelStore((s) => s.tab);
-  const setTab = usePanelStore((s) => s.setTab);
+  const tab = usePanelStore((s) => s.section);
+  const setTab = usePanelStore((s) => s.setSection);
   const session = usePanelStore((s) => s.session);
   const queueSize = session?.queueSize ?? 0;
   const continueAll = useContinueAll();
@@ -53,7 +53,7 @@ export function App({ tabId }: { tabId: number | null }) {
       if (usePanelStore.getState().relaxations.length > 0) void endRelaxation();
     },
     focusSearch: () => {
-      usePanelStore.getState().setTab("traffic");
+      usePanelStore.getState().setSection("traffic");
       // La pestaña se monta en el mismo ciclo: se enfoca en el siguiente.
       requestAnimationFrame(() => document.getElementById(SEARCH_INPUT_ID)?.focus());
     },
@@ -70,11 +70,11 @@ export function App({ tabId }: { tabId: number | null }) {
     );
   }
 
-  const tabs: { id: PanelTab; label: string }[] = [
+  const tabs: { id: PanelSection; label: string }[] = [
     { id: "traffic", label: t("tab_traffic") },
     { id: "rules", label: t("tab_rules") },
     {
-      id: "queue",
+      id: "paused",
       label: queueSize > 0 ? t("tab_queue_count", String(queueSize)) : t("tab_queue"),
     },
   ];
@@ -93,7 +93,7 @@ export function App({ tabId }: { tabId: number | null }) {
       <TabPanel idPrefix={TABS} id="rules" hidden={tab !== "rules"}>
         <RulesView />
       </TabPanel>
-      <TabPanel idPrefix={TABS} id="queue" hidden={tab !== "queue"}>
+      <TabPanel idPrefix={TABS} id="paused" hidden={tab !== "paused"}>
         <QueueView continueAll={continueAll} />
       </TabPanel>
       {continueAll.dialog}

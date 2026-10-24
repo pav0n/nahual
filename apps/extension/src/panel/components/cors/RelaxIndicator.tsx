@@ -3,6 +3,7 @@ import { endRelaxation } from "../../cors-commands.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { SHORTCUT_END_RELAXATIONS } from "../../use-shortcuts.ts";
 import { Countdown } from "../queue/Countdown.tsx";
+import { ariaOf } from "../../shortcuts.ts";
 
 /** `h:mm:ss` para la cuenta regresiva de una relajación (≤ 8 h). */
 export function formatRemaining(seconds: number): string {
@@ -28,7 +29,7 @@ export function RelaxIndicator({ onReport }: { onReport?: (apiOrigin: string) =>
         </h2>
         <button
           type="button"
-          aria-keyshortcuts={SHORTCUT_END_RELAXATIONS}
+          aria-keyshortcuts={ariaOf("endRelaxations")}
           title={t("shortcut_hint", SHORTCUT_END_RELAXATIONS)}
           onClick={() => void endRelaxation()}
         >

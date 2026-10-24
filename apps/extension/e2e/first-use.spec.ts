@@ -1,9 +1,13 @@
 import type { Page, Worker } from "@playwright/test";
 import {
   callApi,
+  closeSettings,
+  detach,
+  expectSessionAction,
   openApp,
   openQueue,
-  openTab,
+  openSection,
+  openSettings,
   ownSessions,
   pausedEditor,
   statusOf,
@@ -84,9 +88,10 @@ test("US3-2/4: tras el consentimiento, abrir el panel adjunta solo; el ajuste lo
   await expect(onboarding(panel)).toBeHidden();
   await expect(statusOf(panel)).toContainText("Attached");
 
-  await panel.locator("details.settings summary").click();
-  await panel.getByRole("switch", { name: "Attach when the panel opens" }).uncheck();
+  const settings = await openSettings(panel, "General");
+  await settings.getByRole("switch", { name: "Attach when the panel opens" }).uncheck();
   await expect.poll(() => storedSettings(nahualWorker)).toMatchObject({ autoAttach: false });
+  await closeSettings(panel);
   await panel.close();
 
   panel = await openFreshPanel(await context.newPage(), extensionId, tabId);
@@ -134,9 +139,9 @@ test("US3-5: indicador con estado, sitio, reglas y cola; Soltar no se readjunta 
   await expect(statusOf(panel)).toContainText(
     `Attached · Site: ${servers.appOrigin} · 0 active rules · 0 queued`,
   );
-  await panel.getByRole("button", { name: /^Detach/ }).click();
+  await detach(panel);
   await expect(statusOf(panel)).toContainText("Disconnected");
-  await expect(panel.getByRole("button", { name: /^Reconnect/ })).toBeVisible();
+  await expectSessionAction(panel, /^Reconnect/);
   await panel.waitForTimeout(800);
   await expect(statusOf(panel)).toContainText("Disconnected");
   expect(await ownSessions(nahualWorker)).toEqual([]);
@@ -160,7 +165,7 @@ test("US3-6/7/8 y SC-001: estados vacíos, plantilla y primera respuesta editada
   await expect(panel.getByText("Reload the page to capture its requests.")).toBeVisible();
 
   // US3-6/7: estado vacío de reglas con la plantilla sugerida.
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await expect(panel.getByText("No rules yet")).toBeVisible();
   const templates = panel.getByRole("group", { name: "Templates" });
   await expect(templates.getByRole("button").first()).toContainText("Pause error responses");

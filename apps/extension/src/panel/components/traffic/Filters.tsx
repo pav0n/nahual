@@ -1,6 +1,7 @@
 import { compileFilter, type CompiledFilter, type FilterInput } from "@nahual/domain";
 import { useId, useState } from "react";
 import { t } from "../../../shared/i18n.ts";
+import { ariaOf } from "../../shortcuts.ts";
 
 export const SEARCH_INPUT_ID = "traffic-search";
 
@@ -60,7 +61,7 @@ export function Filters({ shown, total, onChange }: Props) {
           id={SEARCH_INPUT_ID}
           type="search"
           value={input.text}
-          aria-keyshortcuts="/ Alt+Shift+F"
+          aria-keyshortcuts={`${ariaOf("focusSearchSlash")} ${ariaOf("focusSearch")}`}
           onChange={(e) => update({ text: e.target.value })}
         />
       </label>

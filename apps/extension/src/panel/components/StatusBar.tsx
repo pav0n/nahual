@@ -33,7 +33,7 @@ export function StatusBar({ globalPauseControl }: { globalPauseControl?: ReactNo
 
   return (
     <div className="status">
-      <div role="status" aria-live="polite" className="grow">
+      <div role="status" aria-live="polite" aria-label={t("session_label")} className="grow">
         <span className="status-badge" data-status={status}>
           <span aria-hidden="true">{ICONS[status]} </span>
           {t(`status_${status}`)}

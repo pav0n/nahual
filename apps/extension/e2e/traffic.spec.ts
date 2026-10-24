@@ -3,9 +3,11 @@ import type { TestServers } from "./fixtures/servers.ts";
 import {
   attachAndReload,
   callApi,
+  filterTraffic,
   openApp,
   openPanel,
   tabIdOf,
+  toggleTypeFilter,
   trafficGrid,
   trafficRow,
 } from "./fixtures/panel.ts";
@@ -66,26 +68,26 @@ test("US1-2/3: filtros por texto, regex, status y tipo; regex inválida conserva
   for (const id of ["items", "empty", "error"]) await callApi(app, id);
   await expect(trafficRow(panel, "/api/error")).toBeVisible();
 
-  await panel.getByLabel("Search URLs").fill("items");
+  await filterTraffic(panel, "items");
   await expect(trafficGrid(panel).getByRole("row")).toHaveCount(2);
   await expect(count(panel)).toContainText(/^1 of \d+$/);
 
-  await panel.getByLabel("Search URLs").fill("");
-  await panel.getByLabel("URL regex").fill("/api/(items|empty)");
+  await filterTraffic(panel, "");
+  await filterTraffic(panel, "/api/(items|empty)", { regex: true });
   await expect(trafficGrid(panel).getByRole("row")).toHaveCount(3);
 
-  await panel.getByLabel("URL regex").fill("([a-z");
+  await filterTraffic(panel, "([a-z", { regex: true });
   await expect(panel.getByText("Invalid regex")).toBeVisible();
   await expect(panel.getByLabel("URL regex")).toHaveAttribute("aria-invalid", "true");
   await expect(trafficGrid(panel).getByRole("row")).toHaveCount(3);
 
-  await panel.getByLabel("URL regex").fill("");
+  await filterTraffic(panel, "", { regex: true });
   await panel.getByLabel("Status").fill("5xx");
   await expect(trafficGrid(panel).getByRole("row")).toHaveCount(2);
   await expect(trafficRow(panel, "/api/error")).toBeVisible();
 
   await panel.getByLabel("Status").fill("");
-  await panel.getByRole("checkbox", { name: "Document" }).check();
+  await toggleTypeFilter(panel, "Document");
   await expect(trafficRow(panel, "/api/")).toHaveCount(0);
   await expect(trafficGrid(panel).getByRole("row")).toHaveCount(2);
 });
@@ -197,7 +199,7 @@ test("US1-6/7 y SC-004: tope de 2,000, filtro < 300 ms con 2,000 entradas, limpi
   await expect(count(panel)).toHaveText("1 of 2000");
 
   // Desplazamiento: ninguna tarea larga (> 50 ms) mientras se recorre la lista.
-  await panel.getByLabel("Search URLs").fill("");
+  await filterTraffic(panel, "");
   const longTasks = await panel.evaluate(async () => {
     const durations: number[] = [];
     const observer = new PerformanceObserver((list) => {
@@ -231,7 +233,7 @@ test("navegación por teclado en la lista: flechas y Enter abren el detalle", as
   const { app, panel } = await setup(fixtures);
   await callApi(app, "items");
   await callApi(app, "empty");
-  await panel.getByLabel("Search URLs").fill("/api/");
+  await filterTraffic(panel, "/api/");
   const rows = trafficGrid(panel).getByRole("row");
   await expect(rows).toHaveCount(3);
   await rows.nth(1).focus();

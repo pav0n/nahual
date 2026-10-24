@@ -2,6 +2,7 @@ import type { Rule } from "@nahual/domain";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
 import { usePanelStore } from "../../store/index.ts";
+import { ariaOf } from "../../shortcuts.ts";
 
 /** Mueve una regla dentro de la lista de su sitio y anuncia la nueva posición (FR-015, FR-016). */
 export async function moveRule(rule: Rule, siteRules: Rule[], delta: -1 | 1) {
@@ -42,7 +43,7 @@ export function ReorderControls({
         type="button"
         data-move="up"
         disabled={index === 0}
-        aria-keyshortcuts="Alt+ArrowUp"
+        aria-keyshortcuts={ariaOf("moveRuleUp")}
         aria-label={t("action_move_up_rule", rule.name)}
         onClick={() => void moveRule(rule, siteRules, -1)}
       >
@@ -52,7 +53,7 @@ export function ReorderControls({
         type="button"
         data-move="down"
         disabled={index === siteRules.length - 1}
-        aria-keyshortcuts="Alt+ArrowDown"
+        aria-keyshortcuts={ariaOf("moveRuleDown")}
         aria-label={t("action_move_down_rule", rule.name)}
         onClick={() => void moveRule(rule, siteRules, 1)}
       >

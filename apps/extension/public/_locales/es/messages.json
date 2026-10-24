@@ -1399,5 +1399,32 @@
   },
   "cors_cause_name_unrecognized": {
     "message": "causa no reconocida"
+  },
+  "session_label": {
+    "message": "Sesión"
+  },
+  "shortcut_desc_toggle_attach": {
+    "message": "Adjuntar o soltar el debugger"
+  },
+  "shortcut_desc_continue": {
+    "message": "Continuar el pausado seleccionado"
+  },
+  "shortcut_desc_continue_all": {
+    "message": "Continuar todos los pausados"
+  },
+  "shortcut_desc_pause_nahual": {
+    "message": "Pausar o reanudar Nahual"
+  },
+  "shortcut_desc_end_relaxations": {
+    "message": "Apagar todas las relajaciones CORS"
+  },
+  "shortcut_desc_focus_search": {
+    "message": "Ir a la búsqueda de Tráfico"
+  },
+  "shortcut_desc_move_rule_up": {
+    "message": "Subir la regla enfocada"
+  },
+  "shortcut_desc_move_rule_down": {
+    "message": "Bajar la regla enfocada"
   }
 }

@@ -6,7 +6,7 @@ import {
   openApp,
   openCorsDetail,
   openPanel,
-  openTab,
+  openSection,
   requestRow,
   tabIdOf,
   trafficGrid,
@@ -129,7 +129,7 @@ test("US1-5: un request fallado por una regla de 002 no se marca como CORS", asy
 }) => {
   const fx = { context, nahualWorker, extensionId, servers };
   const { app, panel } = await setup(fx);
-  await openTab(panel, "Rules");
+  await openSection(panel, "Rules");
   await panel.getByRole("button", { name: /^(Create your first rule|New rule)$/ }).click();
   const editor = panel.locator(".editor");
   await editor.getByLabel("Name", { exact: true }).fill("Fallar blocked");
@@ -138,7 +138,7 @@ test("US1-5: un request fallado por una regla de 002 no se marca como CORS", asy
   await editor.getByLabel("Action").selectOption("fail");
   await editor.getByRole("button", { name: "Save rule" }).click();
   await expect(panel.locator(".rule-item").filter({ hasText: "Fallar blocked" })).toBeVisible();
-  await openTab(panel, "Traffic");
+  await openSection(panel, "Traffic");
   expect((await corsCall(app, "blocked")).error).toContain("Failed to fetch");
   await expect(trafficRow(panel, "/blocked").last()).toContainText("Failed");
   await expect(trafficRow(panel, "/blocked").last()).not.toContainText(BLOCKED);
