@@ -324,7 +324,8 @@ Escape sigue cerrando el diálogo de Nahual (patrón APG) y se documenta el efec
   tomaba el foco en el siguiente cuadro y un Escape inmediato no lo cerraba (ahora toma el foco al
   colocarse y escucha Escape en captura), y el hover del botón primario le quitaba el fondo
   (texto blanco sobre gris, 1,1:1).
-- **SC-005** (prueba de comprensión): por registrar en la validación manual (T071).
+- **SC-005** (prueba de comprensión): validación manual (T071) hecha por el dev el 2026-10-24 en
+  Chrome estable, con resultado satisfactorio; no se anotaron tiempos por tarea.
 
 ### Decisiones tomadas al implementar
 
