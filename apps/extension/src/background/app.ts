@@ -13,6 +13,13 @@ import {
   type PanelCommand,
   type RuntimeLike,
 } from "./panel-port.ts";
+import {
+  chromeCleanSendDeps,
+  createCleanSender,
+  type CleanSendDeps,
+} from "./repeater/clean-send.ts";
+import { createPageSender } from "./repeater/page-send.ts";
+import { createRepeaterService } from "./repeater/repeater-service.ts";
 import { createRuleEngine } from "./rule-engine.ts";
 import { createRuleStore } from "./rule-store.ts";
 import { createSessionRegistry, type SessionStorageLike } from "./session-registry.ts";
@@ -26,6 +33,8 @@ export interface BackgroundDeps {
   sessionStorage: SessionStorageLike;
   localStorage: LocalStorageLike;
   panelPath?: string;
+  /** Red y permiso de host del contexto limpio del repeater (005); por defecto, los de Chrome. */
+  cleanSend?: CleanSendDeps;
 }
 
 /**
@@ -126,6 +135,20 @@ export function createBackground(deps: BackgroundDeps) {
     frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
     onCorsFailure: (tabId, _exchangeId, diagnosis, url) =>
       relaxer.noteFailure(tabId, url, diagnosis),
+    repeaterSendFor: (tabId) => repeater.currentPageSend(tabId),
+    onRepeaterRequest: (tabId, sendId, exchangeId) =>
+      repeater.onRepeaterRequest(tabId, sendId, exchangeId),
+    onRepeaterSettled: (tabId, sendId, exchangeId) =>
+      repeater.onRepeaterSettled(tabId, sendId, exchangeId),
+  });
+
+  /** Repeater (005): envíos en contexto de página por la pestaña y en contexto limpio por el SW. */
+  const repeater = createRepeaterService({
+    pageSender: createPageSender({ debugger: cdp }),
+    cleanSender: createCleanSender(deps.cleanSend ?? chromeCleanSendDeps),
+    isAttached: (tabId) => manager.isAttached(tabId),
+    capture,
+    onResult: (tabId, result) => port.send(tabId, makeEvent("repeaterResult", result)),
   });
 
   const engine = createRuleEngine({
@@ -156,6 +179,7 @@ export function createBackground(deps: BackgroundDeps) {
     registry,
     onStateChange: sendState,
     onSessionEnded: (tabId) => {
+      repeater.contextLost(tabId);
       engine.sessionEnded(tabId);
       interceptor.sessionEnded(tabId);
       relaxer.sessionEnded(tabId);
@@ -169,6 +193,8 @@ export function createBackground(deps: BackgroundDeps) {
       sendState(tabId);
     },
     onNavigated: (tabId, site, url) => {
+      // El documento cambió: el mundo aislado del repeater ya no existe (research R4).
+      repeater.contextLost(tabId);
       engine.navigated(tabId);
       relaxer.refresh(tabId);
       port.send(tabId, makeEvent("navigated", { site, url }));
@@ -222,8 +248,8 @@ export function createBackground(deps: BackgroundDeps) {
         relaxer.end(tabId, command.payload.relaxationId ?? null, "user");
         return { ok: true };
       case "getBody": {
-        const { exchangeId, side } = command.payload;
-        const body = await capture.getBody(tabId, exchangeId, side);
+        const { exchangeId, side, binary } = command.payload;
+        const body = await capture.getBody(tabId, exchangeId, side, { binary: binary === true });
         if (!body.ok) return { ok: false, code: "body_unavailable" };
         port.send(
           tabId,
@@ -235,9 +261,14 @@ export function createBackground(deps: BackgroundDeps) {
         );
         return { ok: true };
       }
-      // 005: el servicio del repeater y la lista de ignorados llegan en US1 y US2.
       case "repeaterSend":
+        // El tabId sale del remitente (el puerto de la pestaña), nunca del payload.
+        repeater.send(tabId, command.payload);
+        return { ok: true };
       case "repeaterCancel":
+        repeater.cancel(tabId, command.payload.sendId);
+        return { ok: true };
+      // 005: la lista de ignorados llega en US2.
       case "getIgnores":
       case "setIgnores":
         return { ok: false, code: "invalid_message" };

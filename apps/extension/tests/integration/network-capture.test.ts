@@ -581,3 +581,144 @@ describe("NetworkCapture: diagnóstico CORS (003, research R3, R6)", () => {
     });
   });
 });
+
+describe("NetworkCapture: requests del repeater (005, research R2, R3)", () => {
+  const SEND = "3f1c2b4a-8d9e-4f60-a1b2-c3d4e5f60718";
+  const fromRepeater = { type: "script", stack: { callFrames: [{ url: "nahual-repeater" }] } };
+  let inFlight: string | null;
+  let requests: { sendId: string; exchangeId: string }[];
+  let settled: { sendId: string; exchangeId: string }[];
+
+  beforeEach(async () => {
+    inFlight = SEND;
+    requests = [];
+    settled = [];
+    // CDP propio: la captura del beforeEach general no debe procesar estos eventos.
+    cdp = new FakeDebugger();
+    await cdp.attach(1);
+    batches = [];
+    capture = createNetworkCapture({
+      debugger: cdp,
+      onUpdates: (tabId, updates) => {
+        if (tabId === 1) batches.push(updates);
+      },
+      repeaterSendFor: () => inFlight,
+      onRepeaterRequest: (_tab, sendId, exchangeId) => requests.push({ sendId, exchangeId }),
+      onRepeaterSettled: (_tab, sendId, exchangeId) => settled.push({ sendId, exchangeId }),
+    });
+  });
+
+  it("marca el intercambio con el sendId del envío en curso y avisa al terminar", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { initiator: fromRepeater }));
+    cdp.emit(1, "Network.responseReceived", responseReceived("r1", { status: 201 }));
+    cdp.emit(1, "Network.loadingFinished", loadingFinished("r1"));
+    vi.advanceTimersByTime(50);
+    expect(of("r1")[0]?.fields.repeater).toEqual({ sendId: SEND });
+    expect(requests).toEqual([{ sendId: SEND, exchangeId: "r1" }]);
+    expect(settled).toEqual([{ sendId: SEND, exchangeId: "r1" }]);
+    expect(capture.snapshot(1, "r1")).toMatchObject({
+      state: "complete",
+      status: 201,
+      effects: [],
+      diagnosis: null,
+      relaxed: false,
+      preflight: null,
+    });
+  });
+
+  it("sin envío en curso, de otro script o de la página no marca nada", () => {
+    inFlight = null;
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { initiator: fromRepeater }));
+    inFlight = SEND;
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r2", {
+        initiator: { type: "script", stack: { callFrames: [{ url: "https://app.test/app.js" }] } },
+      }),
+    );
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r3", { initiator: { type: "other" } }),
+    );
+    vi.advanceTimersByTime(50);
+    expect(all().some((u) => u.fields.repeater)).toBe(false);
+    expect(requests).toEqual([]);
+  });
+
+  it("un fallo de red avisa al terminar; un bloqueo CORS espera al diagnóstico", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { initiator: fromRepeater }));
+    cdp.emit(1, "Network.loadingFailed", loadingFailed("r1", "net::ERR_CONNECTION_REFUSED"));
+    expect(settled).toEqual([{ sendId: SEND, exchangeId: "r1" }]);
+    expect(capture.snapshot(1, "r1")).toMatchObject({
+      state: "failed",
+      errorText: "net::ERR_CONNECTION_REFUSED",
+    });
+
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r2", { initiator: fromRepeater }));
+    cdp.emit(1, "Network.loadingFailed", corsFailed("r2", "MissingAllowOriginHeader"));
+    vi.advanceTimersByTime(600);
+    expect(settled.at(-1)).toEqual({ sendId: SEND, exchangeId: "r2" });
+    expect(capture.snapshot(1, "r2")?.diagnosis).not.toBeNull();
+  });
+
+  it("el snapshot guarda los efectos de reglas y la relajación del intercambio", () => {
+    cdp.emit(1, "Network.requestWillBeSent", requestWillBeSent("r1", { initiator: fromRepeater }));
+    capture.effect(1, "r1", {
+      stage: "response",
+      ruleId: SEND,
+      ruleName: "Errores",
+      result: "paused",
+    });
+    capture.relaxed(1, "r1", { appOrigin: "https://app.test", added: [] } as never);
+    expect(capture.snapshot(1, "r1")).toMatchObject({
+      effects: [{ ruleName: "Errores", result: "paused" }],
+      relaxed: true,
+    });
+    expect(capture.snapshot(1, "nope")).toBeNull();
+  });
+});
+
+describe("NetworkCapture: body binario del request para el repeater (005, FR-002a)", () => {
+  it("con binary, un body no textual vuelve en base64; sin binary, como siempre", async () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", {
+        method: "POST",
+        hasPostData: true,
+        headers: { "content-type": "image/png" },
+      }),
+    );
+    cdp.respond("Network.getRequestPostData", () => ({ postData: "AAEC", base64Encoded: true }));
+    await expect(capture.getBody(1, "r1", "request", { binary: true })).resolves.toEqual({
+      ok: true,
+      encoding: "base64",
+      content: "AAEC",
+      size: 3,
+    });
+    await expect(capture.getBody(1, "r1", "request")).resolves.toMatchObject({
+      ok: true,
+      encoding: "text",
+    });
+  });
+
+  it("con binary, un body de texto sigue siendo texto", async () => {
+    cdp.emit(
+      1,
+      "Network.requestWillBeSent",
+      requestWillBeSent("r1", {
+        method: "POST",
+        postData: '{"a":1}',
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    cdp.respond("Network.getRequestPostData", () => ({ postData: '{"a":1}' }));
+    await expect(capture.getBody(1, "r1", "request", { binary: true })).resolves.toMatchObject({
+      ok: true,
+      encoding: "text",
+      content: '{"a":1}',
+    });
+  });
+});

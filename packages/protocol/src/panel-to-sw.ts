@@ -112,6 +112,8 @@ export const PanelMessageSchema = z.discriminatedUnion("type", [
     z.strictObject({
       exchangeId: z.string().min(1).max(256),
       side: z.enum(["request", "response"]),
+      /** 005: un body de request no textual vuelve en base64 para reenviarlo intacto. */
+      binary: z.literal(true).optional(),
     }),
   ),
 ]);

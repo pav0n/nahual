@@ -118,7 +118,7 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 ## R6 — Headers que el navegador no deja fijar
 
-- **Decision**: función pura `forbiddenHeaders(headers, mode)` en el dominio con la lista de
+- **Decision**: función pura `forbiddenHeaders(headers)` en el dominio con la lista de
   nombres prohibidos de la especificación Fetch (`Cookie`, `Host`, `Origin`, `Content-Length`,
   `Connection`, `Referer`, `Sec-*`, `Proxy-*`, etc.). El editor los marca (FR-008) y el resultado
   del envío los lista como "no enviados tal cual". Se envían igual a `fetch` (el navegador los

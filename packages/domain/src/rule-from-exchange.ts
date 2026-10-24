@@ -16,7 +16,7 @@ const GLOB_SPECIAL = /[*?\\]/;
 const withoutQuery = (url: string) => url.split(/[?#]/, 1)[0] ?? url;
 
 /** Ruta para el nombre: la de la URL si es http(s); si no, la URL sin query. */
-function pathOf(url: string): string {
+export function pathOf(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.pathname;

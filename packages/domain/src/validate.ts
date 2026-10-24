@@ -14,7 +14,7 @@ export interface ValidationIssue {
 export type Validation<T> = { ok: true; value: T } | { ok: false; issues: ValidationIssue[] };
 
 /** Traduce los issues de Zod a pares ruta + clave i18n, sin incluir nunca el valor. */
-function toIssues(error: z.ZodError): ValidationIssue[] {
+export function toIssues(error: z.ZodError): ValidationIssue[] {
   const seen = new Set<string>();
   const issues: ValidationIssue[] = [];
   for (const issue of error.issues) {
