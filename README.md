@@ -10,7 +10,7 @@ seguro, repeater + diff, hooks en TypeScript y exportación al código. Todo loc
 `005-repeater-diff`: ver el tráfico de la pestaña, crear reglas y pausar, simular o retrasar solo lo
 que cumple una condición, entender y relajar CORS de desarrollo de forma acotada, reenviar requests y
 comparar sus respuestas, en un panel con el aspecto de DevTools. Ver
-`.specify/memory/constitution.md`, `docs/speckit-inputs/` y `specs/`.
+`.specify/memory/constitution.md`, `docs/adr/`, `docs/speckit-inputs/` y `specs/`.
 
 ## Qué hace
 
