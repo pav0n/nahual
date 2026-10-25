@@ -226,6 +226,26 @@ lógica del dominio.
 - **Disponibilidad del contexto de página**: derivada del estado de sesión del store (adjunto y
   sitio actual igual al del envío); el SW lo vuelve a comprobar.
 
+## Revisión de implementación (T063)
+
+Revisión del diff de 005 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Permisos | `permissions` sigue `["debugger", "storage"]`; nuevo `optional_host_permissions` (`http://*/*`, `https://*/*`) sin ningún host concedido al instalar; versión `0.5.0` (`tests/dist/manifest.test.ts`). Solo el build de pruebas declara `host_permissions: ["http://127.0.0.1/*"]` porque Playwright no puede contestar el diálogo (research X2); el de producción no tiene `host_permissions` |
+| Red propia | Exactamente dos `fetch(` en el build: el del contexto limpio en el chunk del SW, junto a la comprobación de permiso, y el texto de `PAGE_SEND`, que corre en la página (`tests/dist/no-network.test.ts`). El panel no hace red |
+| Inyección en el repeater | `PAGE_SEND` y `PAGE_ABORT` son constantes con hash fijo en la integración y llegan íntegras al bundle; el request y el `sendId` van solo en `arguments`; `sourceURL` constante. E2E con cinco cargas en URL, header y body: llegan literales y `__pwned` no existe en la página, el SW ni el panel |
+| Página maliciosa | El envío corre en un mundo aislado: un `window.fetch` reemplazado por la página no se usa (X1). No se reintenta un envío si el contexto se destruyó a mitad (el request pudo salir) |
+| Fuga de credenciales | Repeater solo en memoria; `chrome.storage.local` suma solo `nahual.repeater.ignores.v1`, con claves SHA-256 y sin valores; ningún secreto en `storage.local`, `storage.session`, `localStorage`, `sessionStorage` ni IndexedDB tras una sesión con cookies, `Authorization`, tokens en query y body y una respuesta pegada (`storage-privacy.spec.ts`). Diff redactado por defecto en headers, campos JSON y query, también dentro de líneas de texto; los valores reales solo en memoria y solo tras la acción explícita |
+| Abuso del permiso de host | Se pide un origen exacto, solo al pulsar Enviar en contexto limpio (espía del build de pruebas, SC-005b); se lista y se quita en Ajustes ⇒ General |
+| Contexto limpio | `credentials: "omit"`, `cache: "no-store"`; el eco del servidor no recibe la cookie de la app (SC-005) |
+| Mensajería | Protocolo v4 validado en el SW y en el panel; el worker del diff valida la petición y el panel valida la respuesta y solo acepta la de su instancia y su `requestId` (análisis D1) |
+| XSS en el panel | Respuestas, historial y diff como texto; E2E con `<script>` y `onerror` en resultado y diff |
+| Dependencias | Ninguna nueva (diff JSON y por líneas propios) |
+| Tamaño | Total de JS de 351,626 B a 819,401 B (236,786 B gzip); 184,807 B son el worker del diff con su copia de Zod y del dominio, cargado solo al comparar (research "Tamaño de los bundles") |
+| Rendimiento | SC-001 302 ms (parte automática); SC-003 247–459 ms sin tareas largas; camino del tráfico sin regresión medible (research "Camino del tráfico") |
+| Definición de terminado | Por historia: dominio con TDD (95 % de cobertura del paquete), integración del SW con el CDP simulado, E2E de la historia, axe sin violaciones serias en ambos temas a 320 px y recorrido solo con teclado, textos `es`/`en`, capturas de regresión visual. Pendiente que necesita personas: aceptar el diálogo del permiso dentro de DevTools, la demo en Chrome estable y la prueba de comprensión (T065) |
+
 ## Complexity Tracking
 
 Sin violaciones de la constitución que justificar.

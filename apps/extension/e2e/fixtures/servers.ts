@@ -298,6 +298,8 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         corsRoute(url.pathname, req, res);
         return;
       }
+      // Sin Date: el diff de dos respuestas de /diff/* no depende del segundo en que salen.
+      if (url.pathname.startsWith("/diff/")) res.sendDate = false;
       if (url.pathname !== "/no-cors") {
         cors(res);
         if (req.method === "OPTIONS") {

@@ -371,5 +371,43 @@ sin violaciones de CSP. Sin respaldo.
 - **"Sin diferencias" determinista en las pruebas** con la respuesta pegada: dos envíos al mismo
   endpoint pueden diferir en el header `Date`, y eso es un cambio real.
 
-*Por registrar durante la implementación: medición del camino del tráfico (R18) y tamaño de los
-bundles.*
+### Camino del tráfico (R18, principio VI)
+
+`e2e/experiments/e4-overhead-rules.spec.ts` (el de 002 R20, con el panel y el motor reales), tres
+corridas de 500 fetch tras 10 de calentamiento, HeadlessChrome 156, 2026-10-24:
+
+| Corrida | Overhead p95 en 002 (ms) | Overhead p95 en 005 (ms) |
+|---|---|---|
+| 3. Regla Request: prefiltro coincide, condición de header no | 2,5 | 3,4 · 3,6 · 2,0 |
+| 4. Regla Response: JSONPath no (pide el body) | 2,6 | 2,4 · 3,0 · 2,4 |
+
+La captura pasiva (corrida 2, donde vive el reconocimiento del `initiator`) sigue sin distinguirse
+de la corrida sin debugger. Las corridas varían ±1 ms entre sí (una por encima de 002 en 1,1 ms y
+otra por debajo en 0,5 ms): no hay regresión medible, y todo queda muy por debajo del presupuesto de
+20 ms (SC-002 de 002).
+
+### Estabilidad (T064)
+
+Tres corridas seguidas de `pnpm e2e` (4 workers): 137/137, 132 + 1 fallo, 137/137; la regresión
+visual (66 + 24 capturas nuevas) estable en tres corridas. El único fallo es una intermitencia de
+003, no de 005: `cors-diagnosis.spec.ts` US1-3 a veces diagnostica un bloqueo CORS antes de recibir
+los `ExtraInfo` de Network (headers de la respuesta o `Origin`/`Cookie` del request), que Network no
+ordena respecto de `loadingFailed`. Ocurre también en `main` (2 de 240 repeticiones de la spec, mismo
+síntoma). Un intento de esperar esos headers en el diagnóstico lo corregía, pero hacía que
+`cors-relax.spec.ts` agotara su tiempo en ~2 % de las repeticiones, así que se revirtió: queda como
+deuda de 003 para una corrección propia (con la causa del timeout entendida antes de cambiar la
+espera).
+
+### Tamaño de los bundles (`pnpm build`)
+
+| Archivo | 004 | 005 | gzip (005) |
+|---|---|---|---|
+| Panel (`panel-*.js`) | — | 383,823 B | 115,039 B |
+| Dominio + Zod compartido (`src-*.js`) | — | 200,220 B | 55,513 B |
+| SW (`index.ts-*.js`) | — | 50,302 B | 16,367 B |
+| **Worker del diff** (`diff.worker-*.js`, nuevo) | — | 184,807 B | 49,567 B |
+| **Total JS** | 351,626 B | 819,401 B | 236,786 B |
+
+El worker es la mayor parte del aumento: Vite lo construye como entrada aparte y no comparte chunks
+con el panel, así que lleva su propia copia de Zod y del dominio (los necesita para validar la
+petición y calcular el diff). Se carga solo al abrir un diff.

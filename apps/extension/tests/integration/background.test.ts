@@ -1,5 +1,5 @@
 import { makeCommand, type SwMessage } from "@nahual/protocol";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBackground } from "../../src/background/app.ts";
 import { SETTINGS_KEY } from "../../src/background/settings-store.ts";
 import { FakeDebugger } from "../fakes/fake-debugger.ts";
@@ -362,7 +362,8 @@ describe("background: ignorados del diff (005, contracts/storage.md)", () => {
     port.fromPanel(
       makeCommand("getIgnores", { method: "GET", url: "http://localhost:4000/api/items?x=2" }),
     );
-    await flush();
+    // El hash (crypto.subtle) y el guardado son asíncronos: se espera la respuesta.
+    await vi.waitFor(() => expect(last(port, "ignores")?.payload.url).toContain("x=2"));
     expect(last(port, "ignores")?.payload).toEqual({
       method: "GET",
       url: "http://localhost:4000/api/items?x=2",

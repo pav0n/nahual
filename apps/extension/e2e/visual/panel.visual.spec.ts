@@ -43,9 +43,17 @@ const dynamic = (panel: Page): Locator[] => [
   panel.locator(".toasts"),
   panel.locator(".headers-editor"),
   panel.locator(".header-item").filter({ hasText: /^(date|keep-alive)/i }),
+  // 005: horas, duraciones y headers que cambian en cada envío.
+  panel.locator(".send-summary"),
+  panel.locator(".history-select"),
+  panel.locator(".diff-side select"),
+  panel.locator(".diff-change").filter({ hasText: /Header (date|keep-alive)/ }),
+  panel.locator(".diff-summary strong"),
 ];
 
 async function shoot(panel: Page, name: string) {
+  // Un aviso de un paso anterior (dura 10 s) cambiaría el alto según el tiempo de la corrida.
+  await expect(panel.locator(".toast")).toHaveCount(0, { timeout: 15_000 });
   for (const width of WIDTHS) {
     await panel.setViewportSize({ width, height: 640 });
     await expect(panel).toHaveScreenshot(`${name}-${width}.png`, {
@@ -120,5 +128,44 @@ for (const theme of THEMES) {
       await shoot(panel, `${theme}-settings-${section.toLowerCase().replace(" ", "-")}`);
     }
     await closeSettings(panel);
+
+    // 005: repeater con resultado, diff JSON, diff por líneas y body original no editable.
+    const repeat = async (path: string, to: string) => {
+      await app.evaluate(async (u) => {
+        await (await fetch(u, { credentials: "include" })).text();
+      }, `${servers.apiOrigin}${path}`);
+      await openSection(panel, "Traffic");
+      await panel.setViewportSize({ width: 1280, height: 640 });
+      await trafficRow(panel, path).last().click({ button: "right" });
+      await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
+      const r = panel.locator(".repeater");
+      await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}${to}`);
+      await r.getByRole("button", { name: "Send", exact: true }).click();
+      await expect(r.locator(".send-result").getByText("Sending…")).toHaveCount(0);
+      return r;
+    };
+    const r = await repeat("/diff/a", "/diff/b");
+    await shoot(panel, `${theme}-repeater`);
+    await r.getByRole("button", { name: "Compare with original" }).click();
+    await expect(panel.locator(".diff-view").getByRole("status")).toBeVisible();
+    await shoot(panel, `${theme}-diff-json`);
+    const lines = await repeat("/diff/text?v=1", "/diff/text?v=2");
+    await lines.getByRole("button", { name: "Compare with original" }).click();
+    await expect(panel.locator(".diff-view").getByRole("status")).toBeVisible();
+    await shoot(panel, `${theme}-diff-lines`);
+    await app.evaluate(async (api) => {
+      await fetch(`${api}/echo`, {
+        method: "POST",
+        headers: { "content-type": "image/png" },
+        body: new Uint8Array([137, 80, 78, 71, 0, 1, 2]),
+      });
+    }, servers.apiOrigin);
+    await openSection(panel, "Traffic");
+    await panel.setViewportSize({ width: 1280, height: 640 });
+    // El último /echo es su preflight: se elige el POST.
+    await requestRow(panel, "/echo").last().click({ button: "right" });
+    await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
+    await expect(panel.locator(".repeater").getByText(/Original body, not editable/)).toBeVisible();
+    await shoot(panel, `${theme}-repeater-binary`);
   });
 }

@@ -10,6 +10,11 @@ import {
   pausedEditor,
   pausedOption,
   relaxFrom,
+  repeater,
+  repeaterMode,
+  repeaterResult,
+  repeaterSend,
+  sendToRepeater,
   tabIdOf,
   trafficRow,
 } from "./fixtures/panel.ts";
@@ -129,4 +134,119 @@ test("las preferencias de interfaz no guardan datos de tráfico", async ({
   ]);
   for (const leaked of [servers.apiOrigin, servers.appOrigin, "/api/items", "Datos"])
     expect(prefs["nahual.ui.v1"]).not.toContain(leaked);
+});
+
+// 005 SC-005a (FR-020a, contracts/storage.md): el repeater no deja requests, respuestas, headers
+// ni bodies en ningún almacenamiento; los ignorados solo guardan rutas bajo un hash.
+test("el repeater no guarda requests, respuestas ni valores en ningún almacenamiento", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1300, height: 900 });
+  await attachAndReload(panel, app);
+  await app.evaluate(async (u) => {
+    await (await fetch(u, { credentials: "include" })).text();
+  }, `${servers.apiOrigin}/diff/a`);
+  await sendToRepeater(panel, trafficRow(panel, "/diff/a"));
+  const r = repeater(panel);
+  await r
+    .getByLabel("URL", { exact: true })
+    .fill(`${servers.apiOrigin}/diff/b?token=secret-query-xyz`);
+  await r.getByRole("button", { name: "Add header" }).click();
+  await r
+    .getByLabel(/^Header name \d+$/)
+    .last()
+    .fill("Authorization");
+  await r.getByLabel("Value of Authorization").last().fill("Bearer secret-auth-xyz");
+  await repeaterSend(panel);
+  await repeaterMode(panel, "Clean context").click();
+  await repeaterSend(panel);
+  await r.getByRole("button", { name: "Paste expected response" }).click();
+  await r.getByLabel("Pasted response (JSON or text)").fill('{"access_token":"secret-pasted-xyz"}');
+  await r.getByRole("button", { name: "Use this response" }).click();
+  await r.getByRole("button", { name: "Compare with original" }).click();
+  await panel
+    .locator(".diff-view .diff-change")
+    .filter({ hasText: "$.meta.timestamp" })
+    .getByRole("button", { name: "Ignore this path" })
+    .click();
+  await panel.waitForTimeout(400);
+
+  const secrets = [
+    "secret-query-xyz",
+    "secret-auth-xyz",
+    "secret-pasted-xyz",
+    "secret-token-a",
+    "secret-token-b",
+    "secret-cookie-a",
+    "secret-session-value",
+    servers.apiOrigin,
+    "/diff/",
+  ];
+  const local = await nahualWorker.evaluate(() => chrome.storage.local.get(null));
+  const session = await nahualWorker.evaluate(() => chrome.storage.session.get(null));
+  expect(Object.keys(local).sort()).toEqual(["nahual.repeater.ignores.v1", "nahual.settings.v1"]);
+  const ignores = local["nahual.repeater.ignores.v1"] as { endpoints: Record<string, unknown> };
+  for (const key of Object.keys(ignores.endpoints)) expect(key).toMatch(/^[0-9a-f]{64}$/);
+  expect(JSON.stringify(ignores)).toContain("timestamp");
+  const page = await panel.evaluate(async () => ({
+    local: Object.fromEntries(Object.keys(localStorage).map((k) => [k, localStorage.getItem(k)])),
+    session: Object.fromEntries(
+      Object.keys(sessionStorage).map((k) => [k, sessionStorage.getItem(k)]),
+    ),
+    databases: (await indexedDB.databases()).map((d) => d.name),
+  }));
+  // Solo las preferencias de interfaz, si el dev movió algún divisor.
+  for (const key of Object.keys(page.local)) expect(key).toBe("nahual.ui.v1");
+  expect(page.databases).toEqual([]);
+  for (const stored of [local, session, page.local, page.session]) {
+    const text = JSON.stringify(stored);
+    for (const secret of secrets) expect(text, secret).not.toContain(secret);
+  }
+});
+
+// 005 SC-005b (FR-011a): el acceso a un origen solo se pide al pulsar Enviar en contexto limpio, y
+// siempre para un solo origen exacto.
+test("el acceso a un origen solo se pide al enviar en contexto limpio, para ese origen", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1300, height: 900 });
+  await attachAndReload(panel, app);
+  await panel.evaluate(() =>
+    (
+      window as unknown as { __nahualPermissionsSpy: { install(a: boolean): void } }
+    ).__nahualPermissionsSpy.install(false),
+  );
+  const calls = () =>
+    panel.evaluate(
+      () =>
+        (window as unknown as { __nahualPermissionsSpy: { calls: string[] } })
+          .__nahualPermissionsSpy.calls,
+    );
+  await callApi(app, "items");
+  await sendToRepeater(panel, trafficRow(panel, "/api/items"));
+  const r = repeater(panel);
+  // Contexto de página: no pide nada.
+  await repeaterSend(panel);
+  // Cambiar de modo y escribir la URL tampoco.
+  const localhost = servers.apiOrigin.replace("127.0.0.1", "localhost");
+  await repeaterMode(panel, "Clean context").click();
+  await r.getByLabel("URL", { exact: true }).fill(`${localhost}/no-cors?x=1`);
+  expect(await calls()).toEqual([]);
+  const before = servers.received.length;
+  await repeaterSend(panel);
+  expect(await calls()).toEqual([localhost]);
+  await expect(repeaterResult(panel)).toContainText(`Access to ${localhost} was not granted`);
+  expect(servers.received.slice(before).filter((x) => x.path === "/no-cors")).toEqual([]);
 });

@@ -813,7 +813,7 @@
     "message": "Nada sale de tu navegador"
   },
   "onboarding_local_body": {
-    "message": "Nahual no tiene servidor ni hace requests propios. El historial vive en memoria y se borra al cerrar el panel; solo tus reglas se guardan, en este navegador."
+    "message": "Nahual no tiene servidor. Solo hace requests propios cuando tú reenvías uno desde el repeater en contexto limpio, al origen al que diste acceso. El historial y el repeater viven en memoria y se borran al cerrar el panel; solo se guardan tus reglas, tus ajustes y los campos ignorados del diff, en este navegador."
   },
   "action_back": {
     "message": "Atrás"
@@ -1948,5 +1948,11 @@
   },
   "pasted_save": {
     "message": "Usar esta respuesta"
+  },
+  "help_repeater_title": {
+    "message": "Repeater y diff"
+  },
+  "help_repeater_body": {
+    "message": "En Tráfico, clic derecho en un request ⇒ «Enviar al repeater». Edítalo y envíalo con Ctrl/Cmd+Enter en contexto de página (con las cookies y el origen de la pestaña) o en contexto limpio (sin sesión). En el historial, «Comparar con el original» muestra qué cambió; J y K recorren los cambios."
   }
 }

@@ -813,7 +813,7 @@
     "message": "Nothing leaves your browser"
   },
   "onboarding_local_body": {
-    "message": "Nahual has no server and makes no requests of its own. History lives in memory and is cleared when you close the panel; only your rules are saved, in this browser."
+    "message": "Nahual has no server. It only makes requests of its own when you resend one from the repeater in clean context, to the origin you gave access to. History and the repeater live in memory and are cleared when you close the panel; only your rules, settings and ignored diff fields are saved, in this browser."
   },
   "action_back": {
     "message": "Back"
@@ -1948,5 +1948,11 @@
   },
   "pasted_save": {
     "message": "Use this response"
+  },
+  "help_repeater_title": {
+    "message": "Repeater and diff"
+  },
+  "help_repeater_body": {
+    "message": "In Traffic, right-click a request ⇒ \"Send to repeater\". Edit it and send it with Ctrl/Cmd+Enter in page context (with the tab's cookies and origin) or in clean context (no session). In the history, \"Compare with original\" shows what changed; J and K move between changes."
   }
 }

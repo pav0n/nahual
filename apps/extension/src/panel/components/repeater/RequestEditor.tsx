@@ -34,7 +34,9 @@ function RepeaterHeaders({
     <fieldset className="headers-editor">
       <legend>{t("detail_request_headers")}</legend>
       {headers.map((header, index) => {
-        const masked = isSensitiveHeader(header.name) && !revealed.has(index);
+        // Un valor vacío no tiene nada que ocultar: así se puede escribir en un header nuevo.
+        const masked =
+          isSensitiveHeader(header.name) && header.value !== "" && !revealed.has(index);
         const invalidName = header.name !== "" && !HTTP_TOKEN.test(header.name);
         const forbidden = header.enabled && isForbiddenHeader(header.name);
         const error =

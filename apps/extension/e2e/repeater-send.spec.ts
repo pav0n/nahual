@@ -2,10 +2,12 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 import {
   attachAndReload,
   callApi,
+  closeSettings,
   createRule,
   openApp,
   openPanel,
   openSection,
+  openSettings,
   pausedEditor,
   repeater,
   repeaterMode,
@@ -231,3 +233,22 @@ test(
     expect(elapsed).toBeLessThan(2000);
   },
 );
+
+test("FR-034: Ajustes ⇒ Atajos lista los atajos del repeater y del diff", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const { panel } = await setup({ context, nahualWorker, extensionId, servers });
+  const settings = await openSettings(panel, "Shortcuts");
+  for (const [keys, text] of [
+    ["Ctrl/Cmd+Enter", "Send the repeater request"],
+    ["J", "Go to the next diff change"],
+    ["K", "Go to the previous diff change"],
+  ] as const) {
+    await expect(settings.getByText(keys, { exact: true })).toBeVisible();
+    await expect(settings.getByText(text)).toBeVisible();
+  }
+  await closeSettings(panel);
+});
