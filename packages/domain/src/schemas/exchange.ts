@@ -85,6 +85,8 @@ export const ExchangeFieldsSchema = z.strictObject({
   responseBody: BodyInfoSchema,
   /** En un preflight: id del intercambio del request real (`initiator.requestId`, research R6). */
   preflightFor: z.string().max(256).optional(),
+  /** Enviado por el repeater en contexto de página (005, research R2). */
+  repeater: z.strictObject({ sendId: z.uuid() }).optional(),
   /** Origen del frame que hizo el request (003, research R4). */
   appOrigin: z.string().max(LIMITS.originMax).nullable().optional(),
 });

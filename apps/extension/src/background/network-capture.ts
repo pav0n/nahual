@@ -7,6 +7,7 @@ import {
   type CorsDiagnosis,
   type CorsRelaxedInfo,
   isTextualContentType,
+  textToBase64,
   utf8ByteLength,
   type BodyInfo,
   type ExchangeFields,
@@ -16,10 +17,13 @@ import {
 } from "@nahual/domain";
 import type { DebuggerPort } from "./debugger-port.ts";
 import { logger } from "./logger.ts";
+import { REPEATER_SOURCE_URL } from "./repeater/page-template.ts";
 import { injectedFault } from "./test-hooks.ts";
 
 export type BodyResult =
   | { ok: true; encoding: "text"; content: string; size: number }
+  /** Solo con `binary`: el body de un request no textual, para reenviarlo intacto (005). */
+  | { ok: true; encoding: "base64"; content: string; size: number }
   | { ok: false; reason: "unknown" | "redirect" | "binary" | "tooLarge" | "evicted" | "none" };
 
 export interface NetworkCaptureOptions {
@@ -32,6 +36,27 @@ export interface NetworkCaptureOptions {
   frameOriginOf?(tabId: number, frameId: string | undefined): string | null;
   /** Un request se bloqueó por CORS (003): el CorsRelaxer aprende credenciales (research R5). */
   onCorsFailure?(tabId: number, exchangeId: string, diagnosis: CorsDiagnosis, url: string): void;
+  /** Envío del repeater en contexto de página en curso en la pestaña (005, research R2). */
+  repeaterSendFor?(tabId: number): string | null;
+  /** Un request de la plantilla del repeater empezó: su intercambio. */
+  onRepeaterRequest?(tabId: number, sendId: string, exchangeId: string): void;
+  /** Ese intercambio terminó (respuesta completa, fallo o diagnóstico CORS listo). */
+  onRepeaterSettled?(tabId: number, sendId: string, exchangeId: string): void;
+}
+
+/** Lo que el repeater necesita de un intercambio para armar su resultado (research R3). */
+export interface ExchangeSnapshot {
+  state: "pending" | "complete" | "failed";
+  status: number | null;
+  responseHeaders: Header[];
+  mimeType: string | null;
+  errorText: string | null;
+  effects: RuleEffect[];
+  diagnosis: CorsDiagnosis | null;
+  relaxed: boolean;
+  preflight: { status: number | null } | null;
+  durationMs: number | null;
+  decodedSize: number;
 }
 
 export interface NetworkCapture {
@@ -46,8 +71,15 @@ export interface NetworkCapture {
   effect(tabId: number, exchangeId: string, effect: RuleEffect): void;
   /** Lo que la relajación CORS cambió en el intercambio (FR-026). */
   relaxed(tabId: number, exchangeId: string, info: CorsRelaxedInfo): void;
+  /** Estado conocido de un intercambio, o `null` si ya no está (005). */
+  snapshot(tabId: number, exchangeId: string): ExchangeSnapshot | null;
   /** Body bajo demanda: nunca viaja con la captura (research R1). */
-  getBody(tabId: number, exchangeId: string, side: "request" | "response"): Promise<BodyResult>;
+  getBody(
+    tabId: number,
+    exchangeId: string,
+    side: "request" | "response",
+    options?: { binary?: boolean },
+  ): Promise<BodyResult>;
   /** Envía lo pendiente y olvida la pestaña. */
   sessionEnded(tabId: number): void;
 }
@@ -85,6 +117,14 @@ interface Entry {
   /** En un request: su preflight observado. En un preflight: `Access-Control-Request-Headers`. */
   preflightId?: string;
   requestedHeaders?: string | undefined;
+  // 005: datos para el resultado de un envío del repeater.
+  repeaterSendId?: string;
+  state?: "complete" | "failed";
+  errorText?: string;
+  effects?: RuleEffect[];
+  diagnosis?: CorsDiagnosis;
+  relaxed?: boolean;
+  durationMs?: number;
 }
 
 interface Tab {
@@ -232,7 +272,11 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       request: CdpRequest;
       redirectResponse?: CdpResponse;
       frameId?: string;
-      initiator?: { type?: string; requestId?: string };
+      initiator?: {
+        type?: string;
+        requestId?: string;
+        stack?: { callFrames?: { url?: string }[] };
+      };
     },
   ) => {
     const tab = tabOf(tabId);
@@ -307,10 +351,17 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
       entry.requestedHeaders =
         headerValue(request.headers, "access-control-request-headers") ?? undefined;
     }
+    // 005: el request de la plantilla del repeater se reconoce por su script (research R2).
+    const sendId =
+      event.initiator?.stack?.callFrames?.[0]?.url === REPEATER_SOURCE_URL
+        ? (options.repeaterSendFor?.(tabId) ?? null)
+        : null;
+    if (sendId) entry.repeaterSendId = sendId;
     push(tabId, {
       id,
       kind: "start",
       fields: {
+        ...(sendId ? { repeater: { sendId } } : {}),
         seq: tab.seq++,
         method: method.slice(0, 64),
         ...truncateUrl(request.url),
@@ -336,6 +387,12 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         responseBody: { available: false, size: null, reason: "pending" },
       },
     });
+
+    if (sendId) options.onRepeaterRequest?.(tabId, sendId, id);
+  };
+
+  const settled = (tabId: number, entry: Entry) => {
+    if (entry.repeaterSendId) options.onRepeaterSettled?.(tabId, entry.repeaterSendId, entry.id);
   };
 
   const diagnose = (
@@ -368,8 +425,10 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
           }
         : null,
     });
+    entry.diagnosis = diagnosis;
     push(tabId, { id: entry.id, kind: "cors", fields: {}, cors: { diagnosis } });
     options.onCorsFailure?.(tabId, entry.id, diagnosis, entry.url ?? "");
+    settled(tabId, entry);
   };
 
   /**
@@ -479,6 +538,8 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         const event = params as { requestId: string; timestamp: number; encodedDataLength: number };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
+        entry.state = "complete";
+        entry.durationMs = Math.max(0, (event.timestamp - entry.startTimestamp) * 1000);
         push(tabId, {
           id: entry.id,
           kind: "finish",
@@ -490,6 +551,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
             responseBody: responseBodyInfo(entry, Math.round(event.encodedDataLength)),
           },
         });
+        settled(tabId, entry);
         return;
       }
       case "Network.loadingFailed": {
@@ -501,6 +563,9 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         };
         const entry = currentEntry(tabId, event.requestId);
         if (!entry) return;
+        entry.state = "failed";
+        entry.errorText = event.errorText.slice(0, 256);
+        entry.durationMs = Math.max(0, (event.timestamp - entry.startTimestamp) * 1000);
         push(tabId, {
           id: entry.id,
           kind: "fail",
@@ -513,6 +578,7 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
         });
         // Solo `corsErrorStatus` dice que es CORS; `blockedReason` es otra cosa (research R3).
         if (event.corsErrorStatus) diagnoseWhenReady(tabId, entry, event.corsErrorStatus);
+        else settled(tabId, entry);
         return;
       }
       default:
@@ -526,24 +592,59 @@ export function createNetworkCapture(options: NetworkCaptureOptions): NetworkCap
     resourceTypeOf: (tabId, networkId) => currentEntry(tabId, networkId)?.resourceType ?? null,
 
     effect(tabId, exchangeId, effect) {
+      const entry = tabs.get(tabId)?.entries.get(exchangeId);
+      if (entry) entry.effects = [...(entry.effects ?? []), effect].slice(-4);
       push(tabId, { id: exchangeId, kind: "effect", fields: {}, effect });
     },
 
     relaxed(tabId, exchangeId, info) {
+      const entry = tabs.get(tabId)?.entries.get(exchangeId);
+      if (entry) entry.relaxed = true;
       push(tabId, { id: exchangeId, kind: "cors", fields: {}, cors: { relaxed: info } });
     },
 
-    async getBody(tabId, exchangeId, side) {
+    snapshot(tabId, exchangeId) {
+      const tab = tabs.get(tabId);
+      const entry = tab?.entries.get(exchangeId);
+      if (!entry || exchangeId.startsWith("extra:")) return null;
+      const preflight = entry.preflightId ? tab?.entries.get(entry.preflightId) : undefined;
+      return {
+        state: entry.state ?? "pending",
+        status: entry.status,
+        responseHeaders: entry.responseHeaders ?? [],
+        mimeType: entry.mimeType ?? entry.contentType,
+        errorText: entry.errorText ?? null,
+        effects: entry.effects ?? [],
+        diagnosis: entry.diagnosis ?? null,
+        relaxed: entry.relaxed ?? false,
+        preflight: preflight ? { status: preflight.status } : null,
+        durationMs: entry.durationMs ?? null,
+        decodedSize: entry.decodedSize,
+      };
+    },
+
+    async getBody(tabId, exchangeId, side, { binary = false } = {}) {
       const entry = tabs.get(tabId)?.entries.get(exchangeId);
       if (!entry || exchangeId.startsWith("extra:")) return { ok: false, reason: "unknown" };
       if (side === "request") {
         if (!entry.hasRequestBody) return { ok: false, reason: "none" };
         try {
-          const { postData } = await cdp.send<{ postData: string }>(
-            tabId,
-            "Network.getRequestPostData",
-            { requestId: entry.networkId },
-          );
+          const { postData, base64Encoded } = await cdp.send<{
+            postData: string;
+            base64Encoded?: boolean;
+          }>(tabId, "Network.getRequestPostData", { requestId: entry.networkId });
+          const contentType =
+            (entry.requestHeaders ?? []).find((h) => h.name.toLowerCase() === "content-type")
+              ?.value ?? null;
+          // El repeater reenvía intacto un body no textual (FR-002a, research R16).
+          if (binary && isTextualContentType(contentType) === false) {
+            const content = base64Encoded ? postData : textToBase64(postData);
+            const size =
+              Math.floor((content.length * 3) / 4) - (content.match(/=+$/)?.[0].length ?? 0);
+            return size > MAX_BODY_BYTES
+              ? { ok: false, reason: "tooLarge" }
+              : { ok: true, encoding: "base64", content, size };
+          }
           const decoded = decodeBody({ body: postData, base64Encoded: false, contentType: null });
           return decoded.kind === "text"
             ? { ok: true, encoding: "text", content: decoded.text, size: decoded.size }

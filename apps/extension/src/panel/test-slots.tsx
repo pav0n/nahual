@@ -1,5 +1,7 @@
 import { BATCH_ACTIONS } from "./actions/batch-actions.ts";
 import { RULE_EDITOR_SLOTS } from "./components/rules/editor-slots.ts";
+import { createDiffWorker } from "./repeater/diff-client.ts";
+import { originAccess } from "./repeater/permissions.ts";
 import { SETTINGS_SECTIONS } from "./settings/sections.ts";
 import { DRAWER_SLOT } from "./shell/Drawer.tsx";
 import { SECTIONS } from "./shell/sections.ts";
@@ -38,6 +40,31 @@ const SlotSettings = () => <p>Slot settings</p>;
  */
 export function installTestSlots(): void {
   if (import.meta.env.MODE !== "test") return;
+  // 005 (SC-005b, research X2): Playwright no puede contestar el diálogo del permiso. El espía
+  // registra cada petición de acceso con su origen y contesta lo que la prueba pida.
+  const calls: string[] = [];
+  (window as { __nahualPermissionsSpy?: unknown }).__nahualPermissionsSpy = {
+    calls,
+    install(answer: boolean) {
+      originAccess.request = (origin: string) => {
+        calls.push(origin);
+        return Promise.resolve(answer);
+      };
+    },
+  };
+  // 005-X3: el worker del diff carga bajo la CSP del panel y responde.
+  (window as { __nahualDiffWorkerPing?: unknown }).__nahualDiffWorkerPing = () =>
+    new Promise<string>((resolve) => {
+      const worker = createDiffWorker() as Worker;
+      const timer = setTimeout(() => resolve("timeout"), 3000);
+      worker.addEventListener("message", (event: MessageEvent<{ type: string }>) => {
+        clearTimeout(timer);
+        worker.terminate();
+        resolve(event.data.type);
+      });
+      worker.addEventListener("error", (event) => resolve(`error: ${event.message}`));
+      worker.postMessage({ type: "ping" });
+    });
   let enabled = false;
   (window as { __nahualUiSlots?: unknown }).__nahualUiSlots = {
     pushNotice: (messageKey: string, params?: string[]) =>

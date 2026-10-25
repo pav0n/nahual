@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { RepeaterView } from "../components/repeater/RepeaterView.tsx";
 import type { PanelStore } from "../store/index.ts";
 import type { PanelSection } from "../store/ui.ts";
 
@@ -27,4 +28,12 @@ export const SECTIONS: SectionEntry[] = [
     countTone: "neutral",
   },
   { id: "paused", labelKey: "tab_paused", count: (s) => s.paused.length, countTone: "attention" },
+  // 005: pestañas abiertas del repeater (FR-003).
+  {
+    id: "repeater",
+    labelKey: "tab_repeater",
+    count: (s) => s.repeaterTabs.length,
+    countTone: "neutral",
+    render: RepeaterView,
+  },
 ];

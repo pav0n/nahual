@@ -21,10 +21,12 @@ export interface ActionEffects {
   openRuleDraft(draft: RuleDraft): void;
   openDetail(exchangeId: string, tab: DetailTabId): void;
   requestRelax(exchangeId: string): void;
+  /** Abre una pestaña del repeater con el request (005, FR-002). */
+  sendToRepeater(exchange: CapturedExchange): void;
 }
 
 export interface RequestAction {
-  id: "createRule" | "relaxCors";
+  id: "createRule" | "sendToRepeater" | "relaxCors";
   labelKey: string;
   shortcut?: ShortcutId;
   appliesTo(exchange: CapturedExchange, state: ActionState): boolean;
@@ -57,6 +59,12 @@ export const REQUEST_ACTIONS: readonly RequestAction[] = [
     labelKey: "action_create_rule_from_request",
     appliesTo: () => true,
     run: (exchange, effects) => effects.openRuleDraft(ruleDraftFromExchange(exchange)),
+  },
+  {
+    id: "sendToRepeater",
+    labelKey: "action_send_to_repeater",
+    appliesTo: () => true,
+    run: (exchange, effects) => effects.sendToRepeater(exchange),
   },
   {
     id: "relaxCors",

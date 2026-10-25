@@ -168,14 +168,14 @@ describe("panel-port: mensajes", () => {
     });
   });
 
-  it("un mensaje de más de 6 MB se descarta sin parsear ni responder", async () => {
+  it("un mensaje de más de 8 MB (005) se descarta sin parsear ni responder", async () => {
     p.fromPanel(makeCommand("hello", { tabId: 5 }));
     await flush();
     const before = p.received.length;
     const huge = makeCommand("resolvePaused", {
       pausedId: "p",
       action: "continue",
-      edit: { body: "x".repeat(6 * 1024 * 1024 + 1) },
+      edit: { body: "x".repeat(8 * 1024 * 1024 + 1) },
     });
     p.fromPanel(huge);
     await flush();
@@ -251,7 +251,7 @@ describe("panel-port: dueño del puerto por pestaña", () => {
     a.fromPanel(makeCommand("hello", { tabId: 1 }));
     b.fromPanel(makeCommand("hello", { tabId: 2 }));
     await flush();
-    env.port.send(2, { v: 3, id: crypto.randomUUID(), type: "ack", payload: {} });
+    env.port.send(2, { v: 4, id: crypto.randomUUID(), type: "ack", payload: {} });
     expect(types(a)).toEqual(["ack"]);
     expect(types(b)).toEqual(["ack", "ack"]);
   });

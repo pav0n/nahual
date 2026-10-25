@@ -41,6 +41,16 @@ export const LIMITS = {
   corsHeaderNameMax: 128,
   redirectingPreflightsMax: 50,
   reportEndpointsMax: 50,
+  // Repeater y diff (005, data-model).
+  repeaterTabsMax: 20,
+  repeaterSendsMax: 50,
+  repeaterTabNameMax: 60,
+  repeaterHeadersMax: 100,
+  ignoreEndpointsMax: 500,
+  ignoreEntriesMax: 100,
+  diffChangesMax: 50_000,
+  /** Myers es O(N·D): con 5,000 ediciones el peor caso queda por debajo de 1 s (research R8). */
+  diffLineEditsMax: 5_000,
 } as const;
 
 /** Token HTTP (RFC 9110, sección 5.6.2). */

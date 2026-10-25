@@ -1,6 +1,8 @@
 import {
   CorsHeaderNameSchema,
   LIMITS,
+  PathPatternSchema,
+  RepeaterModeSchema,
   RelaxationDurationSchema,
   SettingsPatchSchema,
   SiteSchema,
@@ -9,10 +11,11 @@ import { z } from "zod";
 import { message } from "./envelope.ts";
 
 /**
- * Los mensajes del panel que superan este tamaño se descartan antes de parsearlos: un mock o un
- * body editado de 5 MB más sus metadatos (contracts/panel-protocol.md).
+ * Los mensajes del panel que superan este tamaño se descartan antes de parsearlos: un mock, un
+ * body editado de 5 MB o un body original del repeater de 5 MB en base64, más sus metadatos
+ * (contracts/panel-protocol.md).
  */
-export const MAX_PANEL_MESSAGE_CHARS = 6 * 1024 * 1024;
+export const MAX_PANEL_MESSAGE_CHARS = 8 * 1024 * 1024;
 
 const Empty = z.strictObject({});
 const RuleId = z.uuid();
@@ -58,7 +61,29 @@ const RelaxCorsSchema = z.strictObject({
   credentials: z.boolean(),
 });
 
+/** Endpoint de la lista de ignorados (005, research R10): el SW calcula su hash. */
+const Endpoint = {
+  method: z.string().min(1).max(64),
+  url: z.string().min(1).max(LIMITS.urlMax),
+};
+
 export const PanelMessageSchema = z.discriminatedUnion("type", [
+  // 005: el request llega sin validar campo por campo; el SW lo valida con RepeaterRequestSchema y
+  // responde los issues en repeaterResult (contracts/panel-protocol.md).
+  message(
+    "repeaterSend",
+    z.strictObject({ sendId: z.uuid(), mode: RepeaterModeSchema, request: Unvalidated }),
+  ),
+  message("repeaterCancel", z.strictObject({ sendId: z.uuid() })),
+  message("getIgnores", z.strictObject(Endpoint)),
+  message(
+    "setIgnores",
+    z.strictObject({
+      ...Endpoint,
+      paths: z.array(PathPatternSchema).max(LIMITS.ignoreEntriesMax),
+      headers: z.array(z.string().min(1).max(LIMITS.headerNameMax)).max(LIMITS.ignoreEntriesMax),
+    }),
+  ),
   message("hello", z.strictObject({ tabId: z.int().min(0) })),
   message("attach", z.strictObject({ consent: z.literal(true).optional() })),
   message("detach", Empty),
@@ -87,6 +112,8 @@ export const PanelMessageSchema = z.discriminatedUnion("type", [
     z.strictObject({
       exchangeId: z.string().min(1).max(256),
       side: z.enum(["request", "response"]),
+      /** 005: un body de request no textual vuelve en base64 para reenviarlo intacto. */
+      binary: z.literal(true).optional(),
     }),
   ),
 ]);

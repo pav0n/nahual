@@ -244,6 +244,9 @@ export function TrafficGrid({
                     {t("traffic_paused")}
                   </span>
                 ) : null}
+                {exchange.repeater ? (
+                  <span className="tag tag-repeater">{t("traffic_repeater")}</span>
+                ) : null}
                 {exchange.isPreflight ? (
                   <span className="tag">{t("traffic_preflight")}</span>
                 ) : null}

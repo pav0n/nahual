@@ -181,6 +181,58 @@ const PNG = Buffer.from(
 
 const XSS = `<img src=x onerror="window.__xss=1"><script>window.__xss=1</script>`;
 
+/**
+ * Respuestas del diff de 005 (quickstart): `a` frente a `b` tiene un campo añadido, uno
+ * eliminado, un tipo cambiado, un elemento de array distinto, un timestamp, un `access_token` y
+ * `Set-Cookie`/`Location` con valores sensibles distintos.
+ */
+const DIFF_A = {
+  id: 1,
+  name: "a",
+  removed: true,
+  type: 1,
+  list: [1, 2, 3],
+  meta: { timestamp: "2026-01-01T00:00:00Z" },
+  access_token: "secret-token-a",
+};
+const DIFF_B = {
+  id: 1,
+  name: "a",
+  added: "new",
+  type: "1",
+  list: [1, 9, 3],
+  meta: { timestamp: "2026-01-02T00:00:00Z" },
+  access_token: "secret-token-b",
+};
+const DIFF_IDS = {
+  "1": {
+    items: [
+      { id: 1, n: "a" },
+      { id: 2, n: "b" },
+    ],
+  },
+  "2": {
+    items: [
+      { id: 2, n: "b" },
+      { id: 1, n: "a" },
+      { id: 3, n: "c" },
+    ],
+  },
+};
+const DIFF_TEXT = { "1": "uno\ndos\ntres\n", "2": "uno\nDOS\ntres\ncuatro\n" };
+
+/** ~1 MB de JSON determinista; `seed` cambia unos pocos valores (SC-003). */
+function diffBig(seed: number) {
+  return JSON.stringify({
+    rows: Array.from({ length: 9000 }, (_, i) => ({
+      id: i,
+      label: `row-${i}-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`,
+      value: i % 1000 === 0 ? i + seed : i,
+      tags: ["a", "b", "c"],
+    })),
+  });
+}
+
 let bigBody: string | null = null;
 /** ~6 MB de JSON: por encima del límite de 5 MB de body evaluable. */
 function big() {
@@ -246,6 +298,8 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         corsRoute(url.pathname, req, res);
         return;
       }
+      // Sin Date: el diff de dos respuestas de /diff/* no depende del segundo en que salen.
+      if (url.pathname.startsWith("/diff/")) res.sendDate = false;
       if (url.pathname !== "/no-cors") {
         cors(res);
         if (req.method === "OPTIONS") {
@@ -310,6 +364,32 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         case "/redirect":
           res.writeHead(302, { location: "/data" }).end();
           return;
+        case "/diff/a":
+        case "/diff/b":
+          res.writeHead(200, {
+            "content-type": "application/json",
+            "set-cookie": `sid=secret-cookie-${url.pathname.slice(-1)}; Path=/`,
+            location: `/next?token=secret-loc-${url.pathname.slice(-1)}&x=1`,
+          });
+          res.end(JSON.stringify(url.pathname === "/diff/a" ? DIFF_A : DIFF_B));
+          return;
+        case "/diff/ids":
+          return json(res, 200, DIFF_IDS[url.searchParams.get("v") === "2" ? "2" : "1"]);
+        case "/diff/text":
+          res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+          res.end(DIFF_TEXT[url.searchParams.get("v") === "2" ? "2" : "1"]);
+          return;
+        case "/diff/big":
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(diffBig(Number(url.searchParams.get("seed") ?? 0)));
+          return;
+        case "/diff/html":
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+          res.end(`${XSS}<p>v${url.searchParams.get("v") ?? "1"}</p>`);
+          return;
+        case "/slow":
+          await new Promise((r) => setTimeout(r, Number(url.searchParams.get("ms") ?? 3000)));
+          return json(res, 200, { slow: true });
         case "/no-cors":
           // Sin headers CORS: para los experimentos E1/E2.
           if (req.method === "OPTIONS") {

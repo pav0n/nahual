@@ -15,7 +15,7 @@ van a `LIMITS` (`schemas/limits.ts`). Tipos de 002 reutilizados: `Header`, `Body
 | `ignoreEndpointsMax` | 500 | R10 |
 | `ignoreEntriesMax` | 100 | R10 |
 | `diffChangesMax` | 50,000 | R7 (corte con `truncated`) |
-| `diffLineEditsMax` | 20,000 | R8 |
+| `diffLineEditsMax` | 5,000 | R8 (Myers es O(N·D): el peor caso queda < 1 s) |
 
 `bodyBytes` (5 MB), `urlMax` y los de headers son los de 002.
 
@@ -25,7 +25,7 @@ van a `LIMITS` (`schemas/limits.ts`). Tipos de 002 reutilizados: `Header`, `Body
 |---|---|---|
 | `method` | string | `/^[A-Za-z]+$/`, 1–64 caracteres (como el editor de pausados) |
 | `url` | string | URL absoluta `http:`/`https:`, ≤ `LIMITS.urlMax` |
-| `headers` | `{ name, value, enabled }[]` | ≤ `repeaterHeadersMax`; nombre válido de header HTTP; solo los `enabled` se envían |
+| `headers` | `{ name, value, enabled }[]` | ≤ `repeaterHeadersMax`; nombre válido de header HTTP; solo los `enabled` se envían; al copiar de un intercambio, los que el navegador no deja fijar llegan desactivados |
 | `body` | `RepeaterBody` | ver abajo |
 
 `RepeaterBody` (unión discriminada por `kind`):
@@ -36,8 +36,8 @@ van a `LIMITS` (`schemas/limits.ts`). Tipos de 002 reutilizados: `Header`, `Body
 | `text` | `text` (≤ 5 MB en UTF-8) | Editable |
 | `original` | `base64`, `contentType: string \| null`, `size` (≤ 5 MB) | Binario reenviado intacto, no editable (R16) |
 
-El SW vuelve a validar `RepeaterRequest` en `repeaterSend` (R15). `forbiddenHeaders(headers,
-mode)` devuelve los nombres que el navegador no deja fijar (R6).
+El SW vuelve a validar `RepeaterRequest` en `repeaterSend` (R15). `forbiddenHeaders(headers)`
+devuelve los nombres que el navegador no deja fijar (R6); la lista es la misma en los dos modos.
 
 ## RepeaterSend (un envío del historial)
 
@@ -153,7 +153,7 @@ cambio de tipo es un solo `changed`; ningún cambio `sensitive` lleva el valor r
 |---|---|---|
 | `repeaterRequestFromExchange(exchange, body)` | `repeater/from-exchange.ts` | FR-002, FR-002a, nombre por defecto |
 | `validateRepeaterRequest(req)` | `repeater/validate.ts` | FR-007 (issues por campo) |
-| `forbiddenHeaders(headers, mode)` | `repeater/forbidden-headers.ts` | FR-008, R6 |
+| `forbiddenHeaders(headers)` | `repeater/forbidden-headers.ts` | FR-008, R6 |
 | `endpointKeyInput(method, url)` | `repeater/endpoint.ts` | R10 (el hash lo calcula el SW) |
 | `diffJson`, `diffLines`, `diffResponses` | `diff/*.ts` | FR-024 a FR-027, R7–R9 |
 | `applyIgnores(result, ignores)` | `diff/ignores.ts` | FR-028 |

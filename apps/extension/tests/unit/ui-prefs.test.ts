@@ -29,10 +29,10 @@ const throwing = {
 const stored = (value: unknown) => memoryStorage({ [UI_PREFS_KEY]: JSON.stringify(value) });
 
 describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
-  it("defaults: split.traffic 0.5, split.rules 0.34, split.paused 0.34, drawerHeight 180", () => {
+  it("defaults: split.traffic 0.5, split.rules 0.34, split.paused 0.34, split.repeater 0.5, drawerHeight 180", () => {
     expect(DEFAULT_UI_PREFS).toEqual({
       version: 1,
-      split: { traffic: 0.5, rules: 0.34, paused: 0.34 },
+      split: { traffic: 0.5, rules: 0.34, paused: 0.34, repeater: 0.5 },
       drawerHeight: 180,
     });
   });
@@ -40,10 +40,19 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
   it("lee un JSON válido", () => {
     const prefs = {
       version: 1,
-      split: { traffic: 0.6, rules: 0.3, paused: 0.4 },
+      split: { traffic: 0.6, rules: 0.3, paused: 0.4, repeater: 0.7 },
       drawerHeight: 300,
     };
     expect(readUiPrefs(stored(prefs))).toEqual(prefs);
+  });
+
+  it("las preferencias guardadas por 004 (sin repeater) toman su default (005)", () => {
+    const prefs = {
+      version: 1,
+      split: { traffic: 0.6, rules: 0.3, paused: 0.4 },
+      drawerHeight: 300,
+    };
+    expect(readUiPrefs(stored(prefs)).split).toEqual({ ...prefs.split, repeater: 0.5 });
   });
 
   it("ausente ⇒ defaults", () => {
@@ -71,7 +80,7 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
     };
     expect(readUiPrefs(stored(prefs))).toEqual({
       version: 1,
-      split: { traffic: 0.5, rules: 0.34, paused: 0.4 },
+      split: { traffic: 0.5, rules: 0.34, paused: 0.4, repeater: 0.5 },
       drawerHeight: 300,
     });
   });

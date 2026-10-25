@@ -54,6 +54,12 @@ export function Onboarding() {
         {current === "data" ? <p>{t("onboarding_data_mask")}</p> : null}
       </div>
       {helpOpen ? (
+        <section aria-labelledby={`${bodyId}-repeater`}>
+          <h3 id={`${bodyId}-repeater`}>{t("help_repeater_title")}</h3>
+          <p>{t("help_repeater_body")}</p>
+        </section>
+      ) : null}
+      {helpOpen ? (
         <section aria-labelledby={`${bodyId}-shortcuts`}>
           <h3 id={`${bodyId}-shortcuts`}>{t("settings_section_shortcuts")}</h3>
           <ShortcutsList />

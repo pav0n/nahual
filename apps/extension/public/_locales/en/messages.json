@@ -813,7 +813,7 @@
     "message": "Nothing leaves your browser"
   },
   "onboarding_local_body": {
-    "message": "Nahual has no server and makes no requests of its own. History lives in memory and is cleared when you close the panel; only your rules are saved, in this browser."
+    "message": "Nahual has no server. It only makes requests of its own when you resend one from the repeater in clean context, to the origin you gave access to. History and the repeater live in memory and are cleared when you close the panel; only your rules, settings and ignored diff fields are saved, in this browser."
   },
   "action_back": {
     "message": "Back"
@@ -1531,5 +1531,431 @@
   },
   "drawer_expand": {
     "message": "Expand the drawer"
+  },
+  "tab_repeater": {
+    "message": "Repeater"
+  },
+  "repeater_empty_title": {
+    "message": "No repeater tabs yet"
+  },
+  "repeater_empty_body": {
+    "message": "Right-click a request in Traffic and choose \"Send to repeater\", or create an empty tab. Tabs live while DevTools is open: closing it discards them."
+  },
+  "repeater_new_tab": {
+    "message": "New tab"
+  },
+  "shortcut_desc_repeater_send": {
+    "message": "Send the repeater request"
+  },
+  "shortcut_desc_next_change": {
+    "message": "Go to the next diff change"
+  },
+  "shortcut_desc_prev_change": {
+    "message": "Go to the previous diff change"
+  },
+  "action_send_to_repeater": {
+    "message": "Send to repeater"
+  },
+  "traffic_repeater": {
+    "message": "repeater"
+  },
+  "repeater_tabs_label": {
+    "message": "Repeater tabs"
+  },
+  "repeater_tabs_full": {
+    "message": "There are already 20 repeater tabs open. Close one to open another."
+  },
+  "repeater_url_truncated": {
+    "message": "This request's URL was too long and was cut when captured: check it before sending."
+  },
+  "repeater_tab_rename": {
+    "message": "Rename"
+  },
+  "repeater_tab_rename_save": {
+    "message": "Save name"
+  },
+  "repeater_tab_name": {
+    "message": "Tab name"
+  },
+  "repeater_tab_duplicate": {
+    "message": "Duplicate"
+  },
+  "repeater_tab_close": {
+    "message": "Close tab"
+  },
+  "repeater_tab_closed": {
+    "message": "Tab \"$1\" closed."
+  },
+  "repeater_tab_copy": {
+    "message": "$1 (copy)"
+  },
+  "repeater_toolbar_label": {
+    "message": "Send options"
+  },
+  "repeater_mode_label": {
+    "message": "Send mode"
+  },
+  "repeater_mode_page": {
+    "message": "Page context"
+  },
+  "repeater_mode_clean": {
+    "message": "Clean context"
+  },
+  "repeater_mode_page_hint": {
+    "message": "Sent from the tab, with its cookies and origin, and through your rules."
+  },
+  "repeater_mode_clean_hint": {
+    "message": "Sent from Nahual, without cookies or session, like a signed-out client."
+  },
+  "repeater_page_unavailable": {
+    "message": "Page context unavailable: Nahual is not attached to the tab. Attach it or use the clean context."
+  },
+  "repeater_send": {
+    "message": "Send"
+  },
+  "repeater_sending": {
+    "message": "Sending…"
+  },
+  "repeater_divider": {
+    "message": "Divider between request and response"
+  },
+  "repeater_editor_label": {
+    "message": "Request to send"
+  },
+  "repeater_header_enabled": {
+    "message": "Send header $1"
+  },
+  "repeater_header_forbidden": {
+    "message": "The browser does not let you set this header: it ignores it or sets its own."
+  },
+  "repeater_body_original": {
+    "message": "Original body, not editable ($1, $2): it is resent intact."
+  },
+  "repeater_body_replace": {
+    "message": "Replace with text"
+  },
+  "repeater_body_replaced": {
+    "message": "Original body replaced with text."
+  },
+  "repeater_body_none_unavailable": {
+    "message": "The original body is not text and Nahual no longer has it: the send will not reproduce it."
+  },
+  "repeater_body_none_evicted": {
+    "message": "The original body is no longer available (dropped from history): the send will not reproduce it."
+  },
+  "repeater_body_none_tooLarge": {
+    "message": "The original body is over 5 MB and is not kept: the send will not reproduce it."
+  },
+  "repeater_result_label": {
+    "message": "Send result"
+  },
+  "repeater_no_result": {
+    "message": "You haven't sent this request yet."
+  },
+  "repeater_state_pending": {
+    "message": "Sending"
+  },
+  "repeater_state_done": {
+    "message": "Done"
+  },
+  "repeater_state_failed": {
+    "message": "Failed"
+  },
+  "repeater_state_cancelled": {
+    "message": "Cancelled"
+  },
+  "repeater_open_rule": {
+    "message": "View rules"
+  },
+  "repeater_preflight": {
+    "message": "There was a CORS preflight (status $1)."
+  },
+  "repeater_preflight_blocked": {
+    "message": "The CORS preflight blocked the request (status $1)."
+  },
+  "repeater_relaxed": {
+    "message": "The development CORS relaxation acted on this send."
+  },
+  "repeater_cors_blocked_detail": {
+    "message": "Open the request in Traffic to see the full CORS diagnosis."
+  },
+  "repeater_not_sent_headers": {
+    "message": "Not sent as written (the browser does not allow it): $1"
+  },
+  "repeater_use_page": {
+    "message": "Use page context"
+  },
+  "repeater_history_title": {
+    "message": "History"
+  },
+  "repeater_history_label": {
+    "message": "Send history"
+  },
+  "repeater_history_empty": {
+    "message": "Each send will show up here with its status, time and size."
+  },
+  "repeater_history_item": {
+    "message": "Send $1: $2"
+  },
+  "repeater_history_dropped": {
+    "message": "$1 older sends were dropped (the 50 most recent are kept)."
+  },
+  "repeater_load_in_editor": {
+    "message": "Load into editor"
+  },
+  "repeater_error_invalid_request": {
+    "message": "The request is not valid: fix the marked fields."
+  },
+  "repeater_error_invalid_request_fix": {
+    "message": "Check the method, URL, headers and body."
+  },
+  "repeater_error_not_attached": {
+    "message": "Nahual is not attached to the tab."
+  },
+  "repeater_error_not_attached_fix": {
+    "message": "Attach Nahual from the session status or use the clean context."
+  },
+  "repeater_error_context_lost": {
+    "message": "The tab navigated, closed or the debugger was released during the send."
+  },
+  "repeater_error_context_lost_fix": {
+    "message": "Send again when the page is ready, or use the clean context."
+  },
+  "repeater_error_network": {
+    "message": "Network error: $1"
+  },
+  "repeater_error_network_fix": {
+    "message": "Check that the server responds and that the URL is right."
+  },
+  "repeater_error_cors_blocked": {
+    "message": "The browser blocked the response because of CORS."
+  },
+  "repeater_error_cors_blocked_fix": {
+    "message": "See the diagnosis in Traffic; you can allow CORS for development or use the clean context."
+  },
+  "repeater_error_permission_required": {
+    "message": "Nahual needs access to $1 to send in clean context."
+  },
+  "repeater_error_permission_required_fix": {
+    "message": "Press Send again and grant access, or use the page context."
+  },
+  "repeater_error_permission_denied": {
+    "message": "Access to $1 was not granted."
+  },
+  "repeater_error_permission_denied_fix": {
+    "message": "Without that access the clean context cannot read the response: use the page context."
+  },
+  "repeater_error_timeout": {
+    "message": "No response after 5 minutes."
+  },
+  "repeater_error_timeout_fix": {
+    "message": "The server did not respond or a rule kept the request paused; try again."
+  },
+  "repeater_error_cancelled": {
+    "message": "Send cancelled."
+  },
+  "repeater_error_cancelled_fix": {
+    "message": "Press Send to try again."
+  },
+  "repeater_error_body_too_large": {
+    "message": "The body is over 5 MB."
+  },
+  "repeater_error_body_too_large_fix": {
+    "message": "Reduce the body to 5 MB or less."
+  },
+  "settings_origin_access": {
+    "message": "Access for the repeater clean context"
+  },
+  "settings_origin_access_hint": {
+    "message": "Origins you gave access to for sending without a session. Removing it does not affect the page context."
+  },
+  "settings_origin_access_empty": {
+    "message": "No origin has access."
+  },
+  "settings_origin_access_remove": {
+    "message": "Remove access to $1"
+  },
+  "repeater_page_other_site": {
+    "message": "Page context unavailable: the tab is no longer on $1 and would send with other cookies and another origin. Go back to that site or use the clean context."
+  },
+  "repeater_output_label": {
+    "message": "Response and history"
+  },
+  "error_ignores_invalid": {
+    "message": "Couldn't save the ignore list. Try again; if it keeps failing, free up the extension's storage."
+  },
+  "repeater_ignores_invalid": {
+    "message": "The saved list of ignored diff fields couldn't be read and was reset."
+  },
+  "diff_title": {
+    "message": "Diff"
+  },
+  "diff_before": {
+    "message": "Before"
+  },
+  "diff_after": {
+    "message": "After"
+  },
+  "diff_swap": {
+    "message": "Swap"
+  },
+  "diff_close": {
+    "message": "Close diff"
+  },
+  "diff_side_original": {
+    "message": "Original response (captured)"
+  },
+  "diff_side_pasted": {
+    "message": "Pasted response"
+  },
+  "diff_side_send": {
+    "message": "Send $1 ($2)"
+  },
+  "diff_side_missing": {
+    "message": "One of the sides is no longer available (send dropped or pasted response removed). Pick another."
+  },
+  "diff_same_side": {
+    "message": "You are comparing a response with itself."
+  },
+  "diff_comparing": {
+    "message": "Comparing…"
+  },
+  "diff_failed_timeout": {
+    "message": "The comparison took over 10 seconds and was stopped: the responses are too large or too different."
+  },
+  "diff_failed_invalid": {
+    "message": "Couldn't compare: the result was not valid."
+  },
+  "diff_failed_error": {
+    "message": "Couldn't compare these responses."
+  },
+  "diff_failed_cancelled": {
+    "message": "Comparison cancelled."
+  },
+  "diff_no_changes": {
+    "message": "No differences"
+  },
+  "diff_total": {
+    "message": "$1 changes"
+  },
+  "diff_ignored_count": {
+    "message": "$1 ignored"
+  },
+  "diff_ignored_title": {
+    "message": "Ignored for this endpoint"
+  },
+  "diff_unignore": {
+    "message": "Stop ignoring"
+  },
+  "diff_prev": {
+    "message": "Previous change"
+  },
+  "diff_next": {
+    "message": "Next change"
+  },
+  "diff_show_sensitive": {
+    "message": "Show sensitive values"
+  },
+  "diff_hide_sensitive": {
+    "message": "Hide sensitive values"
+  },
+  "diff_sensitive": {
+    "message": "redacted"
+  },
+  "diff_note_json_expected": {
+    "message": "The content-type said JSON but the body is not valid JSON: comparing by lines."
+  },
+  "diff_note_body_not_compared": {
+    "message": "The body is not compared: a response is binary, over 5 MB or no longer available."
+  },
+  "diff_note_truncated": {
+    "message": "There are too many differences to show them all: showing the first ones."
+  },
+  "diff_arrays": {
+    "message": "Arrays: $1"
+  },
+  "diff_array_criterion": {
+    "message": "$1 $2"
+  },
+  "diff_by_id": {
+    "message": "by $1"
+  },
+  "diff_by_index": {
+    "message": "by position"
+  },
+  "diff_status": {
+    "message": "Status"
+  },
+  "diff_header": {
+    "message": "Header $1"
+  },
+  "diff_kind_added": {
+    "message": "Added"
+  },
+  "diff_kind_removed": {
+    "message": "Removed"
+  },
+  "diff_kind_changed": {
+    "message": "Changed"
+  },
+  "diff_ignore_path": {
+    "message": "Ignore this path"
+  },
+  "diff_ignore_any": {
+    "message": "Ignore in every element"
+  },
+  "diff_ignore_header": {
+    "message": "Ignore this header"
+  },
+  "diff_hunk": {
+    "message": "Lines $1 (before) and $2 (after)"
+  },
+  "diff_metadata": {
+    "message": "Before: $1, $2. After: $3, $4."
+  },
+  "diff_reason_text": {
+    "message": "text"
+  },
+  "diff_reason_binary": {
+    "message": "binary"
+  },
+  "diff_reason_tooLarge": {
+    "message": "over 5 MB"
+  },
+  "diff_reason_evicted": {
+    "message": "no longer available"
+  },
+  "diff_reason_none": {
+    "message": "no body"
+  },
+  "diff_compare_original": {
+    "message": "Compare with original"
+  },
+  "diff_compare_previous": {
+    "message": "Compare with previous"
+  },
+  "diff_compare_pasted": {
+    "message": "Compare pasted with last send"
+  },
+  "pasted_add": {
+    "message": "Paste expected response"
+  },
+  "pasted_edit": {
+    "message": "Edit pasted response"
+  },
+  "pasted_remove": {
+    "message": "Remove pasted response"
+  },
+  "pasted_label": {
+    "message": "Pasted response (JSON or text)"
+  },
+  "pasted_save": {
+    "message": "Use this response"
+  },
+  "help_repeater_title": {
+    "message": "Repeater and diff"
+  },
+  "help_repeater_body": {
+    "message": "In Traffic, right-click a request ⇒ \"Send to repeater\". Edit it and send it with Ctrl/Cmd+Enter in page context (with the tab's cookies and origin) or in clean context (no session). In the history, \"Compare with original\" shows what changed; J and K move between changes."
   }
 }

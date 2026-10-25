@@ -63,15 +63,34 @@ export function BodyView({
       </p>
     );
   if (loaded.kind === "error") return <p className="muted">{t(loaded.messageKey)}</p>;
-  if (loaded.content === "") return <p className="muted">{t("body_empty")}</p>;
+  return <BodyText side={side} content={loaded.content} size={loaded.size} pretty={pretty} />;
+}
+
+/**
+ * Body ya cargado como texto, formateado si es JSON (002 FR-004); el repeater (005) lo usa para
+ * sus respuestas. Siempre como texto: nunca se interpreta como HTML (FR-032).
+ */
+export function BodyText({
+  side,
+  content,
+  size,
+  pretty: given,
+}: {
+  side: "request" | "response";
+  content: string;
+  size: number;
+  pretty?: ReturnType<typeof prettyBody> | null;
+}) {
+  const pretty = useMemo(() => given ?? prettyBody(content), [given, content]);
+  if (content === "") return <p className="muted">{t("body_empty")}</p>;
   return (
     <div>
       <p className="muted">
-        {formatBytes(loaded.size)}
-        {pretty?.json ? ` · ${t("body_json")}` : ""}
+        {formatBytes(size)}
+        {pretty.json ? ` · ${t("body_json")}` : ""}
       </p>
       <pre className="body mono" tabIndex={0} aria-label={t(`body_label_${side}`)}>
-        {pretty?.text}
+        {pretty.text}
       </pre>
     </div>
   );

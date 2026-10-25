@@ -4,7 +4,15 @@
  * que no hay combinaciones repetidas ni reservadas por DevTools.
  */
 export type ShortcutKeys =
-  | { code: string; alt?: boolean; shift?: boolean; ctrl?: boolean; meta?: boolean }
+  | {
+      code: string;
+      alt?: boolean;
+      shift?: boolean;
+      ctrl?: boolean;
+      meta?: boolean;
+      /** Ctrl en Windows y Linux o Cmd en macOS: cualquiera de los dos (005). */
+      mod?: boolean;
+    }
   /** Tecla simple sin modificadores, por `key` (p. ej. `/`). */
   | { key: string };
 
@@ -17,14 +25,21 @@ export type ShortcutId =
   | "focusSearch"
   | "focusSearchSlash"
   | "moveRuleUp"
-  | "moveRuleDown";
+  | "moveRuleDown"
+  | "repeaterSend"
+  | "nextChange"
+  | "prevChange";
 
 export interface Shortcut {
   id: ShortcutId;
   keys: ShortcutKeys;
   descriptionKey: string;
-  /** `global` se ignora mientras se escribe en un campo; `rules`, sobre una regla enfocada. */
-  scope: "global" | "list" | "rules";
+  /**
+   * `global` se ignora mientras se escribe en un campo; `rules`, sobre una regla enfocada;
+   * `repeater`, con el foco en una pestaña del repeater (también en sus campos); `diff`, en la
+   * vista de diff y fuera de campos de texto (005, research R17).
+   */
+  scope: "global" | "list" | "rules" | "repeater" | "diff";
 }
 
 export const SHORTCUTS: readonly Shortcut[] = [
@@ -82,6 +97,24 @@ export const SHORTCUTS: readonly Shortcut[] = [
     descriptionKey: "shortcut_desc_move_rule_down",
     scope: "rules",
   },
+  {
+    id: "repeaterSend",
+    keys: { code: "Enter", mod: true },
+    descriptionKey: "shortcut_desc_repeater_send",
+    scope: "repeater",
+  },
+  {
+    id: "nextChange",
+    keys: { code: "KeyJ" },
+    descriptionKey: "shortcut_desc_next_change",
+    scope: "diff",
+  },
+  {
+    id: "prevChange",
+    keys: { code: "KeyK" },
+    descriptionKey: "shortcut_desc_prev_change",
+    scope: "diff",
+  },
 ];
 
 /** Atajos de DevTools que Nahual no puede usar (Ctrl y Cmd se tratan igual). */
@@ -103,9 +136,10 @@ const ARIA_NAMES: Record<string, string> = { ArrowUp: "ArrowUp", ArrowDown: "Arr
 const keyName = (code: string, names: Record<string, string>) =>
   names[code] ?? code.replace(/^Key|^Digit/, "");
 
-function parts(keys: ShortcutKeys, names: Record<string, string>): string {
+function parts(keys: ShortcutKeys, names: Record<string, string>, modName: string): string {
   if ("key" in keys) return keys.key;
   return [
+    keys.mod ? modName : "",
     keys.ctrl ? "Ctrl" : "",
     keys.meta ? "Meta" : "",
     keys.alt ? "Alt" : "",
@@ -117,10 +151,16 @@ function parts(keys: ShortcutKeys, names: Record<string, string>): string {
 }
 
 /** Texto visible del atajo, p. ej. "Alt+Shift+A" o "Alt+↑". */
-export const shortcutLabel = (shortcut: Shortcut) => parts(shortcut.keys, KEY_NAMES);
+export const shortcutLabel = (shortcut: Shortcut) => parts(shortcut.keys, KEY_NAMES, "Ctrl/Cmd");
 
 /** Valor para `aria-keyshortcuts`, p. ej. "Alt+Shift+A" o "Alt+ArrowUp". */
-export const shortcutAria = (shortcut: Shortcut) => parts(shortcut.keys, ARIA_NAMES);
+export function shortcutAria(shortcut: Shortcut): string {
+  const { keys } = shortcut;
+  // Dos alternativas separadas por espacio (ARIA `aria-keyshortcuts`).
+  if (!("key" in keys) && keys.mod)
+    return ["Control", "Meta"].map((mod) => parts(keys, ARIA_NAMES, mod)).join(" ");
+  return parts(keys, ARIA_NAMES, "");
+}
 
 export function shortcutById(id: ShortcutId): Shortcut {
   const shortcut = SHORTCUTS.find((s) => s.id === id);
@@ -151,11 +191,13 @@ export function matchesShortcut(shortcut: Shortcut, event: KeyLike): boolean {
   const { keys } = shortcut;
   if ("key" in keys)
     return event.key === keys.key && !event.altKey && !event.ctrlKey && !event.metaKey;
+  const modifiers = keys.mod
+    ? event.ctrlKey !== event.metaKey
+    : event.ctrlKey === Boolean(keys.ctrl) && event.metaKey === Boolean(keys.meta);
   return (
     event.code === keys.code &&
     event.altKey === Boolean(keys.alt) &&
     event.shiftKey === Boolean(keys.shift) &&
-    event.ctrlKey === Boolean(keys.ctrl) &&
-    event.metaKey === Boolean(keys.meta)
+    modifiers
   );
 }

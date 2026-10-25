@@ -17,7 +17,11 @@ export function requestWillBeSent(
     timestamp?: number;
     redirectResponse?: { url: string; status: number; headers: Record<string, string> };
     frameId?: string;
-    initiator?: { type: string; requestId?: string };
+    initiator?: {
+      type: string;
+      requestId?: string;
+      stack?: { callFrames: { url: string; functionName?: string }[] };
+    };
   } = {},
 ) {
   return {

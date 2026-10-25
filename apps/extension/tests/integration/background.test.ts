@@ -1,5 +1,5 @@
 import { makeCommand, type SwMessage } from "@nahual/protocol";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBackground } from "../../src/background/app.ts";
 import { SETTINGS_KEY } from "../../src/background/settings-store.ts";
 import { FakeDebugger } from "../fakes/fake-debugger.ts";
@@ -241,5 +241,135 @@ describe("background: comandos CORS (003, contracts/panel-protocol.md)", () => {
     await flush();
     expect(last(port, "relaxations")?.payload.items[0]?.state).toBe("suspended");
     expect(cdp.sentMethods(1).at(-1)).not.toBe("Fetch.enable");
+  });
+});
+
+describe("background: repeater (005, contracts/panel-protocol.md)", () => {
+  const SEND = "3f1c2b4a-8d9e-4f60-a1b2-c3d4e5f60718";
+  const request = {
+    method: "GET",
+    url: "http://localhost:4000/api/items",
+    headers: [{ name: "accept", value: "*/*", enabled: true }],
+    body: { kind: "none" },
+  };
+  let fetched: { url: string; init: RequestInit }[];
+
+  beforeEach(async () => {
+    cdp = new FakeDebugger();
+    runtime = new FakeRuntime();
+    fetched = [];
+    cdp.respond("Target.getTargetInfo", () => ({ targetInfo: { url: "http://localhost:3000/" } }));
+    const bg = createBackground({
+      debugger: cdp,
+      runtime,
+      sessionStorage: new FakeStorage(),
+      localStorage: new FakeStorage(),
+      cleanSend: {
+        request: async (url, init) => {
+          fetched.push({ url, init });
+          return new Response('{"ok":true}', { headers: { "content-type": "application/json" } });
+        },
+        hasPermission: async () => true,
+      },
+    });
+    await bg.ready;
+  });
+
+  it("contexto limpio: ack y repeaterResult al puerto que lo pidió, sin credenciales", async () => {
+    const port = await openPanel();
+    port.fromPanel(makeCommand("repeaterSend", { sendId: SEND, mode: "clean", request }));
+    await flush();
+    expect(last(port, "repeaterResult")?.payload).toMatchObject({
+      sendId: SEND,
+      state: "done",
+      response: { status: 200, body: { encoding: "text", text: '{"ok":true}' } },
+    });
+    expect(fetched[0]?.init.credentials).toBe("omit");
+  });
+
+  it("contexto de página: plantilla en el mundo aislado y respuesta de la captura", async () => {
+    const port = await openPanel();
+    port.fromPanel(makeCommand("attach", {}));
+    await flush();
+    cdp.respond("Page.getFrameTree", () => ({ frameTree: { frame: { id: "main" } } }));
+    cdp.respond("Page.createIsolatedWorld", () => ({ executionContextId: 9 }));
+    cdp.respond("Network.getResponseBody", () => ({ body: '{"items":[1]}', base64Encoded: false }));
+    cdp.respond("Runtime.callFunctionOn", () => {
+      cdp.emit(1, "Network.requestWillBeSent", {
+        requestId: "net-9",
+        type: "Fetch",
+        timestamp: 1,
+        request: { url: request.url, method: "GET", headers: {} },
+        initiator: { type: "script", stack: { callFrames: [{ url: "nahual-repeater" }] } },
+      });
+      cdp.emit(1, "Network.responseReceived", {
+        requestId: "net-9",
+        response: { url: request.url, status: 200, mimeType: "application/json", headers: {} },
+      });
+      cdp.emit(1, "Network.loadingFinished", {
+        requestId: "net-9",
+        timestamp: 2,
+        encodedDataLength: 13,
+      });
+      return { result: { value: { ok: true, status: 200 } } };
+    });
+    port.fromPanel(makeCommand("repeaterSend", { sendId: SEND, mode: "page", request }));
+    await flush();
+    expect(
+      cdp.calls<{ executionContextId: number }>("Runtime.callFunctionOn")[0]?.executionContextId,
+    ).toBe(9);
+    expect(last(port, "repeaterResult")?.payload).toMatchObject({
+      sendId: SEND,
+      state: "done",
+      exchangeId: "net-9",
+      response: { status: 200, body: { encoding: "text", text: '{"items":[1]}' } },
+    });
+    // Las actualizaciones de la captura salen en lotes de 50 ms.
+    await new Promise((r) => setTimeout(r, 60));
+    expect(
+      received(port).some(
+        (m) =>
+          m.type === "exchanges" &&
+          m.payload.updates.some((u) => u.fields.repeater?.sendId === SEND),
+      ),
+    ).toBe(true);
+  });
+
+  it("desde la pestaña B nunca envía en la A; sin adjuntar ⇒ not_attached", async () => {
+    const a = await openPanel(1);
+    a.fromPanel(makeCommand("attach", {}));
+    const b = await openPanel(2);
+    b.fromPanel(makeCommand("repeaterSend", { sendId: SEND, mode: "page", request }));
+    await flush();
+    expect(last(b, "repeaterResult")?.payload).toMatchObject({ error: { code: "not_attached" } });
+    expect(cdp.calls("Runtime.callFunctionOn")).toEqual([]);
+    expect(last(a, "repeaterResult")).toBeUndefined();
+  });
+});
+
+describe("background: ignorados del diff (005, contracts/storage.md)", () => {
+  it("setIgnores guarda bajo un hash y getIgnores lo devuelve para la misma ruta", async () => {
+    const port = await openPanel();
+    port.fromPanel(
+      makeCommand("setIgnores", {
+        method: "GET",
+        url: "http://localhost:4000/api/items?x=1",
+        paths: [[{ key: "meta" }, { key: "timestamp" }]],
+        headers: ["Date"],
+      }),
+    );
+    await flush();
+    port.fromPanel(
+      makeCommand("getIgnores", { method: "GET", url: "http://localhost:4000/api/items?x=2" }),
+    );
+    // El hash (crypto.subtle) y el guardado son asíncronos: se espera la respuesta.
+    await vi.waitFor(() => expect(last(port, "ignores")?.payload.url).toContain("x=2"));
+    expect(last(port, "ignores")?.payload).toEqual({
+      method: "GET",
+      url: "http://localhost:4000/api/items?x=2",
+      paths: [[{ key: "meta" }, { key: "timestamp" }]],
+      headers: ["date"],
+    });
+    expect(JSON.stringify(local.data.get("nahual.repeater.ignores.v1"))).not.toContain("localhost");
   });
 });

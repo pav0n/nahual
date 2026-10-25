@@ -118,7 +118,7 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 ## R6 — Headers que el navegador no deja fijar
 
-- **Decision**: función pura `forbiddenHeaders(headers, mode)` en el dominio con la lista de
+- **Decision**: función pura `forbiddenHeaders(headers)` en el dominio con la lista de
   nombres prohibidos de la especificación Fetch (`Cookie`, `Host`, `Origin`, `Content-Length`,
   `Connection`, `Referer`, `Sec-*`, `Proxy-*`, etc.). El editor los marca (FR-008) y el resultado
   del envío los lista como "no enviados tal cual". Se envían igual a `fetch` (el navegador los
@@ -150,7 +150,7 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 - **Decision**: `diffLines(before, after)` con el algoritmo de Myers O(ND) (variante lineal en
   espacio) en `packages/domain/src/diff/lines.ts`, sin dependencias. Normaliza fin de línea
-  (`\r\n` ⇒ `\n`). Presupuesto: si el número de ediciones supera 20,000 líneas, devuelve
+  (`\r\n` ⇒ `\n`). Presupuesto: si el número de ediciones supera 5,000 líneas, devuelve
   `truncated: true` con el recuento de líneas de cada lado y el diff se muestra como "demasiadas
   diferencias para mostrarlas por línea" (edge case de bodies grandes). Hasta 5 MB por lado.
 - **Rationale**: Myers es el estándar (git, jsdiff) y en ~120 líneas da resultados mínimos y
@@ -284,4 +284,130 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 ## Resultados
 
-*Por registrar durante la implementación: X1, X2, X3, mediciones de R18 y tamaño de los bundles.*
+### Experimento X1 — envío desde un mundo aislado (2026-10-24, Chromium de Playwright 1.64)
+
+`e2e/experiments/x1-isolated-send.spec.ts`, con el laboratorio CDP de 003 dentro del SW
+(`chrome.debugger`):
+
+| Pregunta | Resultado |
+|---|---|
+| (a) Cookies y origen de la app | Sí: el eco recibió `cookie: nahual_session=…` y `origin` de la app (`credentials: "include"`) |
+| (b) Network y Fetch | Sí: `Network.requestWillBeSent` y `Fetch.requestPaused` en etapa Response |
+| (c) `window.fetch` reemplazado por la página | No se usó (`__hijacked` falso) |
+| (d) `initiator` reconocible | Sí: `type: "script"`, `stack.callFrames[0].url === "nahual-repeater"` |
+| Inyección en la URL | Llegó literal al servidor (`/echo?q=%22);globalThis.__pwned=1;(%22`); `__pwned` no existe |
+
+Se usa el camino principal de R1 y R2 (sin respaldo). Detalle: `callFunctionOn` envuelve la
+declaración entre paréntesis, así que el `//# sourceURL=nahual-repeater` final debe ir seguido de
+un salto de línea; sin él, el `)` queda comentado y la llamada falla con `SyntaxError`.
+
+### Experimento X2 — permiso opcional y `fetch` del SW (2026-10-24)
+
+`e2e/experiments/x2-clean-send.spec.ts`:
+
+| Pregunta | Resultado |
+|---|---|
+| (a) `chrome.permissions.request` en un clic del panel | Abre el diálogo del navegador; Playwright **no puede contestarlo** y la promesa queda pendiente. Aceptarlo dentro de DevTools se comprueba a mano (quickstart, paso 3) |
+| (b) Con el host concedido, lectura sin CORS | Sí: `fetch` del SW a `/no-cors` responde 200 con el body |
+| (c) Sin cookies heredadas | Sí: el eco no trae `cookie` (la cookie de la app existe para 127.0.0.1); sí trae el `authorization` escrito por el dev |
+| (d) `Origin` en un GET | No se envía |
+| Sin host concedido | `TypeError: Failed to fetch` (como esperaba R5) |
+
+**Desvío para las pruebas**: el build de pruebas (`--mode test`) declara además
+`host_permissions: ["http://127.0.0.1/*"]` (los servidores locales, cualquier puerto) para que
+las E2E envíen en contexto limpio de verdad; el flujo de pedir el permiso se prueba contra
+`localhost` (no concedido) con el espía `__nahualPermissionsSpy`, que en el build de pruebas
+sustituye la respuesta del diálogo. El build de producción no tiene `host_permissions`
+(`tests/dist/manifest.test.ts`).
+
+### Experimento X3 — worker del diff (2026-10-24)
+
+`e2e/experiments/x3-worker.spec.ts`: Vite emite `assets/diff.worker-*.js` y el worker creado con
+`new Worker(new URL("./diff.worker.ts", import.meta.url), { type: "module" })` responde al ping
+sin violaciones de CSP. Sin respaldo.
+
+### Mediciones de US1
+
+- **SC-001** (parte automática, `e2e/repeater-send.spec.ts`, `@perf`): de "Send to repeater" a la
+  respuesta mostrada, 302 ms en el fixture local (meta < 2 s; el resto de los 10 s es la persona).
+
+### Decisiones tomadas al implementar US1
+
+- **Headers del navegador copiados desactivados**: al abrir un request capturado, los headers que
+  `fetch` no deja fijar (`sec-*`, `referer`, `origin`, `cookie`…) llegan desactivados. Saldrían
+  igual del navegador y, activos, llenaban el editor de avisos (13 en un GET típico).
+- **Contexto de página atado al sitio de la pestaña**: cada pestaña del repeater recuerda el sitio
+  de la sesión al crearse; si la pestaña inspeccionada está en otro sitio, el modo se deshabilita
+  con el motivo (FR-012, US1-8), porque enviaría con otras cookies y otro origen.
+- **Permiso en el clic**: el panel llama a `chrome.permissions.request` antes de cualquier espera
+  (resuelve al instante si el origen ya tiene acceso), así el gesto del dev sigue vigente.
+- **Reintento solo si el contexto no existía**: `page-send` recrea el mundo aislado y reintenta
+  solo ante "Cannot find context"; si se destruyó a mitad del envío no reintenta, porque el
+  request pudo salir y se enviaría dos veces.
+- **`getBody` con `binary`**: el body no textual de un request vuelve en base64 solo si lo pide el
+  repeater; el detalle de Tráfico sigue igual.
+- **Límite del diff por líneas en 5,000 ediciones** (no 20,000): Myers cuesta O(N·D) y con 20,000
+  ediciones el peor caso tardaba 9,5 s en Node; con 5,000 queda por debajo de 1 s. Por encima, el
+  diff dice "demasiadas diferencias para mostrarlas por línea" (edge case de bodies grandes).
+- **Preferencia `split.repeater`** dentro de `nahual.ui.v1.split` (no una clave aparte), con default
+  0.5 para preferencias guardadas por 004.
+
+### Mediciones de US2
+
+- **SC-003** (`e2e/repeater-perf.spec.ts`, `@perf`): diff de dos JSON de ~1 MB (9,000 filas, 9
+  valores distintos), 247–459 ms en tres corridas, sin tareas largas (> 50 ms) en el panel. El
+  clic y la espera se hacen sin las comprobaciones de Playwright: recorren el DOM (con la
+  respuesta de 1 MB) en el hilo del panel y se medían como tareas largas suyas.
+
+### Decisiones tomadas al implementar US2
+
+- **Solo los arrays con cambios** se informan con su criterio (como mucho 50). Con todos, un JSON
+  de 9,000 filas con un array `tags` cada una devolvía 9,000 entradas: validarlas en el panel y
+  copiarlas desde el worker costaba ~90 ms en el hilo principal.
+- **Lista de ignorados en memoria del SW** tras la primera lectura (solo el SW escribe la clave):
+  cada guardado ya no relee ni valida la lista entera.
+- **Sección Repeater como columna flexible**: el divisor ocupa el alto que queda bajo las pestañas
+  y la barra; sin eso, a 320 px la parte inferior medía casi 0 y el divisor tapaba sus botones.
+- **"Sin diferencias" determinista en las pruebas** con la respuesta pegada: dos envíos al mismo
+  endpoint pueden diferir en el header `Date`, y eso es un cambio real.
+
+### Camino del tráfico (R18, principio VI)
+
+`e2e/experiments/e4-overhead-rules.spec.ts` (el de 002 R20, con el panel y el motor reales), tres
+corridas de 500 fetch tras 10 de calentamiento, HeadlessChrome 156, 2026-10-24:
+
+| Corrida | Overhead p95 en 002 (ms) | Overhead p95 en 005 (ms) |
+|---|---|---|
+| 3. Regla Request: prefiltro coincide, condición de header no | 2,5 | 3,4 · 3,6 · 2,0 |
+| 4. Regla Response: JSONPath no (pide el body) | 2,6 | 2,4 · 3,0 · 2,4 |
+
+La captura pasiva (corrida 2, donde vive el reconocimiento del `initiator`) sigue sin distinguirse
+de la corrida sin debugger. Las corridas varían ±1 ms entre sí (una por encima de 002 en 1,1 ms y
+otra por debajo en 0,5 ms): no hay regresión medible, y todo queda muy por debajo del presupuesto de
+20 ms (SC-002 de 002).
+
+### Estabilidad (T064)
+
+Tres corridas seguidas de `pnpm e2e` (4 workers): 137/137, 132 + 1 fallo, 137/137; la regresión
+visual (66 + 24 capturas nuevas) estable en tres corridas. El único fallo es una intermitencia de
+003, no de 005: `cors-diagnosis.spec.ts` US1-3 a veces diagnostica un bloqueo CORS antes de recibir
+los `ExtraInfo` de Network (headers de la respuesta o `Origin`/`Cookie` del request), que Network no
+ordena respecto de `loadingFailed`. Ocurre también en `main` (2 de 240 repeticiones de la spec, mismo
+síntoma). Un intento de esperar esos headers en el diagnóstico lo corregía, pero hacía que
+`cors-relax.spec.ts` agotara su tiempo en ~2 % de las repeticiones, así que se revirtió: queda como
+deuda de 003 para una corrección propia (con la causa del timeout entendida antes de cambiar la
+espera).
+
+### Tamaño de los bundles (`pnpm build`)
+
+| Archivo | 004 | 005 | gzip (005) |
+|---|---|---|---|
+| Panel (`panel-*.js`) | — | 383,823 B | 115,039 B |
+| Dominio + Zod compartido (`src-*.js`) | — | 200,220 B | 55,513 B |
+| SW (`index.ts-*.js`) | — | 50,302 B | 16,367 B |
+| **Worker del diff** (`diff.worker-*.js`, nuevo) | — | 184,807 B | 49,567 B |
+| **Total JS** | 351,626 B | 819,401 B | 236,786 B |
+
+El worker es la mayor parte del aumento: Vite lo construye como entrada aparte y no comparte chunks
+con el panel, así que lleva su propia copia de Zod y del dominio (los necesita para validar la
+petición y calcular el diff). Se carga solo al abrir un diff.

@@ -9,7 +9,7 @@ export const UI_PREFS_KEY = "nahual.ui.v1";
 export interface UiPrefs {
   version: 1;
   /** Fracción del ancho para el panel izquierdo (la lista) de cada vista. */
-  split: { traffic: number; rules: number; paused: number };
+  split: { traffic: number; rules: number; paused: number; repeater: number };
   /** Alto en px del cajón inferior. */
   drawerHeight: number;
 }
@@ -18,7 +18,7 @@ export type SplitKey = keyof UiPrefs["split"];
 
 export const DEFAULT_UI_PREFS: UiPrefs = {
   version: 1,
-  split: { traffic: 0.5, rules: 0.34, paused: 0.34 },
+  split: { traffic: 0.5, rules: 0.34, paused: 0.34, repeater: 0.5 },
   drawerHeight: 180,
 };
 
@@ -31,6 +31,8 @@ const UiPrefsSchema = z.object({
       traffic: fraction(DEFAULT_UI_PREFS.split.traffic),
       rules: fraction(DEFAULT_UI_PREFS.split.rules),
       paused: fraction(DEFAULT_UI_PREFS.split.paused),
+      // 005: sección Repeater; un valor guardado por 004 no la tiene y toma el default.
+      repeater: fraction(DEFAULT_UI_PREFS.split.repeater),
     })
     .catch(DEFAULT_UI_PREFS.split),
   drawerHeight: z.number().int().min(120).max(600).catch(DEFAULT_UI_PREFS.drawerHeight),
@@ -49,7 +51,12 @@ function defaultStorage(): PrefsStorage | null {
 
 const copy = (prefs: UiPrefs): UiPrefs => ({
   version: 1,
-  split: { traffic: prefs.split.traffic, rules: prefs.split.rules, paused: prefs.split.paused },
+  split: {
+    traffic: prefs.split.traffic,
+    rules: prefs.split.rules,
+    paused: prefs.split.paused,
+    repeater: prefs.split.repeater,
+  },
   drawerHeight: prefs.drawerHeight,
 });
 

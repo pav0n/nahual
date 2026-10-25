@@ -63,18 +63,23 @@ test("FR-020/022: cabecera y menú muestran las mismas acciones según el reques
   await corsCall(app, "cors-preflight-401");
 
   const normal = await actionsOf(panel, trafficRow(panel, "/api/items"));
-  expect(normal.header).toEqual(["Create rule from this request"]);
+  // 005 añade "Send to repeater" al catálogo (FR-001).
+  expect(normal.header).toEqual(["Create rule from this request", "Send to repeater"]);
   expect(normal.items).toEqual(normal.header);
 
   const blocked = await actionsOf(panel, requestRow(panel, "/cors/preflight-401").last());
-  expect(blocked.header).toEqual(["Create rule from this request", "Allow CORS for development"]);
+  expect(blocked.header).toEqual([
+    "Create rule from this request",
+    "Send to repeater",
+    "Allow CORS for development",
+  ]);
   expect(blocked.items).toEqual(blocked.header);
 
   const preflight = trafficRow(panel, "/cors/preflight-401").filter({
     has: panel.getByRole("gridcell", { name: "OPTIONS", exact: true }),
   });
   const options = await actionsOf(panel, preflight.last());
-  expect(options.header).toEqual(["Create rule from this request"]);
+  expect(options.header).toEqual(["Create rule from this request", "Send to repeater"]);
   expect(options.items).toEqual(options.header);
 });
 
@@ -95,6 +100,8 @@ test("FR-021: el menú se abre con clic derecho, Shift+F10 y la tecla de menú; 
   await expect(row).toHaveAttribute("aria-selected", "true");
   await expect(menuItems(panel).first()).toBeFocused();
   await panel.keyboard.press("ArrowDown");
+  await expect(menuItems(panel).nth(1)).toBeFocused();
+  await panel.keyboard.press("ArrowUp");
   await expect(menuItems(panel).first()).toBeFocused();
   await panel.keyboard.press("Escape");
   await expect(menu(panel)).toBeHidden();

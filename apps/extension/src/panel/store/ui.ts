@@ -2,7 +2,7 @@ import type { RuleDraft } from "@nahual/domain";
 import type { SliceCreator } from "./types.ts";
 
 /** Secciones de la barra superior (004, data-model `PanelSection`); 005 añade `repeater`. */
-export type PanelSection = "traffic" | "rules" | "paused";
+export type PanelSection = "traffic" | "rules" | "paused" | "repeater";
 
 export interface Toast {
   id: number;

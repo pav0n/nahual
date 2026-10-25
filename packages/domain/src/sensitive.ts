@@ -10,6 +10,15 @@ export function isSensitiveHeader(name: string): boolean {
   return EXACT.has(lower) || PARTS.some((part) => lower.includes(part));
 }
 
+/**
+ * Nombres de campo JSON y de parámetro de query cuyo valor se redacta en el diff (005, FR-030):
+ * el criterio de los headers más `password`; `_` cuenta como `-` (`api_key`).
+ */
+export function isSensitiveName(name: string): boolean {
+  const normalized = name.toLowerCase().replaceAll("_", "-");
+  return isSensitiveHeader(normalized) || normalized.includes("password");
+}
+
 type HeaderList = { name: string; value: string }[];
 
 /** Copia con los valores sensibles reemplazados por la máscara. */

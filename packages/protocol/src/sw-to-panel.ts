@@ -1,6 +1,8 @@
 import {
   ExchangeUpdateSchema,
   LIMITS,
+  PathPatternSchema,
+  RepeaterOutcomeSchema,
   RelaxationViewSchema,
   PausedItemViewSchema,
   RuleResultSchema,
@@ -25,6 +27,7 @@ export const ERROR_CODES = [
   "body_unavailable",
   "no_site",
   "relaxation_invalid",
+  "ignores_invalid",
 ] as const;
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
@@ -70,6 +73,23 @@ export const MAX_EXCHANGE_UPDATES = 200;
 const Side = z.enum(["request", "response"]);
 
 export const SwMessageSchema = z.discriminatedUnion("type", [
+  // 005: resultado de un envío del repeater, solo al puerto que lo pidió.
+  message(
+    "repeaterResult",
+    RepeaterOutcomeSchema.extend({
+      sendId: z.uuid(),
+      state: z.enum(["done", "failed", "cancelled"]),
+    }),
+  ),
+  message(
+    "ignores",
+    z.strictObject({
+      method: z.string().min(1).max(64),
+      url: z.string().min(1).max(LIMITS.urlMax),
+      paths: z.array(PathPatternSchema).max(LIMITS.ignoreEntriesMax),
+      headers: z.array(z.string().min(1).max(LIMITS.headerNameMax)).max(LIMITS.ignoreEntriesMax),
+    }),
+  ),
   message("ack", z.strictObject({})),
   message(
     "error",
