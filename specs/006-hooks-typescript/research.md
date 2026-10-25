@@ -364,3 +364,26 @@ y 1280 px.
   **Consecuencia**: R4 confirmada: CodeMirror. Monaco pesa un 75 % más y su worker de TypeScript
   necesitaría `unsafe-eval` en las páginas de la extensión, que la constitución prohíbe. La
   latencia de SC-005 se mide con el servicio real en T033.
+
+### Ajustes de implementación (Foundational)
+
+- **Preflights fuera de los hooks**: como el Mock de 002, un preflight (`OPTIONS` con
+  `Access-Control-Request-Method`) no pasa por hooks; su respuesta es del navegador y de la
+  relajación CORS (R15). `rule-engine` lo comprueba antes de mandar la cadena.
+- **Relajación sobre el resultado de un hook** (FR-013): la relajación de 003 respeta los
+  `Access-Control-*` que el dev fija a mano en una pausa ("pinned") y no actúa si el servidor ya
+  respondía con CORS válido. Para los hooks se pasa `fromHook` al ejecutor: lo que deja el hook se
+  trata como la respuesta del servidor, así que la relajación decide sobre esos headers y
+  prevalece (si un hook quita `Access-Control-Allow-Origin`, vuelve). Prueba en
+  `tests/integration/hook-runner.test.ts`.
+- **Chunk compartido**: Rollup había puesto Zod y el dominio en el chunk de entrada del panel y
+  el sandbox lo importaba (cargaba código del panel). `vite.config.ts` los separa en `shared`;
+  `tests/dist` comprueba que el único `Function(` del build está en el runtime del Worker y que
+  Sucrase va solo en el sandbox y sin su CLI. Sucrase lleva como texto el código de su
+  transformación de react-hot-loader (`eval(code)` dentro de una cadena), que Nahual no usa; se
+  permite ese fragmento exacto.
+- **`hashSource`** con aritmética de 16 bits: con `BigInt` por byte, guardar 51 hooks de 100 KB
+  tardaba más de 5 s.
+- **Suite de escape** (`e2e/hooks-escape.spec.ts`, T022/T031): 16 vectores × 2 destinos (API y
+  tercer origen) = 32 casos en verde; ningún request llega a `/leak`.
+- **Zod 4.6.6**: ver plan.md "Dependencias".

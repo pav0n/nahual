@@ -21,6 +21,7 @@ import {
 import { createIgnoresStore } from "./repeater/ignores-store.ts";
 import { createPageSender } from "./repeater/page-send.ts";
 import { createRepeaterService } from "./repeater/repeater-service.ts";
+import { createHookRunner } from "./hook-runner.ts";
 import { createRuleEngine } from "./rule-engine.ts";
 import { createRuleStore } from "./rule-store.ts";
 import { createSessionRegistry, type SessionStorageLike } from "./session-registry.ts";
@@ -155,19 +156,34 @@ export function createBackground(deps: BackgroundDeps) {
     onResult: (tabId, result) => port.send(tabId, makeEvent("repeaterResult", result)),
   });
 
+  // La relajación CORS es el último paso antes de entregar cada respuesta (research R9).
+  const executor = createRelaxingExecutor({
+    base: createActionExecutor({ debugger: cdp }),
+    relaxer,
+    frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
+    onRelaxed: (tabId, exchangeId, info) => capture.relaxed(tabId, exchangeId, info),
+  });
+
+  /** Hooks (006): el panel ejecuta la cadena en el sandbox y devuelve el resultado. */
+  const hooks = createHookRunner({
+    executor,
+    siteOf: (tabId) => manager.siteOf(tabId),
+    send: (tabId, event) => {
+      if (!port.tabs().includes(tabId)) return false;
+      port.send(tabId, makeEvent("hookRun", event));
+      return true;
+    },
+    effect: (tabId, exchangeId, effect) => capture.effect(tabId, exchangeId, effect),
+  });
+
   const engine = createRuleEngine({
     debugger: cdp,
     rules: () => rules.all(),
     settings: () => settings.get(),
     siteOf: (tabId) => manager.siteOf(tabId),
     capture,
-    // La relajación CORS es el último paso antes de entregar cada respuesta (research R9).
-    executor: createRelaxingExecutor({
-      base: createActionExecutor({ debugger: cdp }),
-      relaxer,
-      frameOriginOf: (tabId, frameId) => frames.originOf(tabId, frameId),
-      onRelaxed: (tabId, exchangeId, info) => capture.relaxed(tabId, exchangeId, info),
-    }),
+    executor,
+    hooks,
     onPaused: (tabId, view) => port.send(tabId, makeEvent("paused", view)),
     onResolved: (tabId, result) => port.send(tabId, makeEvent("resolved", result)),
     onQueueChange: (tabId) => sendState(tabId),
@@ -185,6 +201,7 @@ export function createBackground(deps: BackgroundDeps) {
     onSessionEnded: (tabId) => {
       repeater.contextLost(tabId);
       engine.sessionEnded(tabId);
+      hooks.sessionEnded(tabId);
       interceptor.sessionEnded(tabId);
       relaxer.sessionEnded(tabId);
       capture.sessionEnded(tabId);
@@ -272,8 +289,9 @@ export function createBackground(deps: BackgroundDeps) {
       case "repeaterCancel":
         repeater.cancel(tabId, command.payload.sendId);
         return { ok: true };
-      // 006: los cablean hook-runner (T027) e importHook (T054).
       case "hookResult":
+        return hooks.onResult(tabId, command.payload);
+      // 006: importHook llega con US3 (T054).
       case "importHook":
         return { ok: false, code: "invalid_message" };
       case "getIgnores":

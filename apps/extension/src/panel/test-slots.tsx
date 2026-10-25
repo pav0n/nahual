@@ -6,7 +6,9 @@ import { SETTINGS_SECTIONS } from "./settings/sections.ts";
 import { DRAWER_SLOT } from "./shell/Drawer.tsx";
 import { SECTIONS } from "./shell/sections.ts";
 import { STATUS_ITEMS } from "./shell/status-items.ts";
+import { hashSource } from "@nahual/hook-runtime";
 import { usePanelStore } from "./store/index.ts";
+import { sw } from "./sw-client.ts";
 import type { PanelSection } from "./store/ui.ts";
 
 const SlotSection = () => <p className="pane">Slot section</p>;
@@ -65,6 +67,52 @@ export function installTestSlots(): void {
       worker.addEventListener("error", (event) => resolve(`error: ${event.message}`));
       worker.postMessage({ type: "ping" });
     });
+  // 006 (T022): instala una regla con hook sin el editor y lee las ejecuciones del panel.
+  (window as { __nahualHooks?: unknown }).__nahualHooks = {
+    install: (h: {
+      name?: string;
+      stage: "request" | "response";
+      prefilter: string;
+      source: string;
+      permissions?: { changeDestination?: boolean; readSensitive?: boolean };
+      enabled?: boolean;
+    }) =>
+      sw.send("saveRule", {
+        rule: {
+          name: h.name ?? "Hook",
+          enabled: h.enabled ?? true,
+          prefilter: { kind: "glob", pattern: h.prefilter },
+          methods: [],
+          resourceTypes: [],
+          stage: h.stage,
+          conditions: [],
+          action: {
+            kind: "hook",
+            source: h.source,
+            imported: false,
+            permissions: {
+              changeDestination: h.permissions?.changeDestination ?? false,
+              readSensitive: h.permissions?.readSensitive ?? false,
+            },
+            check: { hash: hashSource(h.source), ok: true },
+          },
+        },
+      }),
+    executions: () =>
+      Object.values(usePanelStore.getState().hookExecutions)
+        .flat()
+        .sort((a, b) => a.at - b.at)
+        .map((e) => ({
+          ruleName: e.ruleName,
+          result: e.result,
+          errorType: e.error?.type,
+          message: e.error?.message,
+          line: e.error?.line,
+          logs: e.logs,
+          parts: e.parts,
+          destination: e.destination,
+        })),
+  };
   let enabled = false;
   (window as { __nahualUiSlots?: unknown }).__nahualUiSlots = {
     pushNotice: (messageKey: string, params?: string[]) =>

@@ -1,4 +1,12 @@
-import { LIMITS, RuleSchema, compileJsonPath, validateRuleDraft, type Rule } from "@nahual/domain";
+import {
+  LIMITS,
+  RuleSchema,
+  compileJsonPath,
+  utf8Bytes,
+  validateRuleDraft,
+  type Rule,
+} from "@nahual/domain";
+import { hashSource } from "@nahual/hook-runtime";
 import type { CommandResult } from "./panel-port.ts";
 import { isQuotaError, type LocalStorageLike } from "./storage-port.ts";
 
@@ -40,6 +48,32 @@ function readRule(raw: unknown): Rule | null {
 }
 
 const byOrder = (a: Rule, b: Rule) => a.order - b.order;
+
+const invalid = (path: string, messageKey: string): CommandResult => ({
+  ok: false,
+  code: "rule_invalid",
+  issues: [{ path, messageKey }],
+});
+
+/** Bytes del código de todos los hooks (FR-034: ≤ 5 MB entre todos). */
+export const hookBytes = (rules: Rule[]) =>
+  rules.reduce((sum, r) => sum + (r.action.kind === "hook" ? utf8Bytes(r.action.source) : 0), 0);
+
+/**
+ * Reglas del almacén para hooks (006, research R10): una regla con hook solo se activa con el
+ * análisis del editor sin errores para ese mismo código (FR-016) y el código de todos los hooks
+ * no pasa de 5 MB (FR-034).
+ */
+function checkHooks(next: Rule[], changed: Rule | undefined): CommandResult | null {
+  if (changed?.action.kind === "hook" && changed.enabled) {
+    const { check, source } = changed.action;
+    if (!check.ok || check.hash !== hashSource(source))
+      return invalid("enabled", "hook_error_not_checked");
+  }
+  if (changed?.action.kind === "hook" && hookBytes(next) > LIMITS.hookTotalBytesMax)
+    return invalid("action.source", "hook_error_total_size");
+  return null;
+}
 
 /** Renumera `order` 0..n-1 dentro de cada sitio, respetando el orden actual. */
 function renumber(rules: Rule[]): Rule[] {
@@ -133,18 +167,16 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
         if (typeof id === "string") {
           const existing = current.find((r) => r.id === id);
           if (!existing) return { ok: false, code: "unknown_rule" };
-          return current.map((r) =>
-            r.id === id
-              ? {
-                  ...draft,
-                  id,
-                  site: r.site,
-                  order: r.order,
-                  createdAt: r.createdAt,
-                  updatedAt: now,
-                }
-              : r,
-          );
+          const replaced: Rule = {
+            ...draft,
+            id,
+            site: existing.site,
+            order: existing.order,
+            createdAt: existing.createdAt,
+            updatedAt: now,
+          };
+          const next = current.map((r) => (r.id === id ? replaced : r));
+          return checkHooks(next, replaced) ?? next;
         }
         if (site === null) return { ok: false, code: "no_site" };
         if (current.length >= LIMITS.rulesMax) {
@@ -155,10 +187,16 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
           };
         }
         const order = current.filter((r) => r.site === site).length;
-        return [
-          ...current,
-          { ...draft, id: crypto.randomUUID(), site, order, createdAt: now, updatedAt: now },
-        ];
+        const created: Rule = {
+          ...draft,
+          id: crypto.randomUUID(),
+          site,
+          order,
+          createdAt: now,
+          updatedAt: now,
+        };
+        const next = [...current, created];
+        return checkHooks(next, created) ?? next;
       });
     },
 
@@ -190,9 +228,17 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
 
     setEnabled(ruleId, enabled) {
       if (!find(ruleId)) return Promise.resolve({ ok: false, code: "unknown_rule" });
-      return mutate((current) =>
-        current.map((r) => (r.id === ruleId ? { ...r, enabled, updatedAt: Date.now() } : r)),
-      );
+      return mutate((current) => {
+        const next = current.map((r) =>
+          r.id === ruleId ? { ...r, enabled, updatedAt: Date.now() } : r,
+        );
+        return (
+          checkHooks(
+            next,
+            next.find((r) => r.id === ruleId),
+          ) ?? next
+        );
+      });
     },
 
     reorder(site, ruleIds) {

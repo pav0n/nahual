@@ -469,3 +469,56 @@ export async function repeaterSend(panel: Page) {
   await repeater(panel).getByRole("button", { name: "Send", exact: true }).click();
   await expect(repeaterResult(panel).getByText("Sending…")).toHaveCount(0, { timeout: 15_000 });
 }
+
+// Hooks (006).
+
+export interface HookInstall {
+  name?: string;
+  stage: "request" | "response";
+  prefilter: string;
+  source: string;
+  permissions?: { changeDestination?: boolean; readSensitive?: boolean };
+  enabled?: boolean;
+}
+
+/**
+ * Guarda una regla con hook sin pasar por el editor (gancho `__nahualHooks` del build de
+ * pruebas): el `check` se calcula como si el editor no hubiera encontrado errores.
+ */
+export async function installHook(panel: Page, hook: HookInstall) {
+  const reply = await panel.evaluate(
+    (h) =>
+      (
+        window as unknown as { __nahualHooks: { install(h: unknown): Promise<{ ok: boolean }> } }
+      ).__nahualHooks.install(h),
+    hook,
+  );
+  expect(reply.ok).toBe(true);
+}
+
+export interface HookExecutionView {
+  ruleName: string;
+  result: string;
+  errorType?: string;
+  message?: string;
+  line?: number | null;
+  logs: string[];
+}
+
+/** Ejecuciones de hooks que guarda el panel (memoria), de la más antigua a la más reciente. */
+export const hookExecutions = (panel: Page) =>
+  panel.evaluate(() =>
+    (
+      window as unknown as { __nahualHooks: { executions(): HookExecutionView[] } }
+    ).__nahualHooks.executions(),
+  );
+
+/** `fetch` desde la app a una ruta de la API, con cookies; devuelve status y texto. */
+export const appFetch = (app: Page, url: string, init: RequestInit = {}) =>
+  app.evaluate(
+    async ([u, i]) => {
+      const response = await fetch(u, { credentials: "include", ...i });
+      return { status: response.status, body: await response.text() };
+    },
+    [url, init] as const,
+  );

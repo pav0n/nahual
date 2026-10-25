@@ -567,7 +567,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoSeriousViolations(panel, "editor con errores");
 
     // Envío en curso, resultado con error e historial.
-    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/slow?ms=4000`);
+    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/slow?ms=20000`);
     await r.getByRole("button", { name: "Send", exact: true }).click();
     await expect(r.getByText("Sending…").first()).toBeVisible();
     await expectNoSeriousViolations(panel, "envío en curso");
