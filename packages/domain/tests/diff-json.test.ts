@@ -60,6 +60,16 @@ describe("diffJson: arrays (FR-025a)", () => {
     expect(diffJson([1, 2], [2, 1]).arrays).toEqual([{ path: [], criterion: "index" }]);
   });
 
+  it("solo informa los arrays con algún cambio dentro, como mucho 50", () => {
+    const rows = (v: number) =>
+      Array.from({ length: 200 }, (_, i) => ({ id: i, tags: ["a", "b"], value: i === 5 ? v : i }));
+    expect(diffJson({ rows: rows(1) }, { rows: rows(2) }).arrays).toEqual([
+      { path: [{ key: "rows" }], criterion: "id" },
+    ]);
+    const many = (v: number) => Array.from({ length: 80 }, () => [v]);
+    expect(diffJson(many(1), many(2)).arrays).toHaveLength(50);
+  });
+
   it("por id: reordenar no cuenta; nuevo = añadido; falta = eliminado; cambio con [id=…]", () => {
     const before = {
       items: [
@@ -86,10 +96,12 @@ describe("diffJson: arrays (FR-025a)", () => {
 
   it.each(["_id", "uuid", "key"] as const)("usa %s si todos lo tienen y no hay id", (field) => {
     const result = diffJson(
-      [{ [field]: "x" }, { [field]: "y" }],
-      [{ [field]: "y" }, { [field]: "x" }],
+      [{ [field]: "x", n: 1 }, { [field]: "y" }],
+      [{ [field]: "y" }, { [field]: "x", n: 2 }],
     );
-    expect(result.changes).toEqual([]);
+    expect(result.changes.map((c) => c.path)).toEqual([
+      [{ idField: field, id: "x" }, { key: "n" }],
+    ]);
     expect(result.arrays[0]?.criterion).toBe(field);
   });
 
@@ -102,7 +114,7 @@ describe("diffJson: arrays (FR-025a)", () => {
   it.each([
     ["falta en un elemento", [{ id: 1 }, { n: 2 }], [{ id: 1 }]],
     ["id repetido", [{ id: 1 }, { id: 1 }], [{ id: 1 }]],
-    ["id que no es texto ni número", [{ id: { x: 1 } }], [{ id: { x: 1 } }]],
+    ["id que no es texto ni número", [{ id: { x: 1 } }], [{ id: { x: 1 } }, { id: { x: 2 } }]],
     ["elementos que no son objetos", [1, 2], [2, 1]],
   ])("sin identificador válido (%s) ⇒ por posición", (_name, before, after) => {
     expect(diffJson(before, after).arrays[0]?.criterion).toBe("index");

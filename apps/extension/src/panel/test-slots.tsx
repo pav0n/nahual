@@ -42,7 +42,7 @@ export function installTestSlots(): void {
   // 005-X3: el worker del diff carga bajo la CSP del panel y responde.
   (window as { __nahualDiffWorkerPing?: unknown }).__nahualDiffWorkerPing = () =>
     new Promise<string>((resolve) => {
-      const worker = createDiffWorker();
+      const worker = createDiffWorker() as Worker;
       const timer = setTimeout(() => resolve("timeout"), 3000);
       worker.addEventListener("message", (event: MessageEvent<{ type: string }>) => {
         clearTimeout(timer);

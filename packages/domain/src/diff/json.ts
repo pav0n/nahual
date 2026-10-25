@@ -3,10 +3,16 @@ import { LIMITS } from "../schemas/limits.ts";
 
 export interface DiffJsonResult {
   changes: JsonChange[];
-  /** Criterio con el que se comparó cada array no vacío (FR-025a). */
+  /**
+   * Criterio con el que se comparó cada array con algún cambio dentro (FR-025a), hasta
+   * `ARRAYS_MAX`: los arrays sin cambios no aportan y en un JSON grande serían miles.
+   */
   arrays: { path: PathSegment[]; criterion: IdField | "index" }[];
   truncated: boolean;
 }
+
+/** Arrays que se informan como mucho (los primeros con cambios). */
+export const ARRAYS_MAX = 50;
 
 /** Más allá de esta profundidad se compara el subárbol entero (la ruta queda acotada). */
 const MAX_DEPTH = 200;
@@ -121,7 +127,19 @@ export function diffJson(before: unknown, after: unknown): DiffJsonResult {
     const left = a as unknown[];
     const right = b as unknown[];
     const field = idFieldOf(left, right);
-    if (left.length + right.length > 0) arrays.push({ path, criterion: field ?? "index" });
+    const before = changes.length;
+    const ok = walkArray(left, right, field, path);
+    if (changes.length > before && arrays.length < ARRAYS_MAX)
+      arrays.push({ path, criterion: field ?? "index" });
+    return ok;
+  };
+
+  const walkArray = (
+    left: unknown[],
+    right: unknown[],
+    field: IdField | null,
+    path: PathSegment[],
+  ): boolean => {
     if (field) {
       const byId = new Map<unknown, Record<string, unknown>>();
       for (const item of left as Record<string, unknown>[]) byId.set(item[field], item);
@@ -159,5 +177,7 @@ export function diffJson(before: unknown, after: unknown): DiffJsonResult {
   };
 
   walk(before, after, []);
-  return { changes, arrays: arrays.slice(0, LIMITS.diffChangesMax), truncated };
+  // Primero los de afuera: un array anidado se registra antes que el que lo contiene.
+  arrays.sort((x, y) => x.path.length - y.path.length);
+  return { changes, arrays, truncated };
 }

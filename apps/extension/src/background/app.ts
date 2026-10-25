@@ -18,6 +18,7 @@ import {
   createCleanSender,
   type CleanSendDeps,
 } from "./repeater/clean-send.ts";
+import { createIgnoresStore } from "./repeater/ignores-store.ts";
 import { createPageSender } from "./repeater/page-send.ts";
 import { createRepeaterService } from "./repeater/repeater-service.ts";
 import { createRuleEngine } from "./rule-engine.ts";
@@ -141,6 +142,9 @@ export function createBackground(deps: BackgroundDeps) {
     onRepeaterSettled: (tabId, sendId, exchangeId) =>
       repeater.onRepeaterSettled(tabId, sendId, exchangeId),
   });
+
+  /** Rutas y headers ignorados en el diff, por endpoint (005, research R10). */
+  const ignores = createIgnoresStore({ storage: deps.localStorage, onNotice: notice });
 
   /** Repeater (005): envíos en contexto de página por la pestaña y en contexto limpio por el SW. */
   const repeater = createRepeaterService({
@@ -268,10 +272,20 @@ export function createBackground(deps: BackgroundDeps) {
       case "repeaterCancel":
         repeater.cancel(tabId, command.payload.sendId);
         return { ok: true };
-      // 005: la lista de ignorados llega en US2.
       case "getIgnores":
-      case "setIgnores":
-        return { ok: false, code: "invalid_message" };
+      case "setIgnores": {
+        const { method, url } = command.payload;
+        try {
+          const value =
+            command.type === "getIgnores"
+              ? await ignores.get(method, url)
+              : await ignores.set(method, url, command.payload);
+          port.send(tabId, makeEvent("ignores", { method, url, ...value }, command.id));
+          return { ok: true };
+        } catch {
+          return { ok: false, code: "ignores_invalid" };
+        }
+      }
     }
   }
 

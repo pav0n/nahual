@@ -7,7 +7,10 @@ import { usePanelStore } from "../../store/index.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
 import { SplitPane } from "../common/SplitPane.tsx";
 import { TabPanel } from "../common/Tabs.tsx";
+import type { SideRef } from "../../repeater/compare.ts";
+import { DiffView } from "./DiffView.tsx";
 import { ModeSwitch } from "./ModeSwitch.tsx";
+import { PastedResponse } from "./PastedResponse.tsx";
 import { REPEATER_TABS_PREFIX, RepeaterTabs } from "./RepeaterTabs.tsx";
 import { RequestEditor } from "./RequestEditor.tsx";
 import { SendHistory } from "./SendHistory.tsx";
@@ -26,6 +29,10 @@ export function RepeaterView() {
   const tab = tabs.find((x) => x.id === activeId) ?? null;
   const [showIssues, setShowIssues] = useState<string | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
+  /** Diff abierto por pestaña (FR-022). */
+  const [comparing, setComparing] = useState<
+    Record<string, { before: SideRef; after: SideRef; seq: number }>
+  >({});
 
   if (!tab) {
     return (
@@ -49,6 +56,12 @@ export function RepeaterView() {
   const latest = tab.sends[0] ?? null;
   const pending = latest?.state === "pending";
   const shown: RepeaterSend | null = tab.sends.find((s) => s.sendId === selected[tab.id]) ?? latest;
+
+  const open = (before: SideRef, after: SideRef) =>
+    setComparing((current) => ({
+      ...current,
+      [tab.id]: { before, after, seq: (current[tab.id]?.seq ?? 0) + 1 },
+    }));
 
   const send = () => {
     if (tab.mode === "page" && pageUnavailable) return;
@@ -139,7 +152,18 @@ export function RepeaterView() {
               role="region"
               aria-label={t("repeater_output_label")}
             >
-              {shown ? (
+              {comparing[tab.id] ? (
+                <DiffView
+                  key={comparing[tab.id]?.seq}
+                  tab={tab}
+                  initial={comparing[tab.id] as { before: SideRef; after: SideRef }}
+                  onClose={() =>
+                    setComparing((current) =>
+                      Object.fromEntries(Object.entries(current).filter(([id]) => id !== tab.id)),
+                    )
+                  }
+                />
+              ) : shown ? (
                 <SendResult
                   send={shown}
                   onUsePage={() => store().setRepeaterMode(tab.id, "page")}
@@ -147,6 +171,23 @@ export function RepeaterView() {
               ) : (
                 <p className="muted">{t("repeater_no_result")}</p>
               )}
+              <PastedResponse
+                key={`${tab.id}-${tab.pasted?.text.length ?? 0}`}
+                pasted={tab.pasted}
+                onChange={(pasted) => store().setRepeaterPasted(tab.id, pasted)}
+              />
+              {tab.pasted && tab.sends.some((s) => s.state !== "pending") ? (
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => {
+                    const last = tab.sends.find((s) => s.state !== "pending");
+                    if (last) open({ kind: "pasted" }, { kind: "send", sendId: last.sendId });
+                  }}
+                >
+                  {t("diff_compare_pasted")}
+                </button>
+              ) : null}
               <h3>{t("repeater_history_title")}</h3>
               <SendHistory
                 sends={tab.sends}
@@ -154,6 +195,8 @@ export function RepeaterView() {
                 selectedId={shown?.sendId ?? null}
                 onSelect={(sendId) => setSelected((current) => ({ ...current, [tab.id]: sendId }))}
                 onLoad={(s) => store().setRepeaterDraft(tab.id, s.request)}
+                onCompare={open}
+                hasOriginal={tab.source !== null}
               />
             </div>
           }

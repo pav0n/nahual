@@ -1,6 +1,7 @@
 import type { RepeaterSend } from "@nahual/domain";
 import { t } from "../../../shared/i18n.ts";
 import { formatBytes, formatDuration } from "../../format.ts";
+import type { SideRef } from "../../repeater/compare.ts";
 
 const time = (ms: number) =>
   new Date(ms).toLocaleTimeString(undefined, {
@@ -19,12 +20,18 @@ export function SendHistory({
   selectedId,
   onSelect,
   onLoad,
+  onCompare,
+  hasOriginal,
 }: {
   sends: RepeaterSend[];
   droppedCount: number;
   selectedId: string | null;
   onSelect(sendId: string): void;
   onLoad(send: RepeaterSend): void;
+  /** Abre el diff con estos lados (FR-022). */
+  onCompare(before: SideRef, after: SideRef): void;
+  /** La pestaña salió de un request capturado: se puede comparar con su respuesta. */
+  hasOriginal: boolean;
 }) {
   if (sends.length === 0) return <p className="muted">{t("repeater_history_empty")}</p>;
   return (
@@ -57,9 +64,36 @@ export function SendHistory({
                 {` · ${t(`repeater_mode_${send.mode}`)}`}
               </button>
               {selected ? (
-                <button type="button" className="link" onClick={() => onLoad(send)}>
-                  {t("repeater_load_in_editor")}
-                </button>
+                <>
+                  <button type="button" className="link" onClick={() => onLoad(send)}>
+                    {t("repeater_load_in_editor")}
+                  </button>
+                  {hasOriginal && send.state !== "pending" ? (
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() =>
+                        onCompare({ kind: "original" }, { kind: "send", sendId: send.sendId })
+                      }
+                    >
+                      {t("diff_compare_original")}
+                    </button>
+                  ) : null}
+                  {sends[index + 1] && send.state !== "pending" ? (
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() =>
+                        onCompare(
+                          { kind: "send", sendId: sends[index + 1]?.sendId ?? "" },
+                          { kind: "send", sendId: send.sendId },
+                        )
+                      }
+                    >
+                      {t("diff_compare_previous")}
+                    </button>
+                  ) : null}
+                </>
               ) : null}
             </li>
           );

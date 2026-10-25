@@ -346,3 +346,29 @@ describe("background: repeater (005, contracts/panel-protocol.md)", () => {
     expect(last(a, "repeaterResult")).toBeUndefined();
   });
 });
+
+describe("background: ignorados del diff (005, contracts/storage.md)", () => {
+  it("setIgnores guarda bajo un hash y getIgnores lo devuelve para la misma ruta", async () => {
+    const port = await openPanel();
+    port.fromPanel(
+      makeCommand("setIgnores", {
+        method: "GET",
+        url: "http://localhost:4000/api/items?x=1",
+        paths: [[{ key: "meta" }, { key: "timestamp" }]],
+        headers: ["Date"],
+      }),
+    );
+    await flush();
+    port.fromPanel(
+      makeCommand("getIgnores", { method: "GET", url: "http://localhost:4000/api/items?x=2" }),
+    );
+    await flush();
+    expect(last(port, "ignores")?.payload).toEqual({
+      method: "GET",
+      url: "http://localhost:4000/api/items?x=2",
+      paths: [[{ key: "meta" }, { key: "timestamp" }]],
+      headers: ["date"],
+    });
+    expect(JSON.stringify(local.data.get("nahual.repeater.ignores.v1"))).not.toContain("localhost");
+  });
+});

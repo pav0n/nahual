@@ -649,3 +649,114 @@ test("005 FR-033: repeater solo con teclado", async ({
   await panel.keyboard.press("Enter");
   await expect(r.getByRole("tab")).toHaveCount(2);
 });
+
+/** La SPA pide una ruta de la API y el request se reenvía a otra desde el repeater. */
+async function repeaterDiff(panel: Page, app: Page, base: string, path: string, to: string) {
+  await app.evaluate(async (u) => {
+    await (await fetch(u, { credentials: "include" })).text();
+  }, `${base}${path}`);
+  await openSection(panel, "Traffic");
+  await trafficRow(panel, path).last().click({ button: "right" });
+  await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
+  const r = panel.locator(".repeater");
+  await r.getByLabel("URL", { exact: true }).fill(`${base}${to}`);
+  await r.getByRole("button", { name: "Send", exact: true }).click();
+  await r.getByRole("button", { name: "Compare with original" }).click();
+  await expect(panel.locator(".diff-view").getByRole("status")).toBeVisible();
+  return panel.locator(".diff-view");
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`005 US2: diff en tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+
+    const diff = await repeaterDiff(panel, app, servers.apiOrigin, "/diff/a", "/diff/b");
+    await expectNoSeriousViolations(panel, "diff JSON");
+    await expectNoHorizontalScroll(panel);
+    await diff
+      .locator(".diff-change")
+      .filter({ hasText: "$.meta.timestamp" })
+      .getByRole("button", { name: "Ignore this path" })
+      .click();
+    await diff.getByRole("button", { name: "1 ignored" }).click();
+    await expectNoSeriousViolations(panel, "diff con ignorados");
+    await diff.getByRole("button", { name: "Show sensitive values" }).click();
+    await expectNoSeriousViolations(panel, "diff con sensibles visibles");
+    await expectNoHorizontalScroll(panel);
+
+    await repeaterDiff(panel, app, servers.apiOrigin, "/diff/text?v=1", "/diff/text?v=2");
+    await expectNoSeriousViolations(panel, "diff por líneas");
+    // Sin diferencias, de forma determinista: la pegada solo compara el body (el header Date de
+    // dos envíos puede cambiar de segundo).
+    await repeaterDiff(panel, app, servers.apiOrigin, "/api/items", "/api/items");
+    const r = panel.locator(".repeater");
+    await panel.locator(".diff-view").getByRole("button", { name: "Close diff" }).click();
+    await r.getByRole("button", { name: "Paste expected response" }).click();
+    await r.getByLabel("Pasted response (JSON or text)").fill('{"items":[1,2]}');
+    await r.getByRole("button", { name: "Use this response" }).click();
+    await r.getByRole("button", { name: "Compare pasted with last send" }).click();
+    await expect(panel.locator(".diff-view").getByText("No differences")).toBeVisible();
+    await expectNoSeriousViolations(panel, "sin diferencias");
+    await expectNoHorizontalScroll(panel);
+  });
+}
+
+test("005 FR-033: diff solo con teclado", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1000, height: 800 });
+  await attach(panel);
+  await app.reload();
+  const diff = await repeaterDiff(panel, app, servers.apiOrigin, "/diff/a", "/diff/b");
+
+  // Elegir los lados con teclado.
+  expect(await tabTo(panel, diff.getByRole("combobox", { name: "Before" }))).toBe(true);
+  expect(await tabTo(panel, diff.getByRole("button", { name: "Swap" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await panel.keyboard.press("Enter");
+  // J/K entre cambios.
+  expect(await tabTo(panel, diff.getByRole("button", { name: "Next change" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(diff.locator("[data-change]").first()).toBeFocused();
+  await panel.keyboard.press("j");
+  await expect(diff.locator("[data-change]").nth(1)).toBeFocused();
+  await panel.keyboard.press("k");
+  await expect(diff.locator("[data-change]").first()).toBeFocused();
+  // Ignorar y mostrar sensibles.
+  const timestamp = diff.locator(".diff-change").filter({ hasText: "$.meta.timestamp" });
+  expect(await tabTo(panel, timestamp.getByRole("button", { name: "Ignore this path" }))).toBe(
+    true,
+  );
+  await panel.keyboard.press("Enter");
+  await expect(timestamp).toHaveCount(0);
+  expect(await tabTo(panel, diff.getByRole("button", { name: "Show sensitive values" }))).toBe(
+    true,
+  );
+  await panel.keyboard.press("Enter");
+  await expect(diff.getByRole("button", { name: "Hide sensitive values" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  // Escape cierra el diff sin abrir la consola de DevTools y el foco no se pierde.
+  await diff.locator("[data-change]").first().focus();
+  await panel.keyboard.press("Escape");
+  await expect(panel.locator(".diff-view")).toHaveCount(0);
+  await expect(panel.locator(".repeater .send-result")).toBeVisible();
+});

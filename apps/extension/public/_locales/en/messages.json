@@ -1777,5 +1777,176 @@
   },
   "repeater_output_label": {
     "message": "Response and history"
+  },
+  "error_ignores_invalid": {
+    "message": "Couldn't save the ignore list. Try again; if it keeps failing, free up the extension's storage."
+  },
+  "repeater_ignores_invalid": {
+    "message": "The saved list of ignored diff fields couldn't be read and was reset."
+  },
+  "diff_title": {
+    "message": "Diff"
+  },
+  "diff_before": {
+    "message": "Before"
+  },
+  "diff_after": {
+    "message": "After"
+  },
+  "diff_swap": {
+    "message": "Swap"
+  },
+  "diff_close": {
+    "message": "Close diff"
+  },
+  "diff_side_original": {
+    "message": "Original response (captured)"
+  },
+  "diff_side_pasted": {
+    "message": "Pasted response"
+  },
+  "diff_side_send": {
+    "message": "Send $1 ($2)"
+  },
+  "diff_side_missing": {
+    "message": "One of the sides is no longer available (send dropped or pasted response removed). Pick another."
+  },
+  "diff_same_side": {
+    "message": "You are comparing a response with itself."
+  },
+  "diff_comparing": {
+    "message": "Comparing…"
+  },
+  "diff_failed_timeout": {
+    "message": "The comparison took over 10 seconds and was stopped: the responses are too large or too different."
+  },
+  "diff_failed_invalid": {
+    "message": "Couldn't compare: the result was not valid."
+  },
+  "diff_failed_error": {
+    "message": "Couldn't compare these responses."
+  },
+  "diff_failed_cancelled": {
+    "message": "Comparison cancelled."
+  },
+  "diff_no_changes": {
+    "message": "No differences"
+  },
+  "diff_total": {
+    "message": "$1 changes"
+  },
+  "diff_ignored_count": {
+    "message": "$1 ignored"
+  },
+  "diff_ignored_title": {
+    "message": "Ignored for this endpoint"
+  },
+  "diff_unignore": {
+    "message": "Stop ignoring"
+  },
+  "diff_prev": {
+    "message": "Previous change"
+  },
+  "diff_next": {
+    "message": "Next change"
+  },
+  "diff_show_sensitive": {
+    "message": "Show sensitive values"
+  },
+  "diff_hide_sensitive": {
+    "message": "Hide sensitive values"
+  },
+  "diff_sensitive": {
+    "message": "redacted"
+  },
+  "diff_note_json_expected": {
+    "message": "The content-type said JSON but the body is not valid JSON: comparing by lines."
+  },
+  "diff_note_body_not_compared": {
+    "message": "The body is not compared: a response is binary, over 5 MB or no longer available."
+  },
+  "diff_note_truncated": {
+    "message": "There are too many differences to show them all: showing the first ones."
+  },
+  "diff_arrays": {
+    "message": "Arrays: $1"
+  },
+  "diff_array_criterion": {
+    "message": "$1 $2"
+  },
+  "diff_by_id": {
+    "message": "by $1"
+  },
+  "diff_by_index": {
+    "message": "by position"
+  },
+  "diff_status": {
+    "message": "Status"
+  },
+  "diff_header": {
+    "message": "Header $1"
+  },
+  "diff_kind_added": {
+    "message": "Added"
+  },
+  "diff_kind_removed": {
+    "message": "Removed"
+  },
+  "diff_kind_changed": {
+    "message": "Changed"
+  },
+  "diff_ignore_path": {
+    "message": "Ignore this path"
+  },
+  "diff_ignore_any": {
+    "message": "Ignore in every element"
+  },
+  "diff_ignore_header": {
+    "message": "Ignore this header"
+  },
+  "diff_hunk": {
+    "message": "Lines $1 (before) and $2 (after)"
+  },
+  "diff_metadata": {
+    "message": "Before: $1, $2. After: $3, $4."
+  },
+  "diff_reason_text": {
+    "message": "text"
+  },
+  "diff_reason_binary": {
+    "message": "binary"
+  },
+  "diff_reason_tooLarge": {
+    "message": "over 5 MB"
+  },
+  "diff_reason_evicted": {
+    "message": "no longer available"
+  },
+  "diff_reason_none": {
+    "message": "no body"
+  },
+  "diff_compare_original": {
+    "message": "Compare with original"
+  },
+  "diff_compare_previous": {
+    "message": "Compare with previous"
+  },
+  "diff_compare_pasted": {
+    "message": "Compare pasted with last send"
+  },
+  "pasted_add": {
+    "message": "Paste expected response"
+  },
+  "pasted_edit": {
+    "message": "Edit pasted response"
+  },
+  "pasted_remove": {
+    "message": "Remove pasted response"
+  },
+  "pasted_label": {
+    "message": "Pasted response (JSON or text)"
+  },
+  "pasted_save": {
+    "message": "Use this response"
   }
 }

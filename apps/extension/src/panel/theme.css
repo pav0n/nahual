@@ -24,6 +24,10 @@
   --nh-error: #b3261e; /* desvío: --color-error-text (#f00) da 4,0:1 */
   --nh-backdrop: rgb(0 0 0 / 40%);
   --nh-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 6px 2px rgb(0 0 0 / 15%);
+  /* Diff (005): fondos suaves; el tipo de cambio lo dice también el prefijo (FR-031). */
+  --nh-diff-added: #e6f4ea;
+  --nh-diff-removed: #fce8e6;
+  --nh-diff-changed: #fef7e0;
   color-scheme: light;
 }
 
@@ -46,6 +50,9 @@
   --nh-error: #f28b82;
   --nh-backdrop: rgb(0 0 0 / 60%);
   --nh-shadow: 0 1px 3px rgb(0 0 0 / 50%), 0 4px 8px 3px rgb(0 0 0 / 30%);
+  --nh-diff-added: rgb(129 201 149 / 16%);
+  --nh-diff-removed: rgb(242 139 130 / 16%);
+  --nh-diff-changed: rgb(253 214 99 / 12%);
   color-scheme: dark;
 }
 
@@ -1438,9 +1445,24 @@ dialog.report {
   height: 100%;
 }
 
-/* Repeater (005) */
+/* Repeater (005): pestañas y barra arriba; el divisor ocupa el alto que queda. */
 .repeater {
+  height: 100%;
   min-height: 0;
+}
+
+.repeater > [role="tabpanel"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repeater > [role="tabpanel"] > .split {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 320px;
 }
 
 .repeater-tabbar {
@@ -1516,4 +1538,75 @@ dialog.report {
 .tag-repeater {
   border-color: var(--nh-accent);
   color: var(--nh-accent);
+}
+
+/* Diff (005): cada cambio lleva prefijo e icono además del color (FR-031). */
+.diff-view {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.diff-header,
+.diff-summary {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.diff-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.diff-side-label {
+  font-weight: 600;
+}
+
+.diff-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.diff-change,
+.diff-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 4px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.diff-symbol {
+  font-weight: 700;
+  min-width: 1ch;
+}
+
+.diff-added {
+  background: var(--nh-diff-added);
+}
+
+.diff-removed {
+  background: var(--nh-diff-removed);
+}
+
+.diff-changed {
+  background: var(--nh-diff-changed);
+}
+
+.diff-change:focus-visible,
+.diff-line:focus-visible {
+  outline: 2px solid var(--nh-focus);
+  outline-offset: -2px;
+}
+
+.diff-values del,
+.diff-values ins {
+  text-decoration: none;
 }

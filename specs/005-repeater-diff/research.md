@@ -352,4 +352,24 @@ sin violaciones de CSP. Sin respaldo.
 - **Preferencia `split.repeater`** dentro de `nahual.ui.v1.split` (no una clave aparte), con default
   0.5 para preferencias guardadas por 004.
 
-*Por registrar durante la implementación: resto de mediciones de R18 y tamaño de los bundles.*
+### Mediciones de US2
+
+- **SC-003** (`e2e/repeater-perf.spec.ts`, `@perf`): diff de dos JSON de ~1 MB (9,000 filas, 9
+  valores distintos), 247–459 ms en tres corridas, sin tareas largas (> 50 ms) en el panel. El
+  clic y la espera se hacen sin las comprobaciones de Playwright: recorren el DOM (con la
+  respuesta de 1 MB) en el hilo del panel y se medían como tareas largas suyas.
+
+### Decisiones tomadas al implementar US2
+
+- **Solo los arrays con cambios** se informan con su criterio (como mucho 50). Con todos, un JSON
+  de 9,000 filas con un array `tags` cada una devolvía 9,000 entradas: validarlas en el panel y
+  copiarlas desde el worker costaba ~90 ms en el hilo principal.
+- **Lista de ignorados en memoria del SW** tras la primera lectura (solo el SW escribe la clave):
+  cada guardado ya no relee ni valida la lista entera.
+- **Sección Repeater como columna flexible**: el divisor ocupa el alto que queda bajo las pestañas
+  y la barra; sin eso, a 320 px la parte inferior medía casi 0 y el divisor tapaba sus botones.
+- **"Sin diferencias" determinista en las pruebas** con la respuesta pegada: dos envíos al mismo
+  endpoint pueden diferir en el header `Date`, y eso es un cambio real.
+
+*Por registrar durante la implementación: medición del camino del tráfico (R18) y tamaño de los
+bundles.*

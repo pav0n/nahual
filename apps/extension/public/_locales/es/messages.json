@@ -1777,5 +1777,176 @@
   },
   "repeater_output_label": {
     "message": "Respuesta e historial"
+  },
+  "error_ignores_invalid": {
+    "message": "No se pudo guardar la lista de ignorados. Vuelve a intentarlo; si sigue fallando, libera espacio en el almacenamiento de la extensión."
+  },
+  "repeater_ignores_invalid": {
+    "message": "La lista guardada de campos ignorados del diff no se pudo leer y se empezó de cero."
+  },
+  "diff_title": {
+    "message": "Diff"
+  },
+  "diff_before": {
+    "message": "Antes"
+  },
+  "diff_after": {
+    "message": "Después"
+  },
+  "diff_swap": {
+    "message": "Intercambiar"
+  },
+  "diff_close": {
+    "message": "Cerrar diff"
+  },
+  "diff_side_original": {
+    "message": "Respuesta original (capturada)"
+  },
+  "diff_side_pasted": {
+    "message": "Respuesta pegada"
+  },
+  "diff_side_send": {
+    "message": "Envío $1 ($2)"
+  },
+  "diff_side_missing": {
+    "message": "Uno de los lados ya no está disponible (envío descartado o pegada quitada). Elige otro."
+  },
+  "diff_same_side": {
+    "message": "Estás comparando una respuesta consigo misma."
+  },
+  "diff_comparing": {
+    "message": "Comparando…"
+  },
+  "diff_failed_timeout": {
+    "message": "La comparación tardó más de 10 segundos y se detuvo: las respuestas son demasiado grandes o muy distintas."
+  },
+  "diff_failed_invalid": {
+    "message": "No se pudo comparar: el resultado no era válido."
+  },
+  "diff_failed_error": {
+    "message": "No se pudo comparar estas respuestas."
+  },
+  "diff_failed_cancelled": {
+    "message": "Comparación cancelada."
+  },
+  "diff_no_changes": {
+    "message": "Sin diferencias"
+  },
+  "diff_total": {
+    "message": "$1 cambios"
+  },
+  "diff_ignored_count": {
+    "message": "$1 ignorados"
+  },
+  "diff_ignored_title": {
+    "message": "Ignorados en este endpoint"
+  },
+  "diff_unignore": {
+    "message": "Dejar de ignorar"
+  },
+  "diff_prev": {
+    "message": "Cambio anterior"
+  },
+  "diff_next": {
+    "message": "Cambio siguiente"
+  },
+  "diff_show_sensitive": {
+    "message": "Mostrar valores sensibles"
+  },
+  "diff_hide_sensitive": {
+    "message": "Ocultar valores sensibles"
+  },
+  "diff_sensitive": {
+    "message": "redactado"
+  },
+  "diff_note_json_expected": {
+    "message": "El content-type decía JSON pero el body no es JSON válido: se compara por líneas."
+  },
+  "diff_note_body_not_compared": {
+    "message": "El body no se compara: alguna respuesta es binaria, pasa de 5 MB o ya no está disponible."
+  },
+  "diff_note_truncated": {
+    "message": "Hay demasiadas diferencias para mostrarlas todas: se muestran las primeras."
+  },
+  "diff_arrays": {
+    "message": "Arrays: $1"
+  },
+  "diff_array_criterion": {
+    "message": "$1 $2"
+  },
+  "diff_by_id": {
+    "message": "por $1"
+  },
+  "diff_by_index": {
+    "message": "por posición"
+  },
+  "diff_status": {
+    "message": "Status"
+  },
+  "diff_header": {
+    "message": "Header $1"
+  },
+  "diff_kind_added": {
+    "message": "Añadido"
+  },
+  "diff_kind_removed": {
+    "message": "Eliminado"
+  },
+  "diff_kind_changed": {
+    "message": "Cambiado"
+  },
+  "diff_ignore_path": {
+    "message": "Ignorar esta ruta"
+  },
+  "diff_ignore_any": {
+    "message": "Ignorar en todos los elementos"
+  },
+  "diff_ignore_header": {
+    "message": "Ignorar este header"
+  },
+  "diff_hunk": {
+    "message": "Líneas $1 (antes) y $2 (después)"
+  },
+  "diff_metadata": {
+    "message": "Antes: $1, $2. Después: $3, $4."
+  },
+  "diff_reason_text": {
+    "message": "texto"
+  },
+  "diff_reason_binary": {
+    "message": "binario"
+  },
+  "diff_reason_tooLarge": {
+    "message": "más de 5 MB"
+  },
+  "diff_reason_evicted": {
+    "message": "ya no disponible"
+  },
+  "diff_reason_none": {
+    "message": "sin body"
+  },
+  "diff_compare_original": {
+    "message": "Comparar con el original"
+  },
+  "diff_compare_previous": {
+    "message": "Comparar con el anterior"
+  },
+  "diff_compare_pasted": {
+    "message": "Comparar la pegada con el último envío"
+  },
+  "pasted_add": {
+    "message": "Pegar respuesta esperada"
+  },
+  "pasted_edit": {
+    "message": "Editar respuesta pegada"
+  },
+  "pasted_remove": {
+    "message": "Quitar respuesta pegada"
+  },
+  "pasted_label": {
+    "message": "Respuesta pegada (JSON o texto)"
+  },
+  "pasted_save": {
+    "message": "Usar esta respuesta"
   }
 }
