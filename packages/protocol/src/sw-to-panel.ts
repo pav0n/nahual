@@ -8,7 +8,10 @@ import {
   RuleResultSchema,
   RuleSchema,
   SettingsSchema,
+  StageSchema,
+  utf8Bytes,
 } from "@nahual/domain";
+import { HookContextDataSchema } from "@nahual/hook-runtime";
 import { z } from "zod";
 import { message } from "./envelope.ts";
 
@@ -72,7 +75,26 @@ export const MAX_EXCHANGE_UPDATES = 200;
 
 const Side = z.enum(["request", "response"]);
 
+/** 006: un eslabón de la cadena de hooks que el panel ejecuta en el sandbox. */
+const HookChainItemSchema = z.strictObject({
+  ruleId: z.uuid(),
+  ruleName: z.string().max(LIMITS.ruleNameMax),
+  source: z.string().refine((s) => utf8Bytes(s) <= LIMITS.hookSourceBytesMax),
+  permissions: z.strictObject({ changeDestination: z.boolean(), readSensitive: z.boolean() }),
+});
+
 export const SwMessageSchema = z.discriminatedUnion("type", [
+  // 006: el SW pausó un intercambio con una cadena de hooks; el panel responde con hookResult.
+  message(
+    "hookRun",
+    z.strictObject({
+      runId: z.uuid(),
+      exchangeId: z.string().min(1).max(256),
+      stage: StageSchema,
+      chain: z.array(HookChainItemSchema).min(1).max(LIMITS.rulesMax),
+      context: HookContextDataSchema,
+    }),
+  ),
   // 005: resultado de un envío del repeater, solo al puerto que lo pidió.
   message(
     "repeaterResult",

@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src", "tests", "vitest.config.ts"]
+  "include": ["src", "tests", "vitest.config.ts"],
+  // La API pública declara globales propios de un hook (sin DOM ni Node): se compila aparte, en
+  // tests/types.test.ts, con lib es2022.
+  "exclude": ["src/hook-context.d.ts"]
 }

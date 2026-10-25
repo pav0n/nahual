@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@nahual/domain": "workspace:*",
+    "@nahual/hook-runtime": "workspace:*",
     "zod": "4.6.6"
   },
   "devDependencies": {

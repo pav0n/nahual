@@ -37,6 +37,12 @@ export const RULE_RESULTS = [
   "queue_full",
   "unevaluable",
   "apply_failed",
+  // 006: hooks (research R8).
+  "hooked",
+  "hook_unchanged",
+  "hook_failed",
+  "hook_responded",
+  "hook_skipped_suspended",
 ] as const;
 export const RuleResultSchema = z.enum(RULE_RESULTS);
 export type RuleResult = z.infer<typeof RuleResultSchema>;
@@ -57,6 +63,12 @@ export const RuleEffectSchema = z.strictObject({
   result: RuleResultSchema,
   reason: z.enum(UNEVALUABLE_REASONS).optional(),
   errorKey: z.string().min(1).max(128).optional(),
+  /** 006: duración de la ejecución del hook. */
+  durationMs: z.number().min(0).optional(),
+  /** 006: el hook cambió el destino del request (FR-010). */
+  destination: z
+    .strictObject({ from: z.string().max(LIMITS.urlMax), to: z.string().max(LIMITS.urlMax) })
+    .optional(),
 });
 export type RuleEffect = z.infer<typeof RuleEffectSchema>;
 

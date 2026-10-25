@@ -158,6 +158,9 @@ importers:
       '@nahual/domain':
         specifier: workspace:*
         version: link:../domain
+      '@nahual/hook-runtime':
+        specifier: workspace:*
+        version: link:../hook-runtime
       zod:
         specifier: 4.6.6
         version: 4.6.6

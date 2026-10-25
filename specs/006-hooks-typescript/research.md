@@ -188,6 +188,10 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
   agotado no guarda (FR-023). Límite: 1 MB del JSON en UTF-8 al guardar (error `state_too_large`).
   Recargar o navegar no lo vacía; "Vaciar estado" en la consola, sí, con "Deshacer" durante
   10 s que restaura la copia anterior (`restore`, FR-008).
+- **Reintentos en serie**: los primeros intentos corren en paralelo; los que chocan se repiten
+  **de uno en uno** (cola del `HookHost`), cada uno con el `state` recién leído. Así 20
+  ejecuciones simultáneas que incrementan un contador terminan en 20 con 2 intentos como mucho
+  (SC-012, `hrtests/state.test.ts`).
 - **Rationale**: copia + comparación de versión (concurrencia optimista) da contadores exactos
   con ejecuciones paralelas (SC-012) sin serializar todo. Repetir un hook es seguro: no tiene
   efectos fuera de su resultado (sin red) y solo cuentan los `log()` del último intento.
@@ -243,7 +247,12 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
   los de objetos de headers, y los parámetros de query sensibles dentro de URLs; a los textos
   sueltos les aplica la redacción por pares clave/valor de `redactDiff`. Los valores reales viajan
   aparte, solo en memoria del panel, y se muestran con "Mostrar valores sensibles" (como el diff
-  de 005) hasta cerrar la consola. No depende del permiso de leer valores sensibles. El indicador de la barra (slot `STATUS_ITEMS` de 004) cuenta errores sin leer; abrir
+  de 005) hasta cerrar la consola. No depende del permiso de leer valores sensibles.
+  **Ajuste de implementación**: el runtime del Worker es una función serializada a `Blob` y no
+  puede importar el dominio, así que el Worker solo convierte cada registro a texto (JSON con
+  límite) y la redacción la hace el **panel** (de confianza) con la redacción de texto de 005
+  (`redactText`: pares `"clave": valor`, query y líneas de header). El panel guarda el texto real
+  aparte, en memoria. El indicador de la barra (slot `STATUS_ITEMS` de 004) cuenta errores sin leer; abrir
   la consola los marca leídos.
 - **Detalle**: pestaña `hooks` en `DETAIL_TABS` (previsto en 004), visible cuando el intercambio
   tiene ejecuciones.

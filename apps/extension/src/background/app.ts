@@ -272,6 +272,10 @@ export function createBackground(deps: BackgroundDeps) {
       case "repeaterCancel":
         repeater.cancel(tabId, command.payload.sendId);
         return { ok: true };
+      // 006: los cablean hook-runner (T027) e importHook (T054).
+      case "hookResult":
+      case "importHook":
+        return { ok: false, code: "invalid_message" };
       case "getIgnores":
       case "setIgnores": {
         const { method, url } = command.payload;

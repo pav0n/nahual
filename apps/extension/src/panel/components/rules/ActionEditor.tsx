@@ -32,6 +32,15 @@ function defaultAction(kind: ActionKind): Action {
       return { kind: "delay", ms: 3000 };
     case "log":
       return { kind: "log" };
+    case "hook":
+      // 006: el editor de código llega con T037; aquí solo la acción vacía.
+      return {
+        kind: "hook",
+        source: "",
+        imported: false,
+        permissions: { changeDestination: false, readSensitive: false },
+        check: { hash: "0", ok: false },
+      };
   }
 }
 

@@ -181,3 +181,46 @@ describe("PanelMessageSchema (comandos de 005, contracts/panel-protocol.md)", ()
     );
   });
 });
+
+describe("hooks (006, contracts/panel-protocol.md)", () => {
+  const executions = [{ ruleId: UUID, result: "hooked", durationMs: 1.2 }];
+
+  it("hookResult con final unchanged, edit o respond", () => {
+    ok("hookResult", { runId: UUID2, final: { kind: "unchanged" }, executions });
+    ok("hookResult", {
+      runId: UUID2,
+      final: {
+        kind: "edit",
+        request: { method: "GET", url: "https://api.test/x", headers: { "x-a": "1" }, body: "{}" },
+      },
+      executions,
+    });
+    ok("hookResult", {
+      runId: UUID2,
+      final: { kind: "edit", response: { status: 503, headers: {} } },
+      executions: [{ ruleId: UUID, result: "hook_failed", durationMs: 2000, errorType: "timeout" }],
+    });
+    ok("hookResult", {
+      runId: UUID2,
+      final: { kind: "respond", status: 200, headers: {}, body: "{}" },
+      executions,
+    });
+  });
+
+  it("hookResult rechaza un final desconocido o resultados que no son de hooks", () => {
+    bad("hookResult", { runId: UUID2, final: { kind: "eval" }, executions });
+    bad("hookResult", {
+      runId: UUID2,
+      final: { kind: "unchanged" },
+      executions: [{ ruleId: UUID, result: "mocked", durationMs: 1 }],
+    });
+    bad("hookResult", { runId: "x", final: { kind: "unchanged" }, executions });
+  });
+
+  it("importHook { config | null, source }: siempre regla nueva, sin destino", () => {
+    ok("importHook", { config: null, source: "export default (ctx) => ctx;" });
+    ok("importHook", { config: { name: "Hook", stage: "response" }, source: "x" });
+    bad("importHook", { config: null, source: "x", targetRuleId: UUID });
+    bad("importHook", { config: null, source: "x".repeat(102_401) });
+  });
+});

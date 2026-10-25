@@ -415,7 +415,7 @@ export function relaxExtraOrigins(
         new Promise<boolean>((resolve) => {
           const id = crypto.randomUUID();
           replies.set(id, resolve);
-          port.postMessage({ v: 4, id, type, payload });
+          port.postMessage({ v: 5, id, type, payload });
         });
       await send("hello", { tabId: tab });
       const results: boolean[] = [];

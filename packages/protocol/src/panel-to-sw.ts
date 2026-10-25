@@ -6,7 +6,9 @@ import {
   RelaxationDurationSchema,
   SettingsPatchSchema,
   SiteSchema,
+  utf8Bytes,
 } from "@nahual/domain";
+import { HOOK_ERROR_TYPES, HookHeadersSchema } from "@nahual/hook-runtime";
 import { z } from "zod";
 import { message } from "./envelope.ts";
 
@@ -67,7 +69,72 @@ const Endpoint = {
   url: z.string().min(1).max(LIMITS.urlMax),
 };
 
+/** 006: resultado final de una cadena de hooks (contracts/panel-protocol.md). */
+const HookFinalSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("unchanged") }),
+  z.strictObject({
+    kind: z.literal("edit"),
+    request: z
+      .strictObject({
+        method: z.string().min(1).max(64),
+        url: z.string().min(1).max(LIMITS.urlMax),
+        headers: HookHeadersSchema,
+        body: z.string().optional(),
+      })
+      .optional(),
+    response: z
+      .strictObject({
+        status: z.int().min(0).max(999),
+        headers: HookHeadersSchema,
+        body: z.string().optional(),
+      })
+      .optional(),
+  }),
+  z.strictObject({
+    kind: z.literal("respond"),
+    status: z.int(),
+    headers: HookHeadersSchema,
+    body: z.string(),
+  }),
+]);
+
+export const HOOK_RESULTS = [
+  "hooked",
+  "hook_unchanged",
+  "hook_failed",
+  "hook_responded",
+  "hook_skipped_suspended",
+] as const;
+
 export const PanelMessageSchema = z.discriminatedUnion("type", [
+  // 006: el panel ejecutó la cadena; el SW vuelve a validar antes de aplicar.
+  message(
+    "hookResult",
+    z.strictObject({
+      runId: z.uuid(),
+      final: HookFinalSchema,
+      executions: z
+        .array(
+          z.strictObject({
+            ruleId: RuleId,
+            result: z.enum(HOOK_RESULTS),
+            durationMs: z.number().min(0),
+            errorType: z.enum(HOOK_ERROR_TYPES).optional(),
+          }),
+        )
+        .max(LIMITS.rulesMax),
+    }),
+  ),
+  // 006: importar un archivo .ts siempre crea una regla nueva y desactivada (FR-036).
+  message(
+    "importHook",
+    z.strictObject({
+      config: Unvalidated.nullable(),
+      source: z.string().refine((s) => utf8Bytes(s) <= LIMITS.hookSourceBytesMax, {
+        error: "hook_error_too_large",
+      }),
+    }),
+  ),
   // 005: el request llega sin validar campo por campo; el SW lo valida con RepeaterRequestSchema y
   // responde los issues en repeaterResult (contracts/panel-protocol.md).
   message(
