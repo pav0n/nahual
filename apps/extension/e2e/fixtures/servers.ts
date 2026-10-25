@@ -20,6 +20,11 @@ export interface TestServers {
   thirdOrigin: string;
   /** Requests recibidos por la API en orden de llegada. */
   received: ReceivedRequest[];
+  /**
+   * 006: requests que llegaron a `/leak` de la API o del tercer origen (suite de escape de los
+   * hooks); también en `GET /leak/log` de cualquiera de los dos.
+   */
+  leaks: ReceivedRequest[];
   close(): Promise<void>;
 }
 
@@ -247,6 +252,19 @@ function big() {
 
 export async function startServers(ports: ServerPorts = {}): Promise<TestServers> {
   const received: ReceivedRequest[] = [];
+  const leaks: ReceivedRequest[] = [];
+  const leak = (req: IncomingMessage, res: ServerResponse, body: string, path: string) => {
+    if (path === "/leak/log") {
+      res.writeHead(200, {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+      });
+      res.end(JSON.stringify(leaks));
+      return;
+    }
+    leaks.push({ path, url: req.url ?? "/", method: req.method ?? "", headers: req.headers, body });
+    res.writeHead(204, { "access-control-allow-origin": "*" }).end();
+  };
   let appOrigin = "";
   let apiOrigin = "";
   let thirdOrigin = "";
@@ -296,6 +314,10 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
       }
       if (url.pathname.startsWith("/cors/")) {
         corsRoute(url.pathname, req, res);
+        return;
+      }
+      if (url.pathname === "/leak" || url.pathname === "/leak/log") {
+        leak(req, res, body, url.pathname);
         return;
       }
       // Sin Date: el diff de dos respuestas de /diff/* no depende del segundo en que salen.
@@ -390,6 +412,12 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         case "/slow":
           await new Promise((r) => setTimeout(r, Number(url.searchParams.get("ms") ?? 3000)));
           return json(res, 200, { slow: true });
+        // 006: respuesta base de los hooks (quickstart).
+        case "/hooks/items":
+          return json(res, 200, { status: "ok", items: [1, 2, 3] });
+        case "/hooks/slow":
+          await new Promise((r) => setTimeout(r, Number(url.searchParams.get("ms") ?? 3000)));
+          return json(res, 200, { status: "ok", slow: true });
         case "/no-cors":
           // Sin headers CORS: para los experimentos E1/E2.
           if (req.method === "OPTIONS") {
@@ -475,6 +503,10 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
   // Origen C: otra API sin CORS, una página para navegar fuera de la app y un iframe que llama a B.
   const third = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
+    if (url.pathname === "/leak" || url.pathname === "/leak/log") {
+      void readBody(req).then((body) => leak(req, res, body, url.pathname));
+      return;
+    }
     switch (url.pathname) {
       case "/cors/none":
         if (req.method === "OPTIONS") return void res.writeHead(204).end();
@@ -510,6 +542,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
     apiOrigin,
     thirdOrigin,
     received,
+    leaks,
     close: async () => {
       await Promise.all(
         [app, api, third].map(

@@ -67,6 +67,20 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
+    // 006: el sandbox de hooks es el único lugar donde la constitución permite evaluar código
+    // (`new Function` para el JS transpilado del hook). `eval` sigue prohibido también aquí.
+    files: ["apps/extension/src/sandbox/**/*.ts"],
+    rules: {
+      "no-new-func": "off",
+      "no-restricted-syntax": [
+        "error",
+        ...securityRules["no-restricted-syntax"]
+          .slice(1)
+          .filter((rule) => rule.selector !== "NewExpression[callee.name='Function']"),
+      ],
+    },
+  },
+  {
     files: ["apps/extension/e2e/fixtures/conflict-extension/**/*.js"],
     languageOptions: { globals: { ...globals.serviceworker, chrome: "readonly" } },
   },

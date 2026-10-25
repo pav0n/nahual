@@ -132,6 +132,11 @@ transpilado del hook (constitución: "eval solo en el sandbox").
 | `typescript` | 5.9.3 (ya en el monorepo como dev) | Apache-2.0 | Solo el Worker de tipos del panel, al abrir un hook | Autocompletado y errores de tipo antes de guardar (FR-015, FR-016) | Sin tipos (incumple US1-3); servicio remoto (sin red propia) |
 | `@codemirror/state`, `view`, `commands`, `language`, `autocomplete`, `lint`, `lang-javascript` | ver Technical Context | MIT | Chunk del editor, al abrir un hook | Editor accesible y modular, tematizable con los tokens de DevTools, ~150 KB frente a varios MB de Monaco (R4, X3) | Monaco (pesado, tema y CSS propios); textarea (sin autocompletado) |
 
+**Zod 4.6.5 ⇒ 4.6.6** (parche de una dependencia existente, en todos los paquetes): `pnpm audit`
+marcó GHSA-mrhx-c7xc-m3w5 (agotar memoria al validar colecciones enormes con límites), ya
+presente en `main`. Con 006 Zod valida la salida de código no confiable del sandbox, así que el
+parche es obligatorio. Sin cambios de API.
+
 Transitivos: `@lezer/common`, `@lezer/highlight`, `@lezer/lr`, `@lezer/javascript`, `style-mod`,
 `w3c-keyname`, `crelt` (MIT). Los de Sucrase para su CLI (`commander`, `tinyglobby`, `mz`,
 `pirates`) se instalan pero no entran en el bundle del sandbox (se importa solo `transform`);

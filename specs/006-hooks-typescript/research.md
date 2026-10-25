@@ -313,3 +313,45 @@ y 1280 px.
   `extension_pages` sigue sin `unsafe-eval`; `new Function` solo aparece en el chunk del sandbox.
   Pruebas de la mensajería: un `hello` de otra ventana, un mensaje sin `runId` conocido o con
   forma inválida se descartan.
+
+---
+
+## Resultados
+
+### Experimentos X1–X3 (2026-10-25, Chromium 156 de Playwright, Linux)
+
+- **X1** (`e2e/experiments/x1-sandbox.spec.ts`), con una sonda solo del build de pruebas en
+  `src/sandbox/sandbox.ts`:
+  - (a) crxjs copia la página de `sandbox.pages`, pero no procesa su script; se añadió a
+    `rollupOptions.input`. Con eso, el script de módulo carga con origen `null` y Chrome aplica la
+    CSP del manifest: cada bloqueo sale en consola como violación de `connect-src 'none'`.
+  - (b) el `hello` llega con `event.origin === "null"` y `event.source` igual al iframe; el canal
+    con `MessageChannel` funciona sin `targetOrigin "*"`.
+  - (c) el sandbox crea un Worker desde un `Blob` y el Worker evalúa con `new Function`.
+  - (d) desde el Worker fallan `fetch` (`TypeError`), XHR (`NetworkError`), `importScripts`
+    (`NetworkError`), un Worker anidado (`SecurityError`) e `import()` dinámico; `chrome` y `parent`
+    no existen. `WebSocket` y `EventSource` se crean sin lanzar, pero la CSP bloquea la conexión;
+    asignar `location.href` en el Worker no navega. **0 requests** en `/leak` de la API y del
+    tercer origen. La página sandbox tampoco puede hacer `fetch`.
+  - (e) `terminate()` corta un `while (true)` (respuesta a los ~310 ms con un corte de 300 ms).
+  - (f) la pila conserva `hook.js:L`; `new Function` añade **2 líneas**: la línea 3 del texto del
+    dev sale como `hook.js:5`.
+  - **Consecuencia**: R2 sin respaldo. El runtime del Worker además reemplaza `fetch`,
+    `XMLHttpRequest`, `WebSocket`, `EventSource`, `importScripts` y `Worker` por funciones que
+    lanzan `access_denied`, para que el error sea inmediato y claro aunque la CSP ya bloquee.
+- **X2** (`e2e/experiments/x2-hook-latency.spec.ts`): ida y vuelta panel ⇒ sandbox ⇒ Worker con un
+  hook trivial: Worker en frío p50 5,1 ms / p95 7,0 ms; **en caliente p50 0,1 ms / p95 0,2 ms**; en
+  caliente con un body JSON de 1,1 MB p50 4,2 ms / p95 5,1 ms. Sucrase con un hook de 46 líneas
+  (en Node) p50 0,75 ms / p95 1,3 ms (D2 de 001: < 50 ms, cumplido). El tramo SW ⇔ panel se mide
+  de punta a punta en T060. **Consecuencia**: R16 sin respaldo; un Worker por hook reutilizado
+  basta; el precalentado (R2) evita el coste en frío en la primera ejecución.
+- **X3** (builds mínimas con Vite 8.3.4 en un directorio temporal):
+
+  | Editor | Chunk del editor (gzip) | Worker de TypeScript (gzip) | Total (gzip) | `eval`/`new Function` |
+  |---|---|---|---|---|
+  | CodeMirror 6 + servicio de lenguaje propio | 149 KB | 979 KB | **1,13 MB** | ninguno |
+  | Monaco 0.52.2 (ESM, worker de TS) | 572 KB + 11 KB CSS + 81 KB worker | 1,31 MB | 1,98 MB | **sí, en su worker de TS** |
+
+  **Consecuencia**: R4 confirmada: CodeMirror. Monaco pesa un 75 % más y su worker de TypeScript
+  necesitaría `unsafe-eval` en las páginas de la extensión, que la constitución prohíbe. La
+  latencia de SC-005 se mide con el servicio real en T033.

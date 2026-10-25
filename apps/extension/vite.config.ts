@@ -15,7 +15,8 @@ export default defineConfig(({ mode }) => ({
     // Chrome soporta modulepreload: sin el polyfill de Vite, que usa fetch().
     modulePreload: { polyfill: false },
     rollupOptions: {
-      input: { panel: "src/panel/panel.html" },
+      // 006: la página sandbox de hooks; crxjs la copia pero no procesa su script.
+      input: { panel: "src/panel/panel.html", sandbox: "src/sandbox/hook-sandbox.html" },
     },
   },
 }));
