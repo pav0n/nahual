@@ -1589,6 +1589,9 @@
   "repeater_tab_copy": {
     "message": "$1 (copia)"
   },
+  "repeater_toolbar_label": {
+    "message": "Opciones de envío"
+  },
   "repeater_mode_label": {
     "message": "Modo de envío"
   },

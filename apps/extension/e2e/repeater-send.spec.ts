@@ -11,9 +11,11 @@ import {
   pausedEditor,
   repeater,
   repeaterMode,
+  repeaterOutputTab,
   repeaterResponse,
   repeaterResult,
   repeaterSend,
+  repeaterTabs,
   sendToRepeater,
   tabIdOf,
   trafficRow,
@@ -51,7 +53,9 @@ test("US1-1/2/3/4: enviar al repeater y reenviar en contexto de página con cook
   const { app, panel } = await setup(fx);
   await callApi(app, "items");
   await sendToRepeater(panel, trafficRow(panel, "/api/items"));
-  await expect(repeater(panel).getByRole("tab", { selected: true })).toHaveText("GET /api/items");
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toHaveText(
+    "GET /api/items",
+  );
   await expect(url(panel)).toHaveValue(`${fx.servers.apiOrigin}/api/items`);
   await expect(repeaterMode(panel, "Page context")).toHaveAttribute("aria-pressed", "true");
 
@@ -66,6 +70,7 @@ test("US1-1/2/3/4: enviar al repeater y reenviar en contexto de página con cook
   await repeaterSend(panel);
   await expect(repeaterResponse(panel)).toContainText("nahual_session=secret-session-value");
   await expect(repeaterResponse(panel)).toContainText(fx.servers.appOrigin);
+  await repeaterOutputTab(panel, "History");
   await expect(repeater(panel).locator(".history-item")).toHaveCount(2);
 
   // En Tráfico, la fila marcada.
@@ -150,16 +155,18 @@ test("FR-020: renombrar, duplicar, cerrar y deshacer", async ({
   await r.getByRole("button", { name: "Rename" }).click();
   await r.getByLabel("Tab name").fill("Items");
   await r.getByRole("button", { name: "Save name" }).click();
-  await expect(r.getByRole("tab", { selected: true })).toHaveText("Items");
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toHaveText("Items");
   await r.getByRole("button", { name: "Duplicate" }).click();
-  await expect(r.getByRole("tab", { selected: true })).toHaveText("Items (copy)");
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toHaveText("Items (copy)");
+  await repeaterOutputTab(panel, "History");
   await expect(r.locator(".history-item")).toHaveCount(0);
-  await r.getByRole("tab", { name: "Items", exact: true }).click();
+  await repeaterTabs(panel).getByRole("tab", { name: "Items", exact: true }).click();
   await r.getByRole("button", { name: "Close tab" }).click();
-  await expect(r.getByRole("tab")).toHaveCount(1);
+  await expect(repeaterTabs(panel).getByRole("tab")).toHaveCount(1);
   await panel.getByRole("button", { name: "Undo" }).click();
-  await expect(r.getByRole("tab")).toHaveCount(2);
-  await expect(r.getByRole("tab", { selected: true })).toHaveText("Items");
+  await expect(repeaterTabs(panel).getByRole("tab")).toHaveCount(2);
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toHaveText("Items");
+  await repeaterOutputTab(panel, "History");
   await expect(r.locator(".history-item")).toHaveCount(1);
 });
 

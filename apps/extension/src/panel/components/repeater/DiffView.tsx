@@ -21,6 +21,7 @@ import { createDiffClient, type DiffOutcome } from "../../repeater/diff-client.t
 import type { RepeaterTab } from "../../repeater/types.ts";
 import { matchesShortcut, shortcutById } from "../../shortcuts.ts";
 import { sw } from "../../sw-client.ts";
+import { IconButton } from "../common/IconButton.tsx";
 
 const NEXT = shortcutById("nextChange");
 const PREV = shortcutById("prevChange");
@@ -179,7 +180,10 @@ export function DiffView({
   return (
     <section className="diff-view" aria-labelledby="diff-title" onKeyDown={onKeyDown}>
       <div className="row diff-header">
-        <h3 id="diff-title">{t("diff_title")}</h3>
+        {/* La pestaña Diff ya lo rotula a la vista. */}
+        <h3 id="diff-title" className="visually-hidden">
+          {t("diff_title")}
+        </h3>
         <label className="diff-side">
           <span className="diff-side-label">{t("diff_before")}</span>
           <select value={optionKey(before)} onChange={(e) => setBefore(fromKey(e.target.value))}>
@@ -209,9 +213,8 @@ export function DiffView({
         >
           {t("diff_swap")}
         </button>
-        <button type="button" onClick={onClose}>
-          {t("diff_close")}
-        </button>
+        <span className="toolbar-spacer" />
+        <IconButton icon="close" label={t("diff_close")} onClick={onClose} />
       </div>
 
       {!left || !right ? (

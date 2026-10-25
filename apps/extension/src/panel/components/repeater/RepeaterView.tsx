@@ -8,13 +8,11 @@ import { EmptyState } from "../common/EmptyState.tsx";
 import { SplitPane } from "../common/SplitPane.tsx";
 import { TabPanel } from "../common/Tabs.tsx";
 import type { SideRef } from "../../repeater/compare.ts";
-import { DiffView } from "./DiffView.tsx";
+import { Toolbar } from "../common/Toolbar.tsx";
 import { ModeSwitch } from "./ModeSwitch.tsx";
-import { PastedResponse } from "./PastedResponse.tsx";
+import { RepeaterOutput, type OutputTabId } from "./RepeaterOutput.tsx";
 import { REPEATER_TABS_PREFIX, RepeaterTabs } from "./RepeaterTabs.tsx";
 import { RequestEditor } from "./RequestEditor.tsx";
-import { SendHistory } from "./SendHistory.tsx";
-import { SendResult } from "./SendResult.tsx";
 
 const SEND_SHORTCUT = shortcutById("repeaterSend");
 
@@ -29,6 +27,8 @@ export function RepeaterView() {
   const tab = tabs.find((x) => x.id === activeId) ?? null;
   const [showIssues, setShowIssues] = useState<string | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
+  /** Pestaña de la salida por pestaña del repeater. */
+  const [outputTab, setOutputTab] = useState<Record<string, OutputTabId>>({});
   /** Diff abierto por pestaña (FR-022). */
   const [comparing, setComparing] = useState<
     Record<string, { before: SideRef; after: SideRef; seq: number }>
@@ -36,7 +36,7 @@ export function RepeaterView() {
 
   if (!tab) {
     return (
-      <div className="pane repeater">
+      <div className="repeater">
         <RepeaterTabs />
         <EmptyState title={t("repeater_empty_title")}>{t("repeater_empty_body")}</EmptyState>
       </div>
@@ -57,11 +57,14 @@ export function RepeaterView() {
   const pending = latest?.state === "pending";
   const shown: RepeaterSend | null = tab.sends.find((s) => s.sendId === selected[tab.id]) ?? latest;
 
-  const open = (before: SideRef, after: SideRef) =>
+  const showTab = (id: OutputTabId) => setOutputTab((current) => ({ ...current, [tab.id]: id }));
+  const open = (before: SideRef, after: SideRef) => {
     setComparing((current) => ({
       ...current,
       [tab.id]: { before, after, seq: (current[tab.id]?.seq ?? 0) + 1 },
     }));
+    showTab("diff");
+  };
 
   const send = () => {
     if (tab.mode === "page" && pageUnavailable) return;
@@ -71,6 +74,7 @@ export function RepeaterView() {
     }
     setShowIssues(null);
     setSelected((current) => ({ ...current, [tab.id]: "" }));
+    if (outputTab[tab.id] !== "headers") showTab("response");
     void sendRepeaterTab(tab.id);
   };
 
@@ -82,16 +86,17 @@ export function RepeaterView() {
   };
 
   return (
-    <div className="pane repeater" onKeyDown={onKeyDown}>
+    <div className="repeater" onKeyDown={onKeyDown}>
       <RepeaterTabs />
       <TabPanel idPrefix={REPEATER_TABS_PREFIX} id={tab.id} hidden={false}>
-        <div className="row repeater-toolbar">
+        <Toolbar label={t("repeater_toolbar_label")} className="repeater-toolbar">
           <ModeSwitch
             mode={tab.mode}
             unavailable={pageUnavailable}
             site={tab.site}
             onChange={(mode) => store().setRepeaterMode(tab.id, mode)}
           />
+          <span className="toolbar-spacer" />
           {pending && latest ? (
             <button type="button" onClick={() => cancelRepeaterSend(latest.sendId)}>
               {t("action_cancel")}
@@ -106,9 +111,9 @@ export function RepeaterView() {
           >
             {t("repeater_send")}
           </button>
-        </div>
+        </Toolbar>
         {issues.length > 0 ? (
-          <p role="alert" className="alert">
+          <p role="alert" className="alert repeater-alert">
             {t("repeater_error_invalid_request")}
           </p>
         ) : null}
@@ -118,87 +123,48 @@ export function RepeaterView() {
           minStart={260}
           minEnd={260}
           start={
-            <div className="pane">
-              <RequestEditor
-                draft={tab.draft}
-                issues={issues}
-                onChange={(draft) => store().setRepeaterDraft(tab.id, draft)}
-                onBodyReplaced={(undo) =>
-                  store().pushToast(
-                    {
-                      messageKey: "repeater_body_replaced",
-                      actionKey: "action_undo",
-                      onAction: () => {
-                        const current = usePanelStore
+            <RequestEditor
+              draft={tab.draft}
+              issues={issues}
+              onChange={(draft) => store().setRepeaterDraft(tab.id, draft)}
+              onBodyReplaced={(undo) =>
+                store().pushToast(
+                  {
+                    messageKey: "repeater_body_replaced",
+                    actionKey: "action_undo",
+                    onAction: () => {
+                      const current = usePanelStore
+                        .getState()
+                        .repeaterTabs.find((x) => x.id === tab.id);
+                      if (current)
+                        usePanelStore
                           .getState()
-                          .repeaterTabs.find((x) => x.id === tab.id);
-                        if (current)
-                          usePanelStore
-                            .getState()
-                            .setRepeaterDraft(tab.id, { ...current.draft, body: undo });
-                      },
+                          .setRepeaterDraft(tab.id, { ...current.draft, body: undo });
                     },
-                    10_000,
-                  )
-                }
-              />
-            </div>
+                  },
+                  10_000,
+                )
+              }
+            />
           }
           end={
-            // Enfocable: si solo hay texto, la región con scroll se alcanza con teclado (axe).
-            <div
-              className="pane"
-              tabIndex={0}
-              role="region"
-              aria-label={t("repeater_output_label")}
-            >
-              {comparing[tab.id] ? (
-                <DiffView
-                  key={comparing[tab.id]?.seq}
-                  tab={tab}
-                  initial={comparing[tab.id] as { before: SideRef; after: SideRef }}
-                  onClose={() =>
-                    setComparing((current) =>
-                      Object.fromEntries(Object.entries(current).filter(([id]) => id !== tab.id)),
-                    )
-                  }
-                />
-              ) : shown ? (
-                <SendResult
-                  send={shown}
-                  onUsePage={() => store().setRepeaterMode(tab.id, "page")}
-                />
-              ) : (
-                <p className="muted">{t("repeater_no_result")}</p>
-              )}
-              <PastedResponse
-                key={`${tab.id}-${tab.pasted?.text.length ?? 0}`}
-                pasted={tab.pasted}
-                onChange={(pasted) => store().setRepeaterPasted(tab.id, pasted)}
-              />
-              {tab.pasted && tab.sends.some((s) => s.state !== "pending") ? (
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    const last = tab.sends.find((s) => s.state !== "pending");
-                    if (last) open({ kind: "pasted" }, { kind: "send", sendId: last.sendId });
-                  }}
-                >
-                  {t("diff_compare_pasted")}
-                </button>
-              ) : null}
-              <h3>{t("repeater_history_title")}</h3>
-              <SendHistory
-                sends={tab.sends}
-                droppedCount={tab.droppedCount}
-                selectedId={shown?.sendId ?? null}
-                onSelect={(sendId) => setSelected((current) => ({ ...current, [tab.id]: sendId }))}
-                onLoad={(s) => store().setRepeaterDraft(tab.id, s.request)}
-                onCompare={open}
-                hasOriginal={tab.source !== null}
-              />
-            </div>
+            <RepeaterOutput
+              tab={tab}
+              shown={shown}
+              current={outputTab[tab.id] ?? "response"}
+              onTab={showTab}
+              comparing={comparing[tab.id] ?? null}
+              onCompare={open}
+              onCloseDiff={() => {
+                setComparing((current) =>
+                  Object.fromEntries(Object.entries(current).filter(([id]) => id !== tab.id)),
+                );
+                showTab("response");
+              }}
+              onSelectSend={(sendId) =>
+                setSelected((current) => ({ ...current, [tab.id]: sendId }))
+              }
+            />
           }
         />
       </TabPanel>

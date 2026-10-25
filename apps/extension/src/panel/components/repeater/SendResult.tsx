@@ -6,30 +6,44 @@ import { BodyText } from "../traffic/BodyView.tsx";
 import { HeaderList } from "../traffic/HeaderList.tsx";
 
 /**
- * Resultado de un envío (FR-015 a FR-017, FR-010a): status, tiempo y tamaño; la respuesta con los
- * límites de 002; las reglas que actuaron, el preflight, el bloqueo CORS y los headers que no
+ * Resumen de un envío (FR-015 a FR-017, FR-010a), como el del detalle de Tráfico: status, tiempo,
+ * tamaño y modo; las reglas que actuaron, el preflight, el bloqueo CORS y los headers que no
  * salieron tal cual; un error con causa y solución.
  */
-export function SendResult({ send, onUsePage }: { send: RepeaterSend; onUsePage(): void }) {
+export function SendSummary({ send, onUsePage }: { send: RepeaterSend; onUsePage(): void }) {
   // Lleva a Reglas, donde está la regla que actuó (FR-010a).
   const openRules = () => usePanelStore.getState().setSection("rules");
   const { response, error } = send;
   return (
-    <section className="send-result" aria-label={t("repeater_result_label")} aria-live="polite">
-      <p className="send-summary">
-        {send.state === "pending" ? (
-          <span aria-busy="true">{t("repeater_sending")}</span>
-        ) : (
-          <>
-            <strong>
-              {response ? String(response.status) : t(`repeater_state_${send.state}`)}
-            </strong>
-            {send.durationMs !== null ? ` · ${formatDuration(send.durationMs)}` : ""}
-            {send.size !== null ? ` · ${formatBytes(send.size)}` : ""}
-            {` · ${t(`repeater_mode_${send.mode}`)}`}
-          </>
-        )}
-      </p>
+    <>
+      {send.state === "pending" ? (
+        <p className="send-summary" aria-busy="true">
+          {t("repeater_sending")}
+        </p>
+      ) : (
+        <dl className="summary send-summary">
+          <div>
+            <dt>{t("traffic_col_status")}</dt>
+            <dd>{response ? String(response.status) : t(`repeater_state_${send.state}`)}</dd>
+          </div>
+          {send.durationMs !== null ? (
+            <div>
+              <dt>{t("traffic_col_time")}</dt>
+              <dd>{formatDuration(send.durationMs)}</dd>
+            </div>
+          ) : null}
+          {send.size !== null ? (
+            <div>
+              <dt>{t("traffic_col_size")}</dt>
+              <dd>{formatBytes(send.size)}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>{t("repeater_mode_label")}</dt>
+            <dd>{t(`repeater_mode_${send.mode}`)}</dd>
+          </div>
+        </dl>
+      )}
       {error ? (
         <div role="alert" className="alert">
           <p>{t(error.messageKey, error.params)}</p>
@@ -67,25 +81,43 @@ export function SendResult({ send, onUsePage }: { send: RepeaterSend; onUsePage(
           {t("repeater_not_sent_headers", send.notSentHeaders.join(", "))}
         </p>
       ) : null}
-      {response ? (
+    </>
+  );
+}
+
+/** Body de la respuesta con los límites de 002 (pestaña Response). */
+export function SendBody({ send }: { send: RepeaterSend }) {
+  const { response } = send;
+  if (!response) return null;
+  return response.body.encoding === "text" ? (
+    <BodyText
+      side="response"
+      content={response.body.text}
+      size={new TextEncoder().encode(response.body.text).length}
+    />
+  ) : (
+    <p className="muted">
+      {t(`body_unavailable_${response.body.info.reason ?? "none"}`)}
+      {response.body.info.size !== null ? ` · ${formatBytes(response.body.info.size)}` : ""}
+    </p>
+  );
+}
+
+/** Headers enviados (los activos del request) y recibidos (pestaña Headers), como en Tráfico. */
+export function SendHeaders({ send }: { send: RepeaterSend }) {
+  return (
+    <>
+      <h3>{t("detail_request_headers")}</h3>
+      <HeaderList
+        headers={send.request.headers.filter((h) => h.enabled)}
+        emptyKey="detail_no_headers"
+      />
+      {send.response ? (
         <>
           <h3>{t("detail_response_headers")}</h3>
-          <HeaderList headers={response.headers} emptyKey="detail_no_headers" />
-          <h3>{t("detail_tab_response")}</h3>
-          {response.body.encoding === "text" ? (
-            <BodyText
-              side="response"
-              content={response.body.text}
-              size={new TextEncoder().encode(response.body.text).length}
-            />
-          ) : (
-            <p className="muted">
-              {t(`body_unavailable_${response.body.info.reason ?? "none"}`)}
-              {response.body.info.size !== null ? ` · ${formatBytes(response.body.info.size)}` : ""}
-            </p>
-          )}
+          <HeaderList headers={send.response.headers} emptyKey="detail_no_headers" />
         </>
       ) : null}
-    </section>
+    </>
   );
 }

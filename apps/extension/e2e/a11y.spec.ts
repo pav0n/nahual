@@ -22,6 +22,8 @@ import {
   relaxFrom,
   relaxIndicator,
   relaxItems,
+  repeaterOutputTab,
+  repeaterTabs,
   requestRow,
   sectionTab,
   statusOf,
@@ -554,7 +556,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await trafficRow(panel, "/api/items").click({ button: "right" });
     await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
     const r = panel.locator(".repeater");
-    await expect(r.getByRole("tab", { selected: true })).toBeVisible();
+    await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toBeVisible();
     await expectNoSeriousViolations(panel, "repeater con pestaña");
     await expectNoHorizontalScroll(panel);
 
@@ -574,6 +576,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoSeriousViolations(panel, "resultado con error");
     await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/api/items`);
     await r.getByRole("button", { name: "Send", exact: true }).click();
+    await repeaterOutputTab(panel, "History");
     await expect(r.locator(".history-item")).toHaveCount(2);
     await expectNoSeriousViolations(panel, "historial");
     await expectNoHorizontalScroll(panel);
@@ -602,7 +605,7 @@ test("005 FR-033: repeater solo con teclado", async ({
   await expect(panel.getByRole("menuitem", { name: "Send to repeater" })).toBeFocused();
   await panel.keyboard.press("Enter");
   const r = panel.locator(".repeater");
-  await expect(r.getByRole("tab", { selected: true })).toBeVisible();
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toBeVisible();
 
   // Editar la URL, un header y enviar con Ctrl+Enter.
   const url = r.getByLabel("URL", { exact: true });
@@ -629,9 +632,9 @@ test("005 FR-033: repeater solo con teclado", async ({
   );
   expect(await tabTo(panel, r.getByRole("button", { name: "New tab" }))).toBe(true);
   await panel.keyboard.press("Enter");
-  expect(await tabTo(panel, r.getByRole("tab", { selected: true }))).toBe(true);
+  expect(await tabTo(panel, repeaterTabs(panel).getByRole("tab", { selected: true }))).toBe(true);
   await panel.keyboard.press("ArrowLeft");
-  await expect(r.getByRole("tab", { name: "GET /api/items" })).toHaveAttribute(
+  await expect(repeaterTabs(panel).getByRole("tab", { name: "GET /api/items" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -641,13 +644,13 @@ test("005 FR-033: repeater solo con teclado", async ({
   await panel.keyboard.press("Control+A");
   await panel.keyboard.type("Echo");
   await panel.keyboard.press("Enter");
-  await expect(r.getByRole("tab", { selected: true })).toHaveText("Echo");
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toHaveText("Echo");
   expect(await tabTo(panel, r.getByRole("button", { name: "Close tab" }))).toBe(true);
   await panel.keyboard.press("Enter");
-  await expect(r.getByRole("tab")).toHaveCount(1);
+  await expect(repeaterTabs(panel).getByRole("tab")).toHaveCount(1);
   expect(await tabTo(panel, panel.getByRole("button", { name: "Undo" }))).toBe(true);
   await panel.keyboard.press("Enter");
-  await expect(r.getByRole("tab")).toHaveCount(2);
+  await expect(repeaterTabs(panel).getByRole("tab")).toHaveCount(2);
 });
 
 /** La SPA pide una ruta de la API y el request se reenvía a otra desde el repeater. */
@@ -702,6 +705,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await repeaterDiff(panel, app, servers.apiOrigin, "/api/items", "/api/items");
     const r = panel.locator(".repeater");
     await panel.locator(".diff-view").getByRole("button", { name: "Close diff" }).click();
+    await repeaterOutputTab(panel, "History");
     await r.getByRole("button", { name: "Paste expected response" }).click();
     await r.getByLabel("Pasted response (JSON or text)").fill('{"items":[1,2]}');
     await r.getByRole("button", { name: "Use this response" }).click();

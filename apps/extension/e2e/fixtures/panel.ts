@@ -440,13 +440,24 @@ export function relaxExtraOrigins(
 
 export const repeater = (panel: Page) => panel.locator(".repeater");
 export const repeaterResult = (panel: Page) => panel.locator(".send-result");
+/** Pestañas del repeater (no las de su salida: Response, Headers, History, Diff). */
+export const repeaterTabs = (panel: Page) =>
+  repeater(panel).getByRole("tablist", { name: "Repeater tabs" });
+
+/** Elige una pestaña de la salida del repeater. */
+export async function repeaterOutputTab(
+  panel: Page,
+  name: "Response" | "Headers" | "History" | "Diff",
+) {
+  await repeater(panel).locator(".repeater-output").getByRole("tab", { name, exact: true }).click();
+}
 export const repeaterResponse = (panel: Page) => repeaterResult(panel).getByLabel("Response body");
 
 /** "Send to repeater" desde el menú contextual de una fila (FR-001). */
 export async function sendToRepeater(panel: Page, row: Locator) {
   await row.click({ button: "right" });
   await panel.getByRole("menu").getByRole("menuitem", { name: "Send to repeater" }).click();
-  await expect(repeater(panel).getByRole("tab", { selected: true })).toBeVisible();
+  await expect(repeaterTabs(panel).getByRole("tab", { selected: true })).toBeVisible();
 }
 
 /** Modo de envío de la pestaña activa (FR-009). */

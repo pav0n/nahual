@@ -5,6 +5,7 @@ import {
   openPanel,
   openSection,
   repeater,
+  repeaterOutputTab,
   repeaterSend,
   sendToRepeater,
   tabIdOf,
@@ -147,6 +148,7 @@ test("FR-025a, FR-026, FR-027: arrays por id, texto por líneas, binario y respu
   // Respuesta pegada inválida frente a un JSON: por líneas con aviso.
   await compareWithOriginal(panel, app, servers.apiOrigin, "/diff/a", "/diff/a");
   await diff(panel).getByRole("button", { name: "Close diff" }).click();
+  await repeaterOutputTab(panel, "History");
   await repeater(panel).getByRole("button", { name: "Paste expected response" }).click();
   await repeater(panel).getByLabel("Pasted response (JSON or text)").fill("{nope");
   await repeater(panel).getByRole("button", { name: "Use this response" }).click();

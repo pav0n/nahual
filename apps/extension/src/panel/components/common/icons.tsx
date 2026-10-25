@@ -22,7 +22,10 @@ export type IconName =
   | "relaxed"
   | "blocked"
   | "paused"
-  | "warning";
+  | "warning"
+  | "plus"
+  | "edit"
+  | "copy";
 
 const PATHS: Record<IconName, ReactNode> = {
   pause: <path d="M7.5 5v10M12.5 5v10" />,
@@ -73,6 +76,14 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   warning: <path d="M10 4l6.5 11.5h-13zM10 9v3M10 14v.5" />,
+  plus: <path d="M10 4.5v11M4.5 10h11" />,
+  edit: <path d="M4.5 15.5l.8-3.3 7.4-7.4 2.5 2.5-7.4 7.4zM11.2 6.3l2.5 2.5" />,
+  copy: (
+    <>
+      <rect x="7.5" y="7.5" width="8" height="8" rx="1.5" />
+      <path d="M12.5 4.5h-6.5a1.5 1.5 0 0 0-1.5 1.5v6.5" />
+    </>
+  ),
 };
 
 export function Icon({ name }: { name: IconName }) {

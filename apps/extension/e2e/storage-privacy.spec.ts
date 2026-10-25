@@ -12,6 +12,7 @@ import {
   relaxFrom,
   repeater,
   repeaterMode,
+  repeaterOutputTab,
   repeaterResult,
   repeaterSend,
   sendToRepeater,
@@ -166,6 +167,7 @@ test("el repeater no guarda requests, respuestas ni valores en ningún almacenam
   await repeaterSend(panel);
   await repeaterMode(panel, "Clean context").click();
   await repeaterSend(panel);
+  await repeaterOutputTab(panel, "History");
   await r.getByRole("button", { name: "Paste expected response" }).click();
   await r.getByLabel("Pasted response (JSON or text)").fill('{"access_token":"secret-pasted-xyz"}');
   await r.getByRole("button", { name: "Use this response" }).click();

@@ -12,6 +12,7 @@ import { useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { formatBytes } from "../../format.ts";
 import { Field, issueAt } from "../common/Field.tsx";
+import { IconButton } from "../common/IconButton.tsx";
 import { BodyEditor } from "../queue/BodyEditor.tsx";
 
 /**
@@ -67,13 +68,11 @@ function RepeaterHeaders({
               }}
               onChange={(e) => update(index, { value: e.target.value })}
             />
-            <button
-              type="button"
+            <IconButton
+              icon="close"
+              label={t("action_remove_header", header.name || String(index + 1))}
               onClick={() => onChange(headers.filter((_, i) => i !== index))}
-              aria-label={t("action_remove_header", header.name || String(index + 1))}
-            >
-              ×
-            </button>
+            />
             {forbidden ? (
               <span className="field-warning header-error">{t("repeater_header_forbidden")}</span>
             ) : null}
@@ -159,44 +158,49 @@ export function RequestEditor({
   const contentType =
     draft.headers.find((h) => h.enabled && h.name.toLowerCase() === "content-type")?.value ?? "";
   return (
-    <section className="repeater-editor" aria-label={t("repeater_editor_label")}>
-      <div className="row">
-        <Field label={t("paused_method")} error={issueAt(issues, "method")} className="method">
-          {(props) => (
-            <input
-              {...props}
-              className="mono"
-              value={draft.method}
-              onChange={(e) => onChange({ ...draft, method: e.target.value.toUpperCase() })}
-            />
-          )}
-        </Field>
-        <Field label={t("paused_url")} error={issueAt(issues, "url")} className="grow">
-          {(props) => (
-            <input
-              {...props}
-              className="mono"
-              value={draft.url}
-              placeholder="https://"
-              onChange={(e) => onChange({ ...draft, url: e.target.value })}
-            />
-          )}
-        </Field>
+    <section className="detail repeater-editor" aria-label={t("repeater_editor_label")}>
+      <div className="detail-header">
+        <h2>{t("detail_tab_request")}</h2>
       </div>
-      <RepeaterHeaders
-        headers={draft.headers}
-        issues={issues}
-        onChange={(headers) => onChange({ ...draft, headers })}
-      />
-      <RepeaterBodyField
-        body={draft.body}
-        contentType={contentType}
-        error={issueAt(issues, "body.text") ?? issueAt(issues, "body")}
-        onChange={(body, undo) => {
-          onChange({ ...draft, body });
-          if (undo) onBodyReplaced(undo);
-        }}
-      />
+      <div className="detail-body">
+        <div className="row">
+          <Field label={t("paused_method")} error={issueAt(issues, "method")} className="method">
+            {(props) => (
+              <input
+                {...props}
+                className="mono"
+                value={draft.method}
+                onChange={(e) => onChange({ ...draft, method: e.target.value.toUpperCase() })}
+              />
+            )}
+          </Field>
+          <Field label={t("paused_url")} error={issueAt(issues, "url")} className="grow">
+            {(props) => (
+              <input
+                {...props}
+                className="mono"
+                value={draft.url}
+                placeholder="https://"
+                onChange={(e) => onChange({ ...draft, url: e.target.value })}
+              />
+            )}
+          </Field>
+        </div>
+        <RepeaterHeaders
+          headers={draft.headers}
+          issues={issues}
+          onChange={(headers) => onChange({ ...draft, headers })}
+        />
+        <RepeaterBodyField
+          body={draft.body}
+          contentType={contentType}
+          error={issueAt(issues, "body.text") ?? issueAt(issues, "body")}
+          onChange={(body, undo) => {
+            onChange({ ...draft, body });
+            if (undo) onBodyReplaced(undo);
+          }}
+        />
+      </div>
     </section>
   );
 }

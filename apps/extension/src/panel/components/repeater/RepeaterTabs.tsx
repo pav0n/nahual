@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { usePanelStore } from "../../store/index.ts";
+import { IconButton } from "../common/IconButton.tsx";
 import { Tabs } from "../common/Tabs.tsx";
 
 export const REPEATER_TABS_PREFIX = "repeater";
@@ -40,7 +41,8 @@ export function RepeaterTabs() {
   };
 
   return (
-    <div className="repeater-tabbar">
+    // Barra como la de secciones de DevTools: pestañas y, a la derecha, sus acciones con icono.
+    <div className="toolbar repeater-tabbar">
       {tabs.length > 0 && active ? (
         <Tabs
           idPrefix={REPEATER_TABS_PREFIX}
@@ -50,51 +52,46 @@ export function RepeaterTabs() {
           onSelect={(id) => store().selectRepeaterTab(id)}
         />
       ) : null}
-      <div className="row repeater-tab-actions">
-        <button type="button" onClick={create}>
-          {t("repeater_new_tab")}
-        </button>
-        {current ? (
-          <>
-            {renaming === current.id ? (
-              <form
-                className="row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const input = new FormData(event.currentTarget).get("name");
-                  store().renameRepeaterTab(current.id, String(input ?? ""));
-                  setRenaming(null);
+      <IconButton icon="plus" label={t("repeater_new_tab")} onClick={create} />
+      {current ? (
+        <>
+          <span className="toolbar-separator" />
+          {renaming === current.id ? (
+            <form
+              className="row repeater-rename"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const input = new FormData(event.currentTarget).get("name");
+                store().renameRepeaterTab(current.id, String(input ?? ""));
+                setRenaming(null);
+              }}
+            >
+              <input
+                name="name"
+                aria-label={t("repeater_tab_name")}
+                defaultValue={current.name}
+                maxLength={60}
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.stopPropagation();
+                    setRenaming(null);
+                  }
                 }}
-              >
-                <input
-                  name="name"
-                  aria-label={t("repeater_tab_name")}
-                  defaultValue={current.name}
-                  maxLength={60}
-                  autoFocus
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      event.stopPropagation();
-                      setRenaming(null);
-                    }
-                  }}
-                />
-                <button type="submit">{t("repeater_tab_rename_save")}</button>
-              </form>
-            ) : (
-              <button type="button" onClick={() => setRenaming(current.id)}>
-                {t("repeater_tab_rename")}
-              </button>
-            )}
-            <button type="button" onClick={duplicate}>
-              {t("repeater_tab_duplicate")}
-            </button>
-            <button type="button" onClick={close}>
-              {t("repeater_tab_close")}
-            </button>
-          </>
-        ) : null}
-      </div>
+              />
+              <button type="submit">{t("repeater_tab_rename_save")}</button>
+            </form>
+          ) : (
+            <IconButton
+              icon="edit"
+              label={t("repeater_tab_rename")}
+              onClick={() => setRenaming(current.id)}
+            />
+          )}
+          <IconButton icon="copy" label={t("repeater_tab_duplicate")} onClick={duplicate} />
+          <IconButton icon="close" label={t("repeater_tab_close")} onClick={close} />
+        </>
+      ) : null}
     </div>
   );
 }
