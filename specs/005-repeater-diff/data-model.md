@@ -15,7 +15,7 @@ van a `LIMITS` (`schemas/limits.ts`). Tipos de 002 reutilizados: `Header`, `Body
 | `ignoreEndpointsMax` | 500 | R10 |
 | `ignoreEntriesMax` | 100 | R10 |
 | `diffChangesMax` | 50,000 | R7 (corte con `truncated`) |
-| `diffLineEditsMax` | 20,000 | R8 |
+| `diffLineEditsMax` | 5,000 | R8 (Myers es O(N·D): el peor caso queda < 1 s) |
 
 `bodyBytes` (5 MB), `urlMax` y los de headers son los de 002.
 

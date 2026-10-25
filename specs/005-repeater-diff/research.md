@@ -150,7 +150,7 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
 
 - **Decision**: `diffLines(before, after)` con el algoritmo de Myers O(ND) (variante lineal en
   espacio) en `packages/domain/src/diff/lines.ts`, sin dependencias. Normaliza fin de línea
-  (`\r\n` ⇒ `\n`). Presupuesto: si el número de ediciones supera 20,000 líneas, devuelve
+  (`\r\n` ⇒ `\n`). Presupuesto: si el número de ediciones supera 5,000 líneas, devuelve
   `truncated: true` con el recuento de líneas de cada lado y el diff se muestra como "demasiadas
   diferencias para mostrarlas por línea" (edge case de bodies grandes). Hasta 5 MB por lado.
 - **Rationale**: Myers es el estándar (git, jsdiff) y en ~120 líneas da resultados mínimos y
@@ -346,6 +346,9 @@ sin violaciones de CSP. Sin respaldo.
   request pudo salir y se enviaría dos veces.
 - **`getBody` con `binary`**: el body no textual de un request vuelve en base64 solo si lo pide el
   repeater; el detalle de Tráfico sigue igual.
+- **Límite del diff por líneas en 5,000 ediciones** (no 20,000): Myers cuesta O(N·D) y con 20,000
+  ediciones el peor caso tardaba 9,5 s en Node; con 5,000 queda por debajo de 1 s. Por encima, el
+  diff dice "demasiadas diferencias para mostrarlas por línea" (edge case de bodies grandes).
 - **Preferencia `split.repeater`** dentro de `nahual.ui.v1.split` (no una clave aparte), con default
   0.5 para preferencias guardadas por 004.
 

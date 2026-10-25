@@ -49,7 +49,8 @@ export const LIMITS = {
   ignoreEndpointsMax: 500,
   ignoreEntriesMax: 100,
   diffChangesMax: 50_000,
-  diffLineEditsMax: 20_000,
+  /** Myers es O(N·D): con 5,000 ediciones el peor caso queda por debajo de 1 s (research R8). */
+  diffLineEditsMax: 5_000,
 } as const;
 
 /** Token HTTP (RFC 9110, sección 5.6.2). */
