@@ -79,9 +79,12 @@ export type HookResponse = NahualHookResponse;
 export type BodyInfo = NahualBodyInfo;
 export type RespondInit = NahualRespondInit;
 /** Firma de un hook: `export default (ctx: HookContext) => ...`. */
+// `void` es parte del contrato: un hook puede no devolver nada (contracts/hook-api.md).
+/* eslint-disable @typescript-eslint/no-invalid-void-type */
 export type Hook = (
   ctx: NahualHookContext,
 ) => NahualHookContext | void | Promise<NahualHookContext | void>;
+/* eslint-enable @typescript-eslint/no-invalid-void-type */
 
 declare global {
   type HookContext = NahualHookContext;

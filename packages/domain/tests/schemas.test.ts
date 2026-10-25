@@ -187,7 +187,7 @@ describe("ActionSchema", () => {
       expect(act({ ...hook, permissions: { changeDestination: false } })).toBe(false);
       expect(act({ ...hook, check: { hash: "xyz", ok: true } })).toBe(false);
       expect(act({ ...hook, extra: 1 })).toBe(false);
-      const { imported: _imported, ...missing } = hook;
+      const missing = Object.fromEntries(Object.entries(hook).filter(([k]) => k !== "imported"));
       expect(act(missing)).toBe(false);
     });
   });

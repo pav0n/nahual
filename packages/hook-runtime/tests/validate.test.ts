@@ -47,7 +47,7 @@ describe("validateHookResult (R6, FR-010, FR-011)", () => {
 
   it("valida con las reglas de 002: URL no http, método inválido, header con nombre inválido", () => {
     const url = requestContext();
-    url.request.url = "javascript:alert(1)";
+    url.request.url = "ftp://files.test/a";
     expect(validateHookResult(requestContext(), url, null, YES)).toMatchObject({
       kind: "error",
       field: "url",

@@ -44,7 +44,7 @@ describe("createHookState (R7, FR-008, FR-009)", () => {
     };
     const first = Array.from({ length: 20 }, attempt);
     const retries = first.filter((a) => state.commit(a.version, a.value) === "conflict");
-    for (const _ of retries) {
+    for (let r = 0; r < retries.length; r++) {
       let saved = false;
       for (let i = 1; i < LIMITS.hookStateAttempts && !saved; i++) {
         const next = attempt();
