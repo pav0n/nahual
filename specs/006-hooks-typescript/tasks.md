@@ -131,8 +131,8 @@ la pestaña Hooks del detalle muestra regla, resultado, duración y "body".
 ### E2E y checkpoint
 
 - [X] T041 [US1] `e2e/hooks-write.spec.ts` con la UI: escenarios 1–14 de US1 (editor y ejemplo; autocompletado de `ctx.`; error de tipo bloquea activar; header añadido en Request llega al eco; campo JSON cambiado en Response; sin retorno = sin cambios; asíncrono; contador en `state` que sigue tras recargar; las tres plantillas; cadena de dos hooks; destino sin y con permiso; `respond` en Request sin llegar a la API; `Authorization` enmascarado sin permiso; pestaña Hooks); el chunk del editor no se descarga hasta elegir la acción (FR-019)
-- [ ] T042 [US1] Ampliar `e2e/a11y.spec.ts`: axe sin violaciones serias en el editor (con errores y con sugerencias abiertas) y en la pestaña Hooks, en claro y oscuro a 320 px; recorrido solo con teclado: elegir la acción, escribir, aceptar una sugerencia, salir con Esc + Tab, marcar un permiso y guardar con `Ctrl+S`
-- [ ] T043 [US1] Capturas de US1 en `e2e/visual/panel.visual.spec.ts` (editor con código, con error y con sugerencias; pestaña Hooks) en claro y oscuro a 320, 800 y 1280 px; revisar cada una junto a una captura de Sources y de la pestaña Timing de DevTools en el mismo tema y anotar en research.md "Resultados" cualquier diferencia que quede
+- [X] T042 [US1] Ampliar `e2e/a11y.spec.ts`: axe sin violaciones serias en el editor (con errores y con sugerencias abiertas) y en la pestaña Hooks, en claro y oscuro a 320 px; recorrido solo con teclado: elegir la acción, escribir, aceptar una sugerencia, salir con Esc + Tab, marcar un permiso y guardar con `Ctrl+S`
+- [X] T043 [US1] Capturas de US1 en `e2e/visual/panel.visual.spec.ts` (editor con código, con error y con sugerencias; pestaña Hooks) en claro y oscuro a 320, 800 y 1280 px; revisar cada una junto a una captura de Sources y de la pestaña Timing de DevTools en el mismo tema y anotar en research.md "Resultados" cualquier diferencia que quede
 
 **Checkpoint (demostrable)**: pasos 1–10 de quickstart.md; `pnpm e2e` en verde.
 

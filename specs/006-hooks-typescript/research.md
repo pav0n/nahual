@@ -387,3 +387,19 @@ y 1280 px.
 - **Suite de escape** (`e2e/hooks-escape.spec.ts`, T022/T031): 16 vectores × 2 destinos (API y
   tercer origen) = 32 casos en verde; ningún request llega a `/leak`.
 - **Zod 4.6.6**: ver plan.md "Dependencias".
+
+### Interfaz frente a DevTools (US1, T043)
+
+- **D3** (`e2e/experiments/d3-devtools-syntax.spec.ts`, Chromium 156): tokens de sintaxis de
+  Sources (`--sys-color-token-*`), superficies de error y aviso de Console
+  (`--sys-color-surface-error`, `--sys-color-surface-yellow` y sus textos) y la fuente del editor
+  (`--source-code-font-family`: Noto Sans Mono, 11 px). Se copiaron a `--nh-syntax-*`,
+  `--nh-console-*` y `--nh-source-*`; todos superan 4,5:1 sobre su fondo en ambos temas.
+- **Revisión de las capturas** (`e2e/visual`, claro y oscuro a 320, 800 y 1280 px): el editor
+  coincide con Sources (fuente, numeración en gris, línea activa, colores, subrayado ondulado y
+  marca de error en el margen); la pestaña Hooks coincide con Timing (tabla compacta, cabecera en
+  la superficie de barra) y su error con una fila de error de Console. Diferencia que queda: la
+  caja de sugerencias muestra como mucho 10 opciones a la vez (Sources muestra más con scroll),
+  porque una lista con scroll propio no es enfocable y axe la marca (`scrollable-region-focusable`).
+- **Teclado**: "Esc y luego Tab" sale del editor (lo trae CodeMirror, con 2 s de margen); con las
+  sugerencias abiertas, la primera Esc las cierra, como en Sources.

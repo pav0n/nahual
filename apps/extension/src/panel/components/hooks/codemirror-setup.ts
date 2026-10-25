@@ -75,6 +75,12 @@ const theme = EditorView.theme({
     fontFamily: "var(--nh-source-font)",
     fontSize: "var(--nh-source-size)",
   },
+  // `clip` recorta igual que `hidden` sin crear una región con scroll (axe: las opciones no son
+  // enfocables; el foco se queda en el editor con aria-activedescendant).
+  ".cm-tooltip.cm-tooltip-autocomplete > ul > li": { overflow: "clip" },
+  // Se muestran pocas opciones a la vez (CodeMirror desplaza la ventana con la selección): la
+  // lista no necesita scroll propio, que axe marcaría por no ser enfocable.
+  ".cm-tooltip.cm-tooltip-autocomplete > ul": { maxHeight: "none", overflow: "clip" },
   ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
     backgroundColor: "var(--nh-selected)",
     color: "var(--nh-selected-text)",
@@ -143,6 +149,7 @@ export function hookEditorExtensions(
       { delay: 300 },
     ),
     autocompletion({
+      maxRenderedOptions: 10,
       override: [
         async (context) => {
           const word = context.matchBefore(/[\w$]*/);
