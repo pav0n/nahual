@@ -155,7 +155,8 @@ test("pestañas y adjuntar solo con teclado", async ({
   await expect(sectionTab(panel, "Rules")).toHaveAttribute("aria-selected", "true");
   await expect(sectionTab(panel, "Rules")).toBeFocused();
   await panel.keyboard.press("End");
-  await expect(sectionTab(panel, "Paused")).toHaveAttribute("aria-selected", "true");
+  // 005: Repeater es la última sección.
+  await expect(sectionTab(panel, "Repeater")).toHaveAttribute("aria-selected", "true");
   await panel.keyboard.press("Home");
   await expect(sectionTab(panel, "Traffic")).toHaveAttribute("aria-selected", "true");
 
@@ -513,3 +514,138 @@ for (const colorScheme of ["light", "dark"] as const) {
     await panel.keyboard.press("Escape");
   });
 }
+
+/**
+ * Pulsa Tab (y si no lo alcanza, Shift+Tab) hasta enfocar el elemento, como haría el dev;
+ * `true` si lo alcanzó.
+ */
+async function tabTo(panel: Page, target: ReturnType<Page["locator"]>) {
+  const focused = () => target.evaluate((el) => el === document.activeElement);
+  for (const key of ["Tab", "Shift+Tab"]) {
+    for (let i = 0; i < 150; i++) {
+      if (await focused()) return true;
+      await panel.keyboard.press(key);
+    }
+  }
+  return focused();
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`005 US1: repeater en tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await callApi(app, "items");
+
+    await openSection(panel, "Repeater");
+    await expectNoSeriousViolations(panel, "repeater vacío");
+    await expectNoHorizontalScroll(panel);
+
+    await openSection(panel, "Traffic");
+    await trafficRow(panel, "/api/items").click({ button: "right" });
+    await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
+    const r = panel.locator(".repeater");
+    await expect(r.getByRole("tab", { selected: true })).toBeVisible();
+    await expectNoSeriousViolations(panel, "repeater con pestaña");
+    await expectNoHorizontalScroll(panel);
+
+    // Editor con errores.
+    await r.getByLabel("URL", { exact: true }).fill("no es una url");
+    await r.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(r.getByRole("alert")).toBeVisible();
+    await expectNoSeriousViolations(panel, "editor con errores");
+
+    // Envío en curso, resultado con error e historial.
+    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/slow?ms=4000`);
+    await r.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(r.getByText("Sending…").first()).toBeVisible();
+    await expectNoSeriousViolations(panel, "envío en curso");
+    await r.getByRole("button", { name: "Cancel" }).click();
+    await expect(r.locator(".send-result").getByRole("alert")).toBeVisible();
+    await expectNoSeriousViolations(panel, "resultado con error");
+    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/api/items`);
+    await r.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(r.locator(".history-item")).toHaveCount(2);
+    await expectNoSeriousViolations(panel, "historial");
+    await expectNoHorizontalScroll(panel);
+  });
+}
+
+test("005 FR-033: repeater solo con teclado", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1000, height: 800 });
+  await attach(panel);
+  await app.reload();
+  await callApi(app, "items");
+
+  // Shift+F10 sobre la fila ⇒ "Send to repeater".
+  const row = trafficRow(panel, "/api/items");
+  await row.focus();
+  await panel.keyboard.press("Shift+F10");
+  await panel.keyboard.press("ArrowDown");
+  await expect(panel.getByRole("menuitem", { name: "Send to repeater" })).toBeFocused();
+  await panel.keyboard.press("Enter");
+  const r = panel.locator(".repeater");
+  await expect(r.getByRole("tab", { selected: true })).toBeVisible();
+
+  // Editar la URL, un header y enviar con Ctrl+Enter.
+  const url = r.getByLabel("URL", { exact: true });
+  expect(await tabTo(panel, url)).toBe(true);
+  await panel.keyboard.press("Control+A");
+  await panel.keyboard.type(`${servers.apiOrigin}/echo`);
+  expect(await tabTo(panel, r.getByRole("button", { name: "Add header" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await panel.keyboard.press("Shift+Tab");
+  await panel.keyboard.press("Shift+Tab");
+  await panel.keyboard.press("Shift+Tab");
+  await panel.keyboard.type("x-custom");
+  await panel.keyboard.press("Control+Enter");
+  await expect(r.locator(".send-result").getByLabel("Response body")).toContainText(
+    "nahual_session",
+  );
+
+  // Modo, pestañas, renombrar y cerrar con deshacer.
+  expect(await tabTo(panel, r.getByRole("button", { name: "Clean context" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(r.getByRole("button", { name: "Clean context" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(await tabTo(panel, r.getByRole("button", { name: "New tab" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  expect(await tabTo(panel, r.getByRole("tab", { selected: true }))).toBe(true);
+  await panel.keyboard.press("ArrowLeft");
+  await expect(r.getByRole("tab", { name: "GET /api/items" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(await tabTo(panel, r.getByRole("button", { name: "Rename" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(r.getByLabel("Tab name")).toBeFocused();
+  await panel.keyboard.press("Control+A");
+  await panel.keyboard.type("Echo");
+  await panel.keyboard.press("Enter");
+  await expect(r.getByRole("tab", { selected: true })).toHaveText("Echo");
+  expect(await tabTo(panel, r.getByRole("button", { name: "Close tab" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(r.getByRole("tab")).toHaveCount(1);
+  expect(await tabTo(panel, panel.getByRole("button", { name: "Undo" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(r.getByRole("tab")).toHaveCount(2);
+});

@@ -10,6 +10,11 @@ export interface RepeaterTab {
   id: string;
   name: string;
   mode: RepeaterMode;
+  /**
+   * Sitio de la sesión al crear la pestaña: el contexto de página solo envía desde ese sitio
+   * (FR-012); en otro, saldría con otras cookies y otro origen.
+   */
+  site: string | null;
   draft: RepeaterRequest;
   /** Request capturado del que salió y su respuesta original (FR-002). */
   source: { exchangeId: string; request: RepeaterRequest; response: ComparableResponse } | null;

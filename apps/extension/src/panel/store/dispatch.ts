@@ -52,6 +52,9 @@ export function dispatchSwEvent(message: SwMessage): void {
     case "notice":
       store.pushNotice(message.payload.messageKey, message.payload.params);
       break;
+    case "repeaterResult":
+      store.applyRepeaterResult(message.payload);
+      break;
     case "rules":
       store.setRules(message.payload.rules);
       for (const d of message.payload.discarded) store.pushNotice(d.reasonKey, [String(d.count)]);

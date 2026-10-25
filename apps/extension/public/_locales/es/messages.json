@@ -1552,5 +1552,230 @@
   },
   "shortcut_desc_prev_change": {
     "message": "Ir al cambio anterior del diff"
+  },
+  "action_send_to_repeater": {
+    "message": "Enviar al repeater"
+  },
+  "traffic_repeater": {
+    "message": "repeater"
+  },
+  "repeater_tabs_label": {
+    "message": "Pestañas del repeater"
+  },
+  "repeater_tabs_full": {
+    "message": "Ya hay 20 pestañas del repeater abiertas. Cierra alguna para abrir otra."
+  },
+  "repeater_url_truncated": {
+    "message": "La URL de este request era demasiado larga y se recortó al capturarla: revísala antes de enviar."
+  },
+  "repeater_tab_rename": {
+    "message": "Renombrar"
+  },
+  "repeater_tab_rename_save": {
+    "message": "Guardar nombre"
+  },
+  "repeater_tab_name": {
+    "message": "Nombre de la pestaña"
+  },
+  "repeater_tab_duplicate": {
+    "message": "Duplicar"
+  },
+  "repeater_tab_close": {
+    "message": "Cerrar pestaña"
+  },
+  "repeater_tab_closed": {
+    "message": "Pestaña «$1» cerrada."
+  },
+  "repeater_tab_copy": {
+    "message": "$1 (copia)"
+  },
+  "repeater_mode_label": {
+    "message": "Modo de envío"
+  },
+  "repeater_mode_page": {
+    "message": "Contexto de página"
+  },
+  "repeater_mode_clean": {
+    "message": "Contexto limpio"
+  },
+  "repeater_mode_page_hint": {
+    "message": "Se envía desde la pestaña, con sus cookies y su origen, y pasa por tus reglas."
+  },
+  "repeater_mode_clean_hint": {
+    "message": "Se envía desde Nahual, sin cookies ni sesión, como un cliente que no ha iniciado sesión."
+  },
+  "repeater_page_unavailable": {
+    "message": "Contexto de página no disponible: Nahual no está adjunto a la pestaña. Adjúntalo o usa el contexto limpio."
+  },
+  "repeater_send": {
+    "message": "Enviar"
+  },
+  "repeater_sending": {
+    "message": "Enviando…"
+  },
+  "repeater_divider": {
+    "message": "Divisor entre el request y la respuesta"
+  },
+  "repeater_editor_label": {
+    "message": "Request a enviar"
+  },
+  "repeater_header_enabled": {
+    "message": "Enviar el header $1"
+  },
+  "repeater_header_forbidden": {
+    "message": "El navegador no deja fijar este header: lo ignora o pone el suyo."
+  },
+  "repeater_body_original": {
+    "message": "Body original no editable ($1, $2): se reenvía intacto."
+  },
+  "repeater_body_replace": {
+    "message": "Reemplazar por texto"
+  },
+  "repeater_body_replaced": {
+    "message": "Body original reemplazado por texto."
+  },
+  "repeater_body_none_unavailable": {
+    "message": "El body original no es texto y Nahual ya no lo conserva: el envío no lo reproducirá."
+  },
+  "repeater_body_none_evicted": {
+    "message": "El body original ya no está disponible (se descartó del historial): el envío no lo reproducirá."
+  },
+  "repeater_body_none_tooLarge": {
+    "message": "El body original pasa de 5 MB y no se conserva: el envío no lo reproducirá."
+  },
+  "repeater_result_label": {
+    "message": "Resultado del envío"
+  },
+  "repeater_no_result": {
+    "message": "Aún no has enviado este request."
+  },
+  "repeater_state_pending": {
+    "message": "Enviando"
+  },
+  "repeater_state_done": {
+    "message": "Hecho"
+  },
+  "repeater_state_failed": {
+    "message": "Falló"
+  },
+  "repeater_state_cancelled": {
+    "message": "Cancelado"
+  },
+  "repeater_open_rule": {
+    "message": "Ver reglas"
+  },
+  "repeater_preflight": {
+    "message": "Hubo preflight CORS (status $1)."
+  },
+  "repeater_preflight_blocked": {
+    "message": "El preflight CORS bloqueó el request (status $1)."
+  },
+  "repeater_relaxed": {
+    "message": "La relajación CORS de desarrollo actuó en este envío."
+  },
+  "repeater_cors_blocked_detail": {
+    "message": "Abre el request en Tráfico para ver el diagnóstico CORS completo."
+  },
+  "repeater_not_sent_headers": {
+    "message": "No se enviaron tal cual (el navegador no lo permite): $1"
+  },
+  "repeater_use_page": {
+    "message": "Usar contexto de página"
+  },
+  "repeater_history_title": {
+    "message": "Historial"
+  },
+  "repeater_history_label": {
+    "message": "Historial de envíos"
+  },
+  "repeater_history_empty": {
+    "message": "Cada envío aparecerá aquí con su status, tiempo y tamaño."
+  },
+  "repeater_history_item": {
+    "message": "Envío $1: $2"
+  },
+  "repeater_history_dropped": {
+    "message": "Se descartaron $1 envíos antiguos (se guardan los 50 más recientes)."
+  },
+  "repeater_load_in_editor": {
+    "message": "Cargar en el editor"
+  },
+  "repeater_error_invalid_request": {
+    "message": "El request no es válido: corrige los campos marcados."
+  },
+  "repeater_error_invalid_request_fix": {
+    "message": "Revisa método, URL, headers y body."
+  },
+  "repeater_error_not_attached": {
+    "message": "Nahual no está adjunto a la pestaña."
+  },
+  "repeater_error_not_attached_fix": {
+    "message": "Adjunta Nahual desde el estado de sesión o usa el contexto limpio."
+  },
+  "repeater_error_context_lost": {
+    "message": "La pestaña navegó, se cerró o se soltó el debugger durante el envío."
+  },
+  "repeater_error_context_lost_fix": {
+    "message": "Vuelve a enviar cuando la página esté lista, o usa el contexto limpio."
+  },
+  "repeater_error_network": {
+    "message": "Error de red: $1"
+  },
+  "repeater_error_network_fix": {
+    "message": "Comprueba que el servidor responde y que la URL es correcta."
+  },
+  "repeater_error_cors_blocked": {
+    "message": "El navegador bloqueó la respuesta por CORS."
+  },
+  "repeater_error_cors_blocked_fix": {
+    "message": "Mira el diagnóstico en Tráfico; puedes permitir CORS para desarrollo o usar el contexto limpio."
+  },
+  "repeater_error_permission_required": {
+    "message": "Nahual necesita acceso a $1 para enviar en contexto limpio."
+  },
+  "repeater_error_permission_required_fix": {
+    "message": "Vuelve a pulsar Enviar y concede el acceso, o usa el contexto de página."
+  },
+  "repeater_error_permission_denied": {
+    "message": "No se concedió acceso a $1."
+  },
+  "repeater_error_permission_denied_fix": {
+    "message": "Sin ese acceso, el contexto limpio no puede leer la respuesta: usa el contexto de página."
+  },
+  "repeater_error_timeout": {
+    "message": "Sin respuesta tras 5 minutos."
+  },
+  "repeater_error_timeout_fix": {
+    "message": "El servidor no respondió o una regla mantuvo el request pausado; vuelve a intentarlo."
+  },
+  "repeater_error_cancelled": {
+    "message": "Envío cancelado."
+  },
+  "repeater_error_cancelled_fix": {
+    "message": "Pulsa Enviar para volver a intentarlo."
+  },
+  "repeater_error_body_too_large": {
+    "message": "El body pasa de 5 MB."
+  },
+  "repeater_error_body_too_large_fix": {
+    "message": "Reduce el body a 5 MB o menos."
+  },
+  "settings_origin_access": {
+    "message": "Acceso para el contexto limpio del repeater"
+  },
+  "settings_origin_access_hint": {
+    "message": "Orígenes a los que diste acceso para enviar sin sesión. Quitarlo no afecta al contexto de página."
+  },
+  "settings_origin_access_empty": {
+    "message": "Ningún origen tiene acceso."
+  },
+  "settings_origin_access_remove": {
+    "message": "Quitar el acceso a $1"
+  },
+  "repeater_page_other_site": {
+    "message": "Contexto de página no disponible: la pestaña ya no está en $1 y enviaría con otras cookies y otro origen. Vuelve a ese sitio o usa el contexto limpio."
+  },
+  "repeater_output_label": {
+    "message": "Respuesta e historial"
   }
 }

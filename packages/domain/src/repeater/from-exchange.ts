@@ -1,4 +1,5 @@
 import { pathOf } from "../rule-from-exchange.ts";
+import { isForbiddenHeader } from "./forbidden-headers.ts";
 import type { CapturedExchange } from "../schemas/exchange.ts";
 import { LIMITS } from "../schemas/limits.ts";
 import {
@@ -36,8 +37,8 @@ function bodyOf(exchange: CapturedExchange, body: CapturedRequestBody): Repeater
 
 /**
  * Pestaña nueva del repeater a partir de un request capturado (005, FR-002, FR-002a): método,
- * URL y headers activos (los que el editor no admite se omiten) y el body si se conserva. El
- * nombre por defecto es `MÉTODO /ruta`.
+ * URL, headers (activos salvo los que el navegador no deja fijar; los que el editor no admite se
+ * omiten) y el body si se conserva. El nombre por defecto es `MÉTODO /ruta`.
  */
 export function repeaterRequestFromExchange(
   exchange: CapturedExchange,
@@ -45,7 +46,9 @@ export function repeaterRequestFromExchange(
 ): { request: RepeaterRequest; name: string; truncatedUrl: boolean } {
   const headers: RepeaterHeader[] = [];
   for (const { name, value } of exchange.requestHeaders) {
-    const header = { name, value, enabled: true };
+    // Los que pone el navegador (`sec-*`, `referer`, `cookie`…) se copian desactivados: igual
+    // no saldrían tal cual (FR-008) y así no llenan el editor de avisos.
+    const header = { name, value, enabled: !isForbiddenHeader(name) };
     if (RepeaterHeaderSchema.safeParse(header).success) headers.push(header);
     if (headers.length === LIMITS.repeaterHeadersMax) break;
   }

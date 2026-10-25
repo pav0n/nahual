@@ -1552,5 +1552,230 @@
   },
   "shortcut_desc_prev_change": {
     "message": "Go to the previous diff change"
+  },
+  "action_send_to_repeater": {
+    "message": "Send to repeater"
+  },
+  "traffic_repeater": {
+    "message": "repeater"
+  },
+  "repeater_tabs_label": {
+    "message": "Repeater tabs"
+  },
+  "repeater_tabs_full": {
+    "message": "There are already 20 repeater tabs open. Close one to open another."
+  },
+  "repeater_url_truncated": {
+    "message": "This request's URL was too long and was cut when captured: check it before sending."
+  },
+  "repeater_tab_rename": {
+    "message": "Rename"
+  },
+  "repeater_tab_rename_save": {
+    "message": "Save name"
+  },
+  "repeater_tab_name": {
+    "message": "Tab name"
+  },
+  "repeater_tab_duplicate": {
+    "message": "Duplicate"
+  },
+  "repeater_tab_close": {
+    "message": "Close tab"
+  },
+  "repeater_tab_closed": {
+    "message": "Tab \"$1\" closed."
+  },
+  "repeater_tab_copy": {
+    "message": "$1 (copy)"
+  },
+  "repeater_mode_label": {
+    "message": "Send mode"
+  },
+  "repeater_mode_page": {
+    "message": "Page context"
+  },
+  "repeater_mode_clean": {
+    "message": "Clean context"
+  },
+  "repeater_mode_page_hint": {
+    "message": "Sent from the tab, with its cookies and origin, and through your rules."
+  },
+  "repeater_mode_clean_hint": {
+    "message": "Sent from Nahual, without cookies or session, like a signed-out client."
+  },
+  "repeater_page_unavailable": {
+    "message": "Page context unavailable: Nahual is not attached to the tab. Attach it or use the clean context."
+  },
+  "repeater_send": {
+    "message": "Send"
+  },
+  "repeater_sending": {
+    "message": "Sending…"
+  },
+  "repeater_divider": {
+    "message": "Divider between request and response"
+  },
+  "repeater_editor_label": {
+    "message": "Request to send"
+  },
+  "repeater_header_enabled": {
+    "message": "Send header $1"
+  },
+  "repeater_header_forbidden": {
+    "message": "The browser does not let you set this header: it ignores it or sets its own."
+  },
+  "repeater_body_original": {
+    "message": "Original body, not editable ($1, $2): it is resent intact."
+  },
+  "repeater_body_replace": {
+    "message": "Replace with text"
+  },
+  "repeater_body_replaced": {
+    "message": "Original body replaced with text."
+  },
+  "repeater_body_none_unavailable": {
+    "message": "The original body is not text and Nahual no longer has it: the send will not reproduce it."
+  },
+  "repeater_body_none_evicted": {
+    "message": "The original body is no longer available (dropped from history): the send will not reproduce it."
+  },
+  "repeater_body_none_tooLarge": {
+    "message": "The original body is over 5 MB and is not kept: the send will not reproduce it."
+  },
+  "repeater_result_label": {
+    "message": "Send result"
+  },
+  "repeater_no_result": {
+    "message": "You haven't sent this request yet."
+  },
+  "repeater_state_pending": {
+    "message": "Sending"
+  },
+  "repeater_state_done": {
+    "message": "Done"
+  },
+  "repeater_state_failed": {
+    "message": "Failed"
+  },
+  "repeater_state_cancelled": {
+    "message": "Cancelled"
+  },
+  "repeater_open_rule": {
+    "message": "View rules"
+  },
+  "repeater_preflight": {
+    "message": "There was a CORS preflight (status $1)."
+  },
+  "repeater_preflight_blocked": {
+    "message": "The CORS preflight blocked the request (status $1)."
+  },
+  "repeater_relaxed": {
+    "message": "The development CORS relaxation acted on this send."
+  },
+  "repeater_cors_blocked_detail": {
+    "message": "Open the request in Traffic to see the full CORS diagnosis."
+  },
+  "repeater_not_sent_headers": {
+    "message": "Not sent as written (the browser does not allow it): $1"
+  },
+  "repeater_use_page": {
+    "message": "Use page context"
+  },
+  "repeater_history_title": {
+    "message": "History"
+  },
+  "repeater_history_label": {
+    "message": "Send history"
+  },
+  "repeater_history_empty": {
+    "message": "Each send will show up here with its status, time and size."
+  },
+  "repeater_history_item": {
+    "message": "Send $1: $2"
+  },
+  "repeater_history_dropped": {
+    "message": "$1 older sends were dropped (the 50 most recent are kept)."
+  },
+  "repeater_load_in_editor": {
+    "message": "Load into editor"
+  },
+  "repeater_error_invalid_request": {
+    "message": "The request is not valid: fix the marked fields."
+  },
+  "repeater_error_invalid_request_fix": {
+    "message": "Check the method, URL, headers and body."
+  },
+  "repeater_error_not_attached": {
+    "message": "Nahual is not attached to the tab."
+  },
+  "repeater_error_not_attached_fix": {
+    "message": "Attach Nahual from the session status or use the clean context."
+  },
+  "repeater_error_context_lost": {
+    "message": "The tab navigated, closed or the debugger was released during the send."
+  },
+  "repeater_error_context_lost_fix": {
+    "message": "Send again when the page is ready, or use the clean context."
+  },
+  "repeater_error_network": {
+    "message": "Network error: $1"
+  },
+  "repeater_error_network_fix": {
+    "message": "Check that the server responds and that the URL is right."
+  },
+  "repeater_error_cors_blocked": {
+    "message": "The browser blocked the response because of CORS."
+  },
+  "repeater_error_cors_blocked_fix": {
+    "message": "See the diagnosis in Traffic; you can allow CORS for development or use the clean context."
+  },
+  "repeater_error_permission_required": {
+    "message": "Nahual needs access to $1 to send in clean context."
+  },
+  "repeater_error_permission_required_fix": {
+    "message": "Press Send again and grant access, or use the page context."
+  },
+  "repeater_error_permission_denied": {
+    "message": "Access to $1 was not granted."
+  },
+  "repeater_error_permission_denied_fix": {
+    "message": "Without that access the clean context cannot read the response: use the page context."
+  },
+  "repeater_error_timeout": {
+    "message": "No response after 5 minutes."
+  },
+  "repeater_error_timeout_fix": {
+    "message": "The server did not respond or a rule kept the request paused; try again."
+  },
+  "repeater_error_cancelled": {
+    "message": "Send cancelled."
+  },
+  "repeater_error_cancelled_fix": {
+    "message": "Press Send to try again."
+  },
+  "repeater_error_body_too_large": {
+    "message": "The body is over 5 MB."
+  },
+  "repeater_error_body_too_large_fix": {
+    "message": "Reduce the body to 5 MB or less."
+  },
+  "settings_origin_access": {
+    "message": "Access for the repeater clean context"
+  },
+  "settings_origin_access_hint": {
+    "message": "Origins you gave access to for sending without a session. Removing it does not affect the page context."
+  },
+  "settings_origin_access_empty": {
+    "message": "No origin has access."
+  },
+  "settings_origin_access_remove": {
+    "message": "Remove access to $1"
+  },
+  "repeater_page_other_site": {
+    "message": "Page context unavailable: the tab is no longer on $1 and would send with other cookies and another origin. Go back to that site or use the clean context."
+  },
+  "repeater_output_label": {
+    "message": "Response and history"
   }
 }

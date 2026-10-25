@@ -326,4 +326,27 @@ sustituye la respuesta del diálogo. El build de producción no tiene `host_perm
 `new Worker(new URL("./diff.worker.ts", import.meta.url), { type: "module" })` responde al ping
 sin violaciones de CSP. Sin respaldo.
 
-*Por registrar durante la implementación: mediciones de R18 y tamaño de los bundles.*
+### Mediciones de US1
+
+- **SC-001** (parte automática, `e2e/repeater-send.spec.ts`, `@perf`): de "Send to repeater" a la
+  respuesta mostrada, 302 ms en el fixture local (meta < 2 s; el resto de los 10 s es la persona).
+
+### Decisiones tomadas al implementar US1
+
+- **Headers del navegador copiados desactivados**: al abrir un request capturado, los headers que
+  `fetch` no deja fijar (`sec-*`, `referer`, `origin`, `cookie`…) llegan desactivados. Saldrían
+  igual del navegador y, activos, llenaban el editor de avisos (13 en un GET típico).
+- **Contexto de página atado al sitio de la pestaña**: cada pestaña del repeater recuerda el sitio
+  de la sesión al crearse; si la pestaña inspeccionada está en otro sitio, el modo se deshabilita
+  con el motivo (FR-012, US1-8), porque enviaría con otras cookies y otro origen.
+- **Permiso en el clic**: el panel llama a `chrome.permissions.request` antes de cualquier espera
+  (resuelve al instante si el origen ya tiene acceso), así el gesto del dev sigue vigente.
+- **Reintento solo si el contexto no existía**: `page-send` recrea el mundo aislado y reintenta
+  solo ante "Cannot find context"; si se destruyó a mitad del envío no reintenta, porque el
+  request pudo salir y se enviaría dos veces.
+- **`getBody` con `binary`**: el body no textual de un request vuelve en base64 solo si lo pide el
+  repeater; el detalle de Tráfico sigue igual.
+- **Preferencia `split.repeater`** dentro de `nahual.ui.v1.split` (no una clave aparte), con default
+  0.5 para preferencias guardadas por 004.
+
+*Por registrar durante la implementación: resto de mediciones de R18 y tamaño de los bundles.*

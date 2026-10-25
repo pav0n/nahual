@@ -25,7 +25,7 @@ van a `LIMITS` (`schemas/limits.ts`). Tipos de 002 reutilizados: `Header`, `Body
 |---|---|---|
 | `method` | string | `/^[A-Za-z]+$/`, 1–64 caracteres (como el editor de pausados) |
 | `url` | string | URL absoluta `http:`/`https:`, ≤ `LIMITS.urlMax` |
-| `headers` | `{ name, value, enabled }[]` | ≤ `repeaterHeadersMax`; nombre válido de header HTTP; solo los `enabled` se envían |
+| `headers` | `{ name, value, enabled }[]` | ≤ `repeaterHeadersMax`; nombre válido de header HTTP; solo los `enabled` se envían; al copiar de un intercambio, los que el navegador no deja fijar llegan desactivados |
 | `body` | `RepeaterBody` | ver abajo |
 
 `RepeaterBody` (unión discriminada por `kind`):

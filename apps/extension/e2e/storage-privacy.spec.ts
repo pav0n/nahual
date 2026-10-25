@@ -121,7 +121,12 @@ test("las preferencias de interfaz no guardan datos de tráfico", async ({
   expect(Object.keys(prefs)).toEqual(["nahual.ui.v1"]);
   const parsed = JSON.parse(prefs["nahual.ui.v1"] ?? "{}") as Record<string, unknown>;
   expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "split", "version"]);
-  expect(Object.keys(parsed.split as object).sort()).toEqual(["paused", "rules", "traffic"]);
+  expect(Object.keys(parsed.split as object).sort()).toEqual([
+    "paused",
+    "repeater",
+    "rules",
+    "traffic",
+  ]);
   for (const leaked of [servers.apiOrigin, servers.appOrigin, "/api/items", "Datos"])
     expect(prefs["nahual.ui.v1"]).not.toContain(leaked);
 });

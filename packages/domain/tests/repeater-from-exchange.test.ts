@@ -106,6 +106,24 @@ describe("repeaterRequestFromExchange (005, FR-002, FR-002a)", () => {
     expect(request.body).toEqual({ kind: "none" });
   });
 
+  it("los headers que pone el navegador se copian desactivados (FR-008)", () => {
+    const { request } = repeaterRequestFromExchange(
+      exchange({
+        requestHeaders: [
+          { name: "Sec-Fetch-Mode", value: "cors" },
+          { name: "Referer", value: "https://app.test/" },
+          { name: "x-a", value: "1" },
+        ],
+      }),
+      null,
+    );
+    expect(request.headers.map((h) => [h.name, h.enabled])).toEqual([
+      ["Sec-Fetch-Mode", false],
+      ["Referer", false],
+      ["x-a", true],
+    ]);
+  });
+
   it("un header que el schema no admite (valor con salto de línea) se omite", () => {
     const { request } = repeaterRequestFromExchange(
       exchange({

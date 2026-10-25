@@ -18,7 +18,7 @@ Pestañas del repeater, requests, respuestas, historial, respuestas pegadas y va
 viven solo en memoria del panel. Nada del repeater va a `chrome.storage.*`, `localStorage`,
 `sessionStorage` ni IndexedDB.
 
-`localStorage` del panel (`nahual.ui.v1`, 004) suma solo `repeaterSplit` (reparto del divisor de
+`localStorage` del panel (`nahual.ui.v1`, 004) suma solo `split.repeater` (reparto del divisor de
 la sección Repeater, 0.2–0.8).
 
 ## Pruebas

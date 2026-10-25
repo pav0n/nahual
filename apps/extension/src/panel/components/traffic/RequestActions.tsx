@@ -6,6 +6,7 @@ import {
   type ActionEffects,
   type ActionState,
 } from "../../actions/request-actions.ts";
+import { openRepeaterFromExchange } from "../../repeater/open-from-exchange.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { Menu } from "../common/Menu.tsx";
 import { Toolbar } from "../common/Toolbar.tsx";
@@ -23,6 +24,7 @@ const effects: ActionEffects = {
     store.selectExchange(exchangeId, tab);
   },
   requestRelax: (exchangeId) => usePanelStore.getState().requestRelax(exchangeId),
+  sendToRepeater: (exchange) => void openRepeaterFromExchange(exchange),
 };
 
 /** Estado que la aplicabilidad necesita, del store. */

@@ -1437,3 +1437,83 @@ dialog.report {
 .rules-pane {
   height: 100%;
 }
+
+/* Repeater (005) */
+.repeater {
+  min-height: 0;
+}
+
+.repeater-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  border-bottom: 1px solid var(--nh-divider);
+  min-width: 0;
+}
+
+.repeater-tab-actions,
+.repeater-toolbar,
+.repeater-mode {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.repeater-mode {
+  display: flex;
+}
+
+.repeater-toolbar {
+  justify-content: flex-start;
+}
+
+.repeater-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.repeater-editor .method input {
+  width: 9ch;
+}
+
+.send-summary {
+  margin: 0;
+}
+
+.send-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.send-history .history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--nh-divider);
+}
+
+.history-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+  border: none;
+  background: transparent;
+}
+
+.history-item[data-selected="true"] .history-select {
+  background: var(--nh-selected);
+}
+
+.tag-repeater {
+  border-color: var(--nh-accent);
+  color: var(--nh-accent);
+}

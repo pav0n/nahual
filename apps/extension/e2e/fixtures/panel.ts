@@ -1,4 +1,10 @@
-import { expect, type BrowserContext, type Page, type Worker } from "@playwright/test";
+import {
+  expect,
+  type BrowserContext,
+  type Locator,
+  type Page,
+  type Worker,
+} from "@playwright/test";
 
 /** tabId de la pestaña con esa URL, vía chrome.debugger.getTargets (sin permiso "tabs"). */
 export async function tabIdOf(worker: Worker, url: string): Promise<number> {
@@ -124,7 +130,7 @@ export interface RuleSpec {
   conditions?: ConditionSpec[];
 }
 
-export type Section = "Traffic" | "Rules" | "Paused";
+export type Section = "Traffic" | "Rules" | "Paused" | "Repeater";
 
 /** Pestaña de una sección de la barra; "Paused" se llamaba "Queue" antes de 004. */
 export const sectionTab = (panel: Page, name: Section) =>
@@ -428,4 +434,27 @@ export function relaxExtraOrigins(
     },
     { tab: tabId, app: appOrigin, n: count, apis: apiOrigins },
   );
+}
+
+// Repeater (005).
+
+export const repeater = (panel: Page) => panel.locator(".repeater");
+export const repeaterResult = (panel: Page) => panel.locator(".send-result");
+export const repeaterResponse = (panel: Page) => repeaterResult(panel).getByLabel("Response body");
+
+/** "Send to repeater" desde el menú contextual de una fila (FR-001). */
+export async function sendToRepeater(panel: Page, row: Locator) {
+  await row.click({ button: "right" });
+  await panel.getByRole("menu").getByRole("menuitem", { name: "Send to repeater" }).click();
+  await expect(repeater(panel).getByRole("tab", { selected: true })).toBeVisible();
+}
+
+/** Modo de envío de la pestaña activa (FR-009). */
+export const repeaterMode = (panel: Page, mode: "Page context" | "Clean context") =>
+  repeater(panel).getByRole("group", { name: "Send mode" }).getByRole("button", { name: mode });
+
+/** Envía la pestaña activa y espera a que el envío termine. */
+export async function repeaterSend(panel: Page) {
+  await repeater(panel).getByRole("button", { name: "Send", exact: true }).click();
+  await expect(repeaterResult(panel).getByText("Sending…")).toHaveCount(0, { timeout: 15_000 });
 }
