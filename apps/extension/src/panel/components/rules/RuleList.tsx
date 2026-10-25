@@ -28,6 +28,9 @@ function summary(rule: Rule) {
  * Lista de reglas (FR-014a, FR-015): las del sitio actual primero y, aparte, las de otros sitios
  * con su sitio visible. Eliminar se puede deshacer.
  */
+/** 006 (FR-016): una regla con un hook con errores no se puede activar. */
+const isBlocked = (rule: Rule) => rule.action.kind === "hook" && !rule.action.check.ok;
+
 export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderControls }: Props) {
   const rules = usePanelStore((s) => s.rules);
   const site = usePanelStore((s) => s.session?.site ?? null);
@@ -71,9 +74,12 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
         <Switch
           label={t("rule_enabled", rule.name)}
           checked={rule.enabled}
+          // 006 (FR-016): un hook con errores no se puede activar; el motivo va debajo.
+          disabled={isBlocked(rule) && !rule.enabled}
           onChange={(enabled) => void setRuleEnabled(rule.id, enabled)}
         />
       </div>
+      {isBlocked(rule) ? <p className="field-warning">{t("hook_error_not_checked")}</p> : null}
       <div className="row">
         {reorderControls && !showSite ? reorderControls(rule, index, siteRules) : null}
         <button

@@ -1,4 +1,4 @@
-import { LIMITS, type Stage } from "@nahual/domain";
+import { LIMITS, redactLogText, type Stage } from "@nahual/domain";
 import {
   createChainFold,
   createHookState,
@@ -49,7 +49,10 @@ export interface HookExecution {
   result: ChainExecution["result"];
   durationMs: number;
   parts: HookPart[];
+  /** Registros con los valores sensibles redactados por nombre (FR-030). */
   logs: string[];
+  /** Texto real de cada registro que tuvo algo redactado (índice ⇒ texto). Solo memoria. */
+  revealed: Record<number, string>;
   destination?: { from: string; to: string };
   error?: { type: string; message: string; line: number | null; field?: string };
   at: number;
@@ -64,6 +67,17 @@ export interface HookHostOptions {
   /** Resultado de cada ejecución, para la suspensión (US2). */
   onOutcome?(ruleId: string, failed: boolean): void;
   now?(): number;
+}
+
+/** Registros redactados por nombre (FR-030) y, aparte, el texto real de los que cambiaron. */
+function redactLogs(logs: string[]): { logs: string[]; revealed: Record<number, string> } {
+  const revealed: Record<number, string> = {};
+  const redacted = logs.map((log, index) => {
+    const safe = redactLogText(log);
+    if (safe !== log) revealed[index] = log;
+    return safe;
+  });
+  return { logs: redacted, revealed };
 }
 
 const errorEffect = (outcome: Extract<HookOutcome, { kind: "error" }>): HookEffect => ({
@@ -159,6 +173,7 @@ export function createHookHost(options: HookHostOptions) {
             durationMs: 0,
             parts: [],
             logs: [],
+            revealed: {},
           });
           continue;
         }
@@ -173,7 +188,7 @@ export function createHookHost(options: HookHostOptions) {
           result: last.result,
           durationMs,
           parts: effect.kind === "edit" ? effect.parts : [],
-          logs,
+          ...redactLogs(logs),
           ...(effect.kind === "edit" && effect.parts.includes("url")
             ? { destination: { from: before.request.url, to: effect.context.request.url } }
             : {}),

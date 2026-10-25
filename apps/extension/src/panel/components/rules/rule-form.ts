@@ -124,6 +124,8 @@ export function toRulePayload(form: RuleForm): Record<string, unknown> {
     conditions: form.conditions.map(toCondition),
     action: form.action,
   };
+  // 006 (FR-016): un hook con errores se guarda desactivado hasta corregirlos.
+  if (form.action.kind === "hook" && !form.action.check.ok) draft.enabled = false;
   return form.id ? { ...draft, id: form.id } : draft;
 }
 

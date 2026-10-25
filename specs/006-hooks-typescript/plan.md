@@ -137,6 +137,10 @@ marcó GHSA-mrhx-c7xc-m3w5 (agotar memoria al validar colecciones enormes con l�
 presente en `main`. Con 006 Zod valida la salida de código no confiable del sandbox, así que el
 parche es obligatorio. Sin cambios de API.
 
+`@lezer/highlight` 1.2.5 (MIT) se declara directa: ya venía como transitiva de
+`@codemirror/language` y el editor necesita sus `tags` para pintar la sintaxis con los colores de
+Sources (research R13, D3).
+
 Transitivos: `@lezer/common`, `@lezer/highlight`, `@lezer/lr`, `@lezer/javascript`, `style-mod`,
 `w3c-keyname`, `crelt` (MIT). Los de Sucrase para su CLI (`commander`, `tinyglobby`, `mz`,
 `pirates`) se instalan pero no entran en el bundle del sandbox (se importa solo `transform`);

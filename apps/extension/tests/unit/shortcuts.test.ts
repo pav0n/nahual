@@ -46,6 +46,7 @@ describe("inventario de atajos (004, research R12, FR-030)", () => {
         "Alt+↓",
         // 005 (research R17): repeater y diff.
         "Ctrl/Cmd+Enter",
+        "Ctrl/Cmd+S",
         "J",
         "K",
       ].sort(),

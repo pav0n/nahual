@@ -28,6 +28,23 @@
   --nh-diff-added: #e6f4ea;
   --nh-diff-removed: #fce8e6;
   --nh-diff-changed: #fef7e0;
+  /* Hooks (006, research R13, D3): sintaxis del editor de Sources y superficies de Console. */
+  --nh-syntax-keyword: #b90063; /* --sys-color-token-keyword */
+  --nh-syntax-string: #b3261e; /* --sys-color-token-string */
+  --nh-syntax-number: #0b57d0; /* --sys-color-token-number */
+  --nh-syntax-comment: #146c2e; /* --sys-color-token-comment */
+  --nh-syntax-property: #1f1f1f; /* --sys-color-token-property */
+  --nh-syntax-type: #198639; /* --sys-color-token-type */
+  --nh-syntax-definition: #0842a0; /* --sys-color-token-definition */
+  --nh-syntax-atom: #062e6f; /* --sys-color-token-atom */
+  --nh-syntax-subtle: #757575; /* --sys-color-token-subtle */
+  --nh-editor-gutter: #757575; /* --sys-color-token-subtle */
+  --nh-editor-active-line: rgb(31 31 31 / 4%);
+  --nh-console-error-bg: #fcebeb; /* --sys-color-surface-error */
+  --nh-console-error-text: #8c1d18; /* --sys-color-on-surface-error */
+  --nh-console-warning-bg: #fef6d5; /* --sys-color-surface-yellow */
+  --nh-console-warning-text: #3e2f00; /* --sys-color-on-surface-yellow */
+  --nh-console-badge: #b3261e; /* --sys-color-error */
   color-scheme: light;
 }
 
@@ -53,12 +70,31 @@
   --nh-diff-added: rgb(129 201 149 / 16%);
   --nh-diff-removed: rgb(242 139 130 / 16%);
   --nh-diff-changed: rgb(253 214 99 / 12%);
+  --nh-syntax-keyword: #bf67ff;
+  --nh-syntax-string: #fe8d59;
+  --nh-syntax-number: #c4eed0;
+  --nh-syntax-comment: #ababab;
+  --nh-syntax-property: #facc15;
+  --nh-syntax-type: #7cacf8;
+  --nh-syntax-definition: #7cacf8;
+  --nh-syntax-atom: #c4eed0;
+  --nh-syntax-subtle: #8f8f8f;
+  --nh-editor-gutter: #8f8f8f;
+  --nh-editor-active-line: rgb(227 227 227 / 6%);
+  --nh-console-error-bg: #4e3534;
+  --nh-console-error-text: #f9dedc;
+  --nh-console-warning-bg: #413c26;
+  --nh-console-warning-text: #fdf3aa;
+  --nh-console-badge: #f2b8b5;
   color-scheme: dark;
 }
 
 :root {
   --nh-font: "Google Sans Text", "Google Sans", system-ui, sans-serif;
   --nh-mono: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  /* Fuente del editor de Sources (D3: --source-code-font-family, 11 px). */
+  --nh-source-font: "Noto Sans Mono", "DejaVu Sans Mono", ui-monospace, Menlo, Consolas, monospace;
+  --nh-source-size: 11px;
   /* Medidas de Network (D1): fila de 21 px, barra de 26 px, iconos de 20 px. */
   --nh-row: 21px;
   --nh-bar-height: 26px;
@@ -1644,4 +1680,179 @@ dialog.report {
 .diff-values del,
 .diff-values ins {
   text-decoration: none;
+}
+
+/* Hooks (006, contracts/panel-ui.md): editor como Sources, casillas como Ajustes de DevTools. */
+.hook-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hook-toolbar {
+  border: 1px solid var(--nh-divider);
+  border-bottom: none;
+  margin-bottom: -6px;
+}
+
+.toolbar-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-color: transparent;
+  background: transparent;
+  padding: 0 4px 0 6px;
+}
+
+.toolbar-menu-button .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.hook-usage {
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.hook-code {
+  min-width: 0;
+}
+
+.hook-code .cm-editor {
+  max-height: 60vh;
+}
+
+.hook-help {
+  margin: 0;
+}
+
+.hook-problems {
+  font-size: 12px;
+}
+
+.hook-problems ul {
+  margin: 2px 0 0;
+}
+
+.hook-problems li {
+  color: var(--nh-error);
+}
+
+.hook-permissions {
+  border: 1px solid var(--nh-divider);
+  border-radius: 4px;
+  margin: 0;
+  padding: 4px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.check-multiline {
+  align-items: flex-start;
+}
+
+.check-multiline > span {
+  display: flex;
+  flex-direction: column;
+  padding-top: 3px;
+}
+
+.check-hint {
+  font-size: 11px;
+}
+
+.hook-loading {
+  margin: 0;
+  padding: 8px 0;
+}
+
+/* Pestaña Hooks del detalle: tabla compacta como Timing de Network. */
+.hooks-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.timing-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.timing-table th,
+.timing-table td {
+  text-align: start;
+  font-weight: 400;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--nh-divider);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.timing-table th {
+  color: var(--nh-text-2);
+  background: var(--nh-bar);
+}
+
+.timing-table .num {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.hook-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hook-result .icon,
+.console-row > .icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+tr[data-result="hook_failed"] .hook-result {
+  color: var(--nh-error);
+}
+
+.hook-destination {
+  color: var(--nh-text-2);
+}
+
+/* Filas como las de Console de DevTools (también en la consola de hooks). */
+.console-rows {
+  border-top: 1px solid var(--nh-divider);
+  margin: 0;
+}
+
+.console-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--nh-divider);
+  font-size: var(--nh-source-size);
+}
+
+.console-row[data-level="error"] {
+  background: var(--nh-console-error-bg);
+  color: var(--nh-console-error-text);
+  border-bottom-color: color-mix(in srgb, var(--nh-console-error-text) 25%, transparent);
+}
+
+.console-row[data-level="error"] .link {
+  color: var(--nh-console-error-text);
+}
+
+.console-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--nh-source-font);
 }

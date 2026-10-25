@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { redactDiff } from "../src/diff/redact.ts";
+import { redactDiff, redactLogText } from "../src/diff/redact.ts";
 import { diffResponses } from "../src/diff/responses.ts";
 import type { ComparableResponse } from "../src/schemas/diff.ts";
 import { MASK, isSensitiveName } from "../src/sensitive.ts";
@@ -100,5 +100,22 @@ describe("redactDiff", () => {
     const lines = result.body.hunks.flatMap((h) => h.lines);
     expect(lines.filter((l) => l.sensitive).length).toBeGreaterThan(0);
     expect(lines.some((l) => l.text.includes('"a": 2'))).toBe(true);
+  });
+});
+
+describe("redactLogText (006, FR-030)", () => {
+  it("redacta pares JSON, query y líneas de header con nombre sensible", () => {
+    expect(redactLogText('{"access_token":"abc","n":1}')).toBe('{"access_token":"••••••","n":1}');
+    expect(redactLogText("GET https://a.test/x?token=s3cr3t&page=2")).toBe(
+      "GET https://a.test/x?token=••••••&page=2",
+    );
+    expect(redactLogText('{"authorization":"Bearer x","accept":"*/*"}')).toBe(
+      '{"authorization":"••••••","accept":"*/*"}',
+    );
+    expect(redactLogText("hola\nAuthorization: Bearer x")).toBe("hola\nAuthorization: ••••••");
+  });
+
+  it("deja igual un texto sin nombres sensibles", () => {
+    expect(redactLogText("items 3")).toBe("items 3");
   });
 });

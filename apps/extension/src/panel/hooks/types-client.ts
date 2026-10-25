@@ -58,14 +58,17 @@ export function createTypesClient(factory: () => WorkerLike = createTypesWorker)
         },
       };
     },
-    async complete(position: number): Promise<HookCompletion[]> {
+    /** Completado en `position` del código actual (el Worker lo analiza antes). */
+    async complete(source: string, position: number): Promise<HookCompletion[]> {
+      void ask<"diagnostics">({ type: "update", source });
       return (await ask<"completions">({ type: "complete", position })).completions.map((c) => ({
         label: c.label,
         kind: c.kind,
         ...(c.detail === undefined ? {} : { detail: c.detail }),
       }));
     },
-    async info(position: number): Promise<string | null> {
+    async info(source: string, position: number): Promise<string | null> {
+      void ask<"diagnostics">({ type: "update", source });
       return (await ask<"info">({ type: "info", position })).text;
     },
     dispose() {

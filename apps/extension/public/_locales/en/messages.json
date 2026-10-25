@@ -1957,5 +1957,200 @@
   },
   "help_repeater_body": {
     "message": "In Traffic, right-click a request ⇒ \"Send to repeater\". Edit it and send it with Ctrl/Cmd+Enter in page context (with the tab's cookies and origin) or in clean context (no session). In the history, \"Compare with original\" shows what changed; J and K move between changes."
+  },
+  "action_kind_hook": {
+    "message": "Modify with hook"
+  },
+  "action_kind_hook_hint": {
+    "message": "A TypeScript function that receives the real request or response and returns a changed version."
+  },
+  "hook_editor_title": {
+    "message": "Hook"
+  },
+  "hook_editor_label": {
+    "message": "Hook code"
+  },
+  "hook_editor_toolbar": {
+    "message": "Hook tools"
+  },
+  "hook_editor_loading": {
+    "message": "Loading the editor…"
+  },
+  "hook_templates": {
+    "message": "Templates"
+  },
+  "hook_template_addHeader": {
+    "message": "Add header"
+  },
+  "hook_template_changeJsonField": {
+    "message": "Change a JSON field"
+  },
+  "hook_template_emptyList": {
+    "message": "Simulate empty list"
+  },
+  "hook_usage": {
+    "message": "Hooks: $1 of $2"
+  },
+  "hook_editor_help": {
+    "message": "Tab inserts a tab. Press Esc then Tab to leave the editor. $1 saves. Each hook has 2 s to finish."
+  },
+  "hook_checking": {
+    "message": "Checking the code…"
+  },
+  "hook_no_problems": {
+    "message": "No problems."
+  },
+  "hook_problems_count": {
+    "message": "$1 problems prevent enabling the rule:"
+  },
+  "hook_problem_line": {
+    "message": "Line $1: $2"
+  },
+  "hook_saved_disabled": {
+    "message": "With errors, the rule is saved disabled until they are fixed."
+  },
+  "hook_permissions": {
+    "message": "Hook permissions"
+  },
+  "hook_permission_destination": {
+    "message": "This hook can change the request's destination"
+  },
+  "hook_permission_destination_hint": {
+    "message": "Without it, changing the scheme, host or port is rejected and the request goes to its original destination."
+  },
+  "hook_permission_sensitive": {
+    "message": "This hook can read sensitive values"
+  },
+  "hook_permission_sensitive_hint": {
+    "message": "Without it, Authorization, Cookie and tokens arrive as ••••••; the hook can replace or remove them but not read them."
+  },
+  "shortcut_desc_save_rule": {
+    "message": "Save the rule"
+  },
+  "hook_error_enum": {
+    "message": "Hooks do not support enum."
+  },
+  "hook_error_decorator": {
+    "message": "Hooks do not support decorators."
+  },
+  "hook_error_import": {
+    "message": "A hook cannot import code; only `import type` from ./nahual-hooks."
+  },
+  "hook_error_export": {
+    "message": "A hook only exports its default function (export default)."
+  },
+  "hook_error_no_default": {
+    "message": "The hook function is missing: export default (ctx) => { … }."
+  },
+  "hook_error_too_large": {
+    "message": "The hook code is over 100 KB."
+  },
+  "hook_error_total_size": {
+    "message": "Hooks use $1 of $2: this one does not fit. Delete or shorten other hooks."
+  },
+  "hook_error_not_checked": {
+    "message": "Cannot enable it: the hook has errors or has not been checked. Open it in the editor and fix them."
+  },
+  "hook_error_destination": {
+    "message": "The hook changed the request's destination and its rule lacks the permission: the request went to its original destination."
+  },
+  "hook_error_readonly": {
+    "message": "The hook changed something read-only."
+  },
+  "hook_error_respond_stage": {
+    "message": "respond() only exists in the Request stage."
+  },
+  "hook_error_state_too_large": {
+    "message": "The shared state would exceed 1 MB: it was not saved."
+  },
+  "hook_error_state_conflict": {
+    "message": "Other hooks changed the shared state at the same time: it could not be saved after 3 attempts."
+  },
+  "hook_error_timeout": {
+    "message": "It exceeded the 2 s limit."
+  },
+  "hook_error_no_panel": {
+    "message": "The panel was not available to run the hook."
+  },
+  "hook_error_sandbox_navigated": {
+    "message": "The isolated environment tried to navigate and was restarted."
+  },
+  "result_hooked": {
+    "message": "modified by hook"
+  },
+  "result_hook_unchanged": {
+    "message": "hook without changes"
+  },
+  "result_hook_failed": {
+    "message": "hook failed, no changes"
+  },
+  "result_hook_responded": {
+    "message": "responded by hook"
+  },
+  "result_hook_skipped_suspended": {
+    "message": "hook suspended"
+  },
+  "detail_tab_hooks": {
+    "message": "Hooks"
+  },
+  "hooks_tab_caption": {
+    "message": "Hook executions on this request"
+  },
+  "hooks_col_rule": {
+    "message": "Rule"
+  },
+  "hooks_col_result": {
+    "message": "Result"
+  },
+  "hooks_col_changes": {
+    "message": "Changes"
+  },
+  "hooks_col_time": {
+    "message": "Time"
+  },
+  "hook_part_method": {
+    "message": "method"
+  },
+  "hook_part_url": {
+    "message": "URL"
+  },
+  "hook_part_headers": {
+    "message": "headers"
+  },
+  "hook_part_body": {
+    "message": "body"
+  },
+  "hook_part_status": {
+    "message": "status"
+  },
+  "hooks_destination": {
+    "message": "Destination: $1 → $2"
+  },
+  "hook_error_type_exception": {
+    "message": "Exception"
+  },
+  "hook_error_type_invalid_result": {
+    "message": "Invalid result"
+  },
+  "hook_error_type_timeout": {
+    "message": "Timed out"
+  },
+  "hook_error_type_state_conflict": {
+    "message": "State conflict"
+  },
+  "hook_error_type_state_too_large": {
+    "message": "State too large"
+  },
+  "hook_error_type_access_denied": {
+    "message": "Access not allowed"
+  },
+  "hook_line": {
+    "message": "line $1"
+  },
+  "hooks_open_rule": {
+    "message": "Open rule"
+  },
+  "hooks_chain": {
+    "message": "Chain: $1 hooks, $2"
   }
 }

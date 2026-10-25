@@ -16,6 +16,15 @@ const PAIR = /("((?:[^"\\]|\\.)*)"\s*:\s*)("(?:[^"\\]|\\.)*"|[^,}\]\s]+)/g;
 /** Línea con forma de header (`Authorization: Bearer …`). */
 const HEADER_LINE = /^(\s*)([A-Za-z0-9_-]+)(\s*:\s*)(.+)$/;
 
+/**
+ * Redacta un texto libre con el criterio del diff (FR-030 de 005): `?token=…` en URLs, pares
+ * `"clave": valor` con nombre sensible y líneas con forma de header. 006 lo usa en los registros
+ * de los hooks (FR-030 de 006).
+ */
+export function redactLogText(text: string): string {
+  return text.split("\n").map(redactText).join("\n");
+}
+
 function redactText(text: string): string {
   let out = text.replace(QUERY, (all, sep: string, name: string) =>
     isSensitiveName(decodeName(name)) ? `${sep}${name}=${MASK}` : all,
