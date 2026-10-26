@@ -124,6 +124,8 @@ export const PanelMessageSchema = z.discriminatedUnion("type", [
   message(
     "importConfig",
     z.strictObject({
+      /** Lo genera el panel: identifica la importación para deshacerla (10 s). */
+      importId: z.uuid(),
       config: Unvalidated,
       source: z.enum(["config", "requestly"]),
       hookChecks: z.record(

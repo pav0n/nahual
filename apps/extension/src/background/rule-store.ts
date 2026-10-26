@@ -7,6 +7,7 @@ import {
   validateRuleDraft,
   type Rule,
 } from "@nahual/domain";
+import { hasRedactedValue } from "@nahual/domain/portable";
 import { hashSource } from "@nahual/hook-runtime";
 import type { CommandResult } from "./panel-port.ts";
 import { isQuotaError, type LocalStorageLike } from "./storage-port.ts";
@@ -283,7 +284,11 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
     },
 
     setEnabled(ruleId, enabled) {
-      if (!find(ruleId)) return Promise.resolve({ ok: false, code: "unknown_rule" });
+      const rule = find(ruleId);
+      if (!rule) return Promise.resolve({ ok: false, code: "unknown_rule" });
+      // 007 (FR-028): una regla importada con valores redactados no se activa hasta completarlos.
+      if (enabled && hasRedactedValue(rule))
+        return Promise.resolve(invalid("enabled", "rule_error_redacted_value"));
       return mutate((current) => {
         const next = current.map((r) =>
           r.id === ruleId ? { ...r, enabled, updatedAt: Date.now() } : r,

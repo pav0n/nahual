@@ -98,6 +98,9 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
           ) : null}
           {rule.importedFrom === "requestly" ? (
             <span className="tag">{t("rule_imported_requestly")}</span>
+          ) : rule.importedFrom === "config" &&
+            !(rule.action.kind === "hook" && rule.action.imported) ? (
+            <span className="tag">{t("hook_imported")}</span>
           ) : null}
           {rule.profileIds.map((id) => {
             const name = profiles.find((p) => p.id === id)?.name;

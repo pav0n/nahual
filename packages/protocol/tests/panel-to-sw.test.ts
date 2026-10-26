@@ -257,8 +257,15 @@ describe("PanelMessageSchema v6 (007, contracts/panel-protocol.md)", () => {
   });
 
   it("importConfig: configuración sin validar aquí, origen y checks de hooks", () => {
-    ok("importConfig", { config: { nahual: "config" }, source: "config", hookChecks: {} });
     ok("importConfig", {
+      importId: UUID,
+      config: { nahual: "config" },
+      source: "config",
+      hookChecks: {},
+    });
+    bad("importConfig", { config: { nahual: "config" }, source: "config", hookChecks: {} });
+    ok("importConfig", {
+      importId: UUID,
       config: {},
       source: "requestly",
       hookChecks: { [UUID]: { hash: "ab12", ok: true } },

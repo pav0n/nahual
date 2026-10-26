@@ -23,6 +23,7 @@ import { createPageSender } from "./repeater/page-send.ts";
 import { createRepeaterService } from "./repeater/repeater-service.ts";
 import { createActiveProfiles } from "./active-profiles.ts";
 import { createHookRunner } from "./hook-runner.ts";
+import { createImportService } from "./import-service.ts";
 import { createProfileStore } from "./profile-store.ts";
 import { createRuleEngine } from "./rule-engine.ts";
 import { createRuleStore } from "./rule-store.ts";
@@ -138,6 +139,15 @@ export function createBackground(deps: BackgroundDeps) {
       }
     },
     onNotice: notice,
+  });
+
+  /** 007: configuración portable y Requestly, en una sola escritura (research R10). */
+  const imports = createImportService({
+    rules,
+    profiles,
+    settings,
+    renamed: (name) =>
+      globalThis.chrome?.i18n?.getMessage("profile_imported_name", name) || `${name} (imported)`,
   });
 
   const active = createActiveProfiles({
@@ -353,10 +363,16 @@ export function createBackground(deps: BackgroundDeps) {
       }
       case "setRuleProfiles":
         return rules.setProfiles(command.payload.ruleId, command.payload.profileIds);
-      // 007: la importación se cablea en T057.
       case "importConfig":
-      case "undoImport":
-        return { ok: false, code: "invalid_message" };
+        return imports.importConfig(command.payload);
+      case "undoImport": {
+        const result = await imports.undoImport(command.payload.importId);
+        if (result.ok)
+          for (const other of port.tabs())
+            if (other !== tabId)
+              port.send(other, makeEvent("notice", { messageKey: "notice_import_undone" }));
+        return result;
+      }
       case "importHook":
         return rules.importHook(
           command.payload,

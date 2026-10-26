@@ -2611,5 +2611,8 @@
   },
   "export_reason_batch_limit": {
     "message": "over 50 in the batch"
+  },
+  "profile_imported_name": {
+    "message": "$1 (imported)"
   }
 }

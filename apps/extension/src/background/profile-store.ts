@@ -35,6 +35,8 @@ export interface ProfileStore {
   remove(id: string): Promise<CommandResult>;
   restore(id: string): Promise<CommandResult>;
   setLastActive(site: string, profileId: string | null): Promise<CommandResult>;
+  /** 007 (research R10): valor de `nahual.profiles.v1` para una escritura conjunta. */
+  stage(view: ProfilesView): unknown;
 }
 
 export interface ProfileStoreOptions {
@@ -201,6 +203,8 @@ export function createProfileStore(options: ProfileStoreOptions): ProfileStore {
         ),
       );
     },
+
+    stage: (next) => ({ version: VERSION, ...next }),
 
     setLastActive(site, profileId) {
       if ((lastActive[site] ?? null) === profileId) return Promise.resolve({ ok: true });

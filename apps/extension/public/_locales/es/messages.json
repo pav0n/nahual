@@ -2611,5 +2611,8 @@
   },
   "export_reason_batch_limit": {
     "message": "más de 50 en el lote"
+  },
+  "profile_imported_name": {
+    "message": "$1 (importado)"
   }
 }
