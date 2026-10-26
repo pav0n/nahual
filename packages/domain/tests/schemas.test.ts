@@ -562,6 +562,6 @@ describe("007: límites, perfiles en la regla e importadas (data-model)", () => 
 });
 
 function draftOf(r: Rule) {
-  const { id: _id, site: _site, order: _order, createdAt: _c, updatedAt: _u, ...draft } = r;
-  return draft;
+  const skip = new Set(["id", "site", "order", "createdAt", "updatedAt"]);
+  return Object.fromEntries(Object.entries(r).filter(([key]) => !skip.has(key)));
 }
