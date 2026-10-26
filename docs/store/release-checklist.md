@@ -28,7 +28,7 @@ Versión corregida de la checklist de `docs/speckit-inputs/07-export-publicacion
       [`data-practices.md`](data-practices.md); URL de [`privacy-policy.md`](privacy-policy.md).
 - [ ] Capturas (hasta 5, 1280×800) de [`assets/`](assets/README.md), incluida la barra amarilla;
       icono de 128 px (`apps/extension/public/icons/icon-128.png`); imagen promocional pequeña
-      de 440×280 (obligatoria; pendiente de generar).
+      de 440×280 ([`assets/promo-440x280.png`](assets/promo-440x280.png)).
 - [ ] `demo.webm` subido a YouTube (público o no listado) y su enlace en el campo de video.
 - [ ] Visibilidad: **Pública** (clarificación de 007).
 

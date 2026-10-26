@@ -27,6 +27,16 @@ el panel real dentro de una ventana de DevTools.
 reproducen las pestañas de DevTools y, en la captura 1, la barra con su texto real; el panel de
 Nahual es la captura real.
 
+## Imagen promocional
+
+`promo-440x280.png` es la imagen promocional pequeña (440×280) que la tienda exige: el logo, la
+marca, el tagline y tres funciones. La genera `apps/extension/scripts/render-promo.mjs` desde
+`docs/brand/nahual.svg`:
+
+```bash
+pnpm --filter @nahual/extension exec node scripts/render-promo.mjs
+```
+
 ## Video
 
 `demo.webm` (1280×800, tema oscuro, unos 110 s) lo genera `apps/extension/e2e/store/video.spec.ts`:
