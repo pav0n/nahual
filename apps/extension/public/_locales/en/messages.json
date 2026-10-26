@@ -1958,6 +1958,12 @@
   "help_repeater_body": {
     "message": "In Traffic, right-click a request ⇒ \"Send to repeater\". Edit it and send it with Ctrl/Cmd+Enter in page context (with the tab's cookies and origin) or in clean context (no session). In the history, \"Compare with original\" shows what changed; J and K move between changes."
   },
+  "help_hooks_title": {
+    "message": "Hooks"
+  },
+  "help_hooks_body": {
+    "message": "With the \"Modify with hook\" action, a TypeScript function receives the real request or response and returns a changed version. Start from a template; a type error blocks activation. Errors and ctx.log show up in the Hooks console at the bottom and in the Hooks tab of each request. A failing hook leaves the request unchanged, and after 5 errors in a row it is suspended."
+  },
   "action_kind_hook": {
     "message": "Modify with hook"
   },

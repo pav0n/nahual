@@ -1958,6 +1958,12 @@
   "help_repeater_body": {
     "message": "En Tráfico, clic derecho en un request ⇒ «Enviar al repeater». Edítalo y envíalo con Ctrl/Cmd+Enter en contexto de página (con las cookies y el origen de la pestaña) o en contexto limpio (sin sesión). En el historial, «Comparar con el original» muestra qué cambió; J y K recorren los cambios."
   },
+  "help_hooks_title": {
+    "message": "Hooks"
+  },
+  "help_hooks_body": {
+    "message": "Con la acción «Modificar con hook», una función de TypeScript recibe el request o la respuesta reales y devuelve una versión cambiada. Empieza desde una plantilla; un error de tipo impide activarla. Los errores y ctx.log aparecen en la consola de hooks, abajo, y en la pestaña Hooks de cada request. Si un hook falla, el request sigue sin cambios, y tras 5 errores seguidos se suspende."
+  },
   "action_kind_hook": {
     "message": "Modificar con hook"
   },

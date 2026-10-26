@@ -52,6 +52,22 @@ comparar sus respuestas, en un panel con el aspecto de DevTools. Ver
   lista gana; se reordenan con `Alt+↑`/`Alt+↓`.
 - **Acciones de las reglas**: Pausar (editable desde el detalle en Tráfico o desde Pausados, con
   cuenta regresiva), Mock, Fallar, Retrasar y Solo registrar. Plantillas: pausar respuestas con error o vacías, simular API caída o red lenta.
+- **Hooks en TypeScript**: la acción "Modificar con hook" ejecuta una función que recibe el
+  request o la respuesta reales y devuelve una versión cambiada (headers, body, status, URL) o
+  responde sin llegar al servidor. El editor se parece a Sources: autocompletado y errores de tipo
+  en vivo contra `HookContext`; un error de tipo impide activar la regla. Plantillas: agregar
+  header, cambiar un campo del JSON y simular lista vacía. Si varias reglas con hook coinciden, se
+  encadenan en orden y cada una recibe lo que dejó la anterior; `ctx.state` se comparte entre
+  hooks hasta cerrar el panel. Cada hook corre aislado, sin red, sin acceso a la extensión ni a la
+  página, con 2 s como máximo; si lanza, se pasa de tiempo o devuelve algo inválido, el request
+  sigue sin cambios y tras 5 errores seguidos el hook se suspende (Reglas ⇒ Reanudar). Dos
+  permisos por regla, apagados por defecto: leer valores sensibles (sin él, cookies y tokens
+  llegan enmascarados) y cambiar el destino del request. La **consola de hooks**, en el cajón
+  inferior como la de DevTools, muestra `ctx.log` y los errores con su línea (redactados hasta
+  "Mostrar valores sensibles"); el contador de errores de la barra la abre filtrada. En Tráfico,
+  la pestaña **Hooks** del detalle lista qué hook corrió, qué cambió y cuánto tardó. Un hook se
+  exporta como un `.ts` con su configuración y se importa con vista previa del código, como regla
+  nueva y desactivada, sin permisos; "Descargar tipos" da `nahual-hooks.d.ts` para tu editor.
 - **CORS de desarrollo**: los requests bloqueados por CORS se marcan en la lista y el detalle
   explica la causa, qué pidió la app y qué respondió el servidor. "Permitir CORS para desarrollo"
   relaja CORS solo en esa pestaña, para el origen de la app y el de la API (origen exacto, nunca
@@ -60,7 +76,7 @@ comparar sus respuestas, en un panel con el aspecto de DevTools. Ver
   desarrollo y nunca se relajan. "Generar reporte para backend" produce un texto copiable con lo que el servidor debe
   configurar y ejemplos para Express, NestJS, AWS API Gateway y Google Cloud Run.
 - **Seguro por defecto**: nada sale del navegador salvo lo que reenvíes desde el repeater; el
-  historial y el repeater viven en memoria; todo request
+  historial, el repeater y la consola y el `state` de los hooks viven en memoria; todo request
   pausado continúa sin cambios si vence su timeout, si Nahual falla o si se suelta el debugger.
 
 ## Atajos
@@ -80,6 +96,7 @@ los listan desde ahí.
 | `Shift+F10` o tecla de menú | Menú de acciones de la fila enfocada |
 | `Ctrl+Enter` / `Cmd+Enter` | Enviar el request de la pestaña del repeater |
 | `J` / `K` | Cambio siguiente / anterior en el diff |
+| `Ctrl+S` / `Cmd+S` | Guardar la regla que se edita |
 
 ## Requisitos
 

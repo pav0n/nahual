@@ -60,6 +60,12 @@ export function Onboarding() {
         </section>
       ) : null}
       {helpOpen ? (
+        <section aria-labelledby={`${bodyId}-hooks`}>
+          <h3 id={`${bodyId}-hooks`}>{t("help_hooks_title")}</h3>
+          <p>{t("help_hooks_body")}</p>
+        </section>
+      ) : null}
+      {helpOpen ? (
         <section aria-labelledby={`${bodyId}-shortcuts`}>
           <h3 id={`${bodyId}-shortcuts`}>{t("settings_section_shortcuts")}</h3>
           <ShortcutsList />
