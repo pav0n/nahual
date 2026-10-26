@@ -453,3 +453,14 @@ Cambios aceptados en las capturas de 004–006:
   Postman 115 ms (límite 300 ms). Lote de 50 requests a MSW: 217 ms (límite 3 s).
 - `e2e/hooks-perf.spec.ts` (`@perf`), 300 fetch secuenciales con una regla "Solo registrar": p95
   con todas las reglas (como 006) 2,2 ms; con un perfil activo 1,9 ms (Δ −0,3 ms).
+
+### Estabilidad (T073)
+
+Tres corridas seguidas, sin caché de turbo (`--force`), de `lint`, `typecheck`, `test`, `build`,
+`verify:dist`, `export-smoke`, `e2e` y `e2e:visual`, con `LANG=en_US.UTF-8`: las tres en verde
+(297 s, 304 s y 299 s). Por corrida: domain 571, extension 486, protocol 82, hook-runtime 73,
+export-smoke 5, verify:dist 73, E2E 231 y visual 4. `hooks-failsafe` (SC-012 de 006), que había
+fallado una vez con carga en paralelo, pasó en las tres.
+
+Pendiente fuera del repositorio: el PR de implementación y la checklist de
+`docs/store/release-checklist.md` necesitan el repositorio en GitHub (`origin` es local).
