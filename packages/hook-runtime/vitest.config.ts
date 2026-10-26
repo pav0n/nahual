@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Las pruebas de tipos compilan con TypeScript: con todo el monorepo en paralelo tardan.
+    testTimeout: 30_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
