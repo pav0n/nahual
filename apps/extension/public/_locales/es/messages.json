@@ -2605,5 +2605,8 @@
   },
   "error_undo_expired": {
     "message": "Ya no se puede deshacer."
+  },
+  "export_format_single": {
+    "message": "Solo para un request"
   }
 }

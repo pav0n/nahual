@@ -14,3 +14,6 @@ test-results/
 .claude/settings.local.json
 dist-test/
 *.zip
+
+# 007: archivos que genera tooling/export-smoke al ejecutar lo exportado
+tooling/export-smoke/.generated/
