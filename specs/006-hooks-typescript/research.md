@@ -415,3 +415,45 @@ y 1280 px.
   hace lo mismo); un registro de otro hook en medio corta el grupo.
 - **Icono de error**: círculo con ×, como Console (`icons.tsx`, `error`), en la consola, el
   contador y la pestaña Hooks.
+
+### Rendimiento (SC-002, T060)
+
+`e2e/hooks-perf.spec.ts` (`@perf`, método de E4: 300 requests por caso, se descartan los 20
+primeros), Chromium de Playwright, Linux:
+
+| Caso | p50 | p95 |
+|---|---|---|
+| Sin reglas | 1,1 ms | 2,0 ms |
+| Regla "Solo registrar" | 1,8 ms | 2,6 ms |
+| Misma regla con hook trivial | 3,3 ms | 5,5 ms |
+| **Overhead del hook** | **1,5 ms** | **2,9 ms** |
+
+Overhead p95 de 2,9 ms frente al límite de 10 ms. Sin reglas con hook el camino no cambia:
+`selectChain` devuelve una cadena vacía y no se envía `hookRun`.
+
+### Tamaño de los bundles (SC-007, T061)
+
+Carga inicial del panel = `panel.html` y sus imports estáticos (sin `import()` dinámico), build de
+producción. 005 se midió en un worktree de `main` (5cc7d55).
+
+| | Bytes | gzip |
+|---|---|---|
+| 005 | 606.793 | 175.864 |
+| 006 | 651.632 | 190.412 |
+| Diferencia | +7,4 % | +8,3 % |
+
+Chunks nuevos, fuera de la carga inicial:
+
+| Chunk | Bytes | gzip | Se carga |
+|---|---|---|---|
+| `HookEditor-*.js` (CodeMirror 6 y el editor) | 476.914 | 157.478 | al abrir un editor de hook |
+| `hook-types.worker-*.js` (TypeScript y `lib.es2022.d.ts`) | 4.167.532 | 1.066.672 | al abrir un editor de hook |
+| `sandbox-*.js` (Sucrase y el runtime) | 206.531 | 47.573 | con la primera regla con hook activa |
+
+Apertura del panel (7 aperturas tras una de calentamiento, mediana, desde la navegación a
+`panel.html` hasta que la pestaña Traffic es visible): 005 78 ms, 006 77 ms.
+
+`tests/dist/bundles.test.ts` fija lo anterior: la carga inicial no contiene CodeMirror, el
+servicio de lenguaje de TypeScript ni Sucrase, y mide como mucho 1,10 × la de 005.
+`tests/dist/no-network.test.ts` admite `declare function eval(` porque el chunk del servicio de
+tipos lleva `lib.es2022.d.ts` como texto.
