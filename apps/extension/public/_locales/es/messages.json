@@ -2445,7 +2445,7 @@
     "message": "Este perfil no tiene reglas"
   },
   "profile_empty_add_selected": {
-    "message": "Añadir las reglas seleccionadas"
+    "message": "Usa \"Asignar perfiles\" en una regla para añadirla a este perfil."
   },
   "profile_rule_inactive": {
     "message": "No actúa con $1"

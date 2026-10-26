@@ -3,6 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import { createConnectionSlice, type ConnectionSlice } from "./connection.ts";
 import { createCorsSlice, type CorsSlice } from "./cors.ts";
 import { createHooksSlice, type HooksSlice } from "./hooks.ts";
+import { createProfilesSlice, type ProfilesSlice } from "./profiles.ts";
 import { createQueueSlice, type QueueSlice } from "./queue.ts";
 import { createRepeaterSlice, type RepeaterSlice } from "./repeater.ts";
 import { createRulesSlice, type RulesSlice } from "./rules.ts";
@@ -13,6 +14,7 @@ import { createUiSlice, type UiSlice } from "./ui.ts";
 export type PanelStore = ConnectionSlice &
   CorsSlice &
   HooksSlice &
+  ProfilesSlice &
   QueueSlice &
   RepeaterSlice &
   RulesSlice &
@@ -26,6 +28,7 @@ export const usePanelStore = create<PanelStore>()(
     ...createConnectionSlice(...a),
     ...createCorsSlice(...a),
     ...createHooksSlice(...a),
+    ...createProfilesSlice(...a),
     ...createQueueSlice(...a),
     ...createRepeaterSlice(...a),
     ...createRulesSlice(...a),

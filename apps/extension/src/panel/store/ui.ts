@@ -52,6 +52,10 @@ export interface UiSlice {
   setDrawerExpanded(expanded: boolean): void;
   setHelpOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
+  /** Sección mostrada en Ajustes; 007 lo abre en "Perfiles" desde el selector de la barra. */
+  settingsSection: string | null;
+  setSettingsSection(section: string): void;
+  openSettings(section: string): void;
   setSection(section: PanelSection): void;
   selectExchange(id: string | null, tab?: string): void;
   requestRelax(exchangeId: string | null): void;
@@ -60,6 +64,13 @@ export interface UiSlice {
   /** Lo toma Reglas al abrir el editor; devuelve `null` si no hay ninguno. */
   consumeRuleDraft(): RuleDraft | null;
   pushToast(toast: Omit<Toast, "id">, timeoutMs?: number): number;
+  /**
+   * Diálogos modales abiertos, de abajo arriba: los avisos (y su "Deshacer") se pintan dentro del
+   * de arriba, porque lo que queda fuera de un `<dialog>` modal es inerte (007).
+   */
+  openDialogs: string[];
+  dialogOpened(id: string): void;
+  dialogClosed(id: string): void;
   dismissToast(id: number): void;
 }
 
@@ -105,6 +116,16 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
     set((s) => {
       s.settingsOpen = open;
     }),
+  settingsSection: null,
+  setSettingsSection: (section) =>
+    set((s) => {
+      s.settingsSection = section;
+    }),
+  openSettings: (section) =>
+    set((s) => {
+      s.settingsSection = section;
+      s.settingsOpen = true;
+    }),
   setSection: (section) =>
     set((s) => {
       s.section = section;
@@ -133,6 +154,15 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
       });
     return draft;
   },
+  openDialogs: [],
+  dialogOpened: (id) =>
+    set((s) => {
+      if (!s.openDialogs.includes(id)) s.openDialogs.push(id);
+    }),
+  dialogClosed: (id) =>
+    set((s) => {
+      s.openDialogs = s.openDialogs.filter((x) => x !== id);
+    }),
   pushToast: (toast, timeoutMs = 10_000) => {
     const id = ++toastSeq;
     set((s) => {

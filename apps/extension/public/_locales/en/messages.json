@@ -2445,7 +2445,7 @@
     "message": "This profile has no rules"
   },
   "profile_empty_add_selected": {
-    "message": "Add the selected rules"
+    "message": "Use \"Assign profiles\" on a rule to add it to this profile."
   },
   "profile_rule_inactive": {
     "message": "Not active with $1"

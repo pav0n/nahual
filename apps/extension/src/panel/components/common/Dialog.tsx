@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 import { t } from "../../../shared/i18n.ts";
+import { usePanelStore } from "../../store/index.ts";
 import { IconButton } from "./IconButton.tsx";
+import { ToastRegion } from "./Toast.tsx";
 
 interface Props {
   open: boolean;
@@ -41,21 +43,27 @@ export function Dialog({
   const titleRef = externalTitleRef ?? ownTitleRef;
   const opener = useRef<Element | null>(null);
   const titleId = useId();
+  const dialogId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    const store = usePanelStore.getState();
     if (open && !dialog.open) {
       opener.current = document.activeElement;
       dialog.showModal();
+      store.dialogOpened(dialogId);
       if (focusTitle) titleRef.current?.focus();
     }
     if (!open && dialog.open) {
       dialog.close();
+      store.dialogClosed(dialogId);
       if (opener.current instanceof HTMLElement && opener.current.isConnected)
         opener.current.focus();
     }
-  }, [open, focusTitle, titleRef]);
+  }, [open, focusTitle, titleRef, dialogId]);
+
+  useEffect(() => () => usePanelStore.getState().dialogClosed(dialogId), [dialogId]);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -87,6 +95,7 @@ export function Dialog({
         ) : null}
       </div>
       {open ? children : null}
+      {open ? <ToastRegion dialogId={dialogId} /> : null}
     </dialog>
   );
 }

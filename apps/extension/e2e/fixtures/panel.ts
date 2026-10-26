@@ -182,7 +182,8 @@ export async function createRule(panel: Page, spec: RuleSpec) {
   await expect(panel.locator(".rule-item").filter({ hasText: spec.name })).toBeVisible();
 }
 
-export type SettingsSection = "General" | "Pauses" | "Development CORS" | "Shortcuts";
+export type SettingsSection =
+  "General" | "Pauses" | "Development CORS" | "Shortcuts" | "Profiles" | "Import and export";
 
 /**
  * Abre Ajustes y devuelve su contenedor: el diálogo "Settings" con la sección pedida (004) o, en la

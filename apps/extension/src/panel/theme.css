@@ -2013,3 +2013,39 @@ tr[data-result="hook_failed"] .hook-result {
   vertical-align: -3px;
   margin-right: 4px;
 }
+
+/* 007: perfil activo en la barra, con el patrón del estado de sesión. */
+.profile-trigger[data-active="true"] .icon {
+  color: var(--nh-accent);
+}
+
+.profile-trigger .profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .profile-trigger .profile-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* 007: reglas que no actúan con el perfil activo (texto e icono, no solo color). */
+.rule-inactive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+}
+
+.rule-inactive .icon {
+  width: 16px;
+  height: 16px;
+}

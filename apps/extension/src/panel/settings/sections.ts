@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { CorsSettings } from "../components/cors/CorsSettings.tsx";
 import { GeneralSettings } from "./GeneralSettings.tsx";
 import { PauseSettings } from "./PauseSettings.tsx";
+import { ProfilesSettings } from "../components/profiles/ProfilesSettings.tsx";
 import { ShortcutsList } from "./ShortcutsList.tsx";
 
 export interface SettingsSectionEntry {
@@ -21,4 +22,6 @@ export const SETTINGS_SECTIONS: SettingsSectionEntry[] = [
   { id: "pause", labelKey: "settings_section_pause", render: PauseSettings },
   { id: "cors", labelKey: "settings_section_cors", render: CorsSettings },
   { id: "shortcuts", labelKey: "settings_section_shortcuts", render: ShortcutsList },
+  // 007: perfiles (FR-023); "Importar y exportar" llega con la configuración portable (US4).
+  { id: "profiles", labelKey: "profile_settings_title", render: ProfilesSettings },
 ];
