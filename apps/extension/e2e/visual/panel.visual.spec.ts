@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
 import { test as base, expect } from "../fixtures/extension.ts";
 import {
@@ -222,5 +225,18 @@ for (const theme of THEMES) {
       .click();
     await expect(panel.locator(".hook-console .console-row").first()).toBeVisible();
     await shoot(panel, `${theme}-hooks-console`);
+
+    // 006: vista previa al importar un hook (como un archivo en Sources, solo lectura).
+    await openSection(panel, "Rules");
+    const folder = mkdtempSync(path.join(tmpdir(), "nahual-visual-"));
+    const file = path.join(folder, "hook.ts");
+    writeFileSync(
+      file,
+      `/* @nahual-hook 1\n{"name":"Importado","stage":"response","prefilter":{"kind":"glob","pattern":"*\\/hooks/items*"},"resourceTypes":["Fetch"],"conditions":[]}\n*/\nexport default (ctx: HookContext) => {\n  return ctx;\n};\n`,
+    );
+    await panel.getByLabel("Import hook…").setInputFiles(file);
+    await expect(panel.getByRole("dialog", { name: "Import hook" })).toBeVisible();
+    await shoot(panel, `${theme}-hook-import`);
+    await panel.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
   });
 }

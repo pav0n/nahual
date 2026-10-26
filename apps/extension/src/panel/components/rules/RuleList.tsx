@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
 import { resumeHook } from "../../hooks/runtime.ts";
+import { ImportHookButton } from "../hooks/ImportHookDialog.tsx";
 import { setRuleEnabled } from "../../settings-commands.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
@@ -70,6 +71,9 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
       <div className="row">
         <span className="grow">
           <strong>{rule.name}</strong>
+          {rule.action.kind === "hook" && rule.action.imported ? (
+            <span className="tag">{t("hook_imported")}</span>
+          ) : null}
           <span className="muted"> · {summary(rule)}</span>
           {showSite ? <span className="muted"> · {t("site_label", rule.site)}</span> : null}
         </span>
@@ -129,6 +133,7 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
                 {t("action_create_first_rule")}
               </button>
               {templates}
+              <ImportHookButton disabled={site === null} />
             </>
           }
         >
@@ -138,6 +143,7 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
         <>
           <div className="row">
             <h2 className="grow">{site ? t("rules_for_site", site) : t("tab_rules")}</h2>
+            <ImportHookButton />
             <button type="button" className="primary" onClick={onCreate}>
               {t("action_new_rule")}
             </button>

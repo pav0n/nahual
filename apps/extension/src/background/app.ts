@@ -291,9 +291,12 @@ export function createBackground(deps: BackgroundDeps) {
         return { ok: true };
       case "hookResult":
         return hooks.onResult(tabId, command.payload);
-      // 006: importHook llega con US3 (T054).
       case "importHook":
-        return { ok: false, code: "invalid_message" };
+        return rules.importHook(
+          command.payload,
+          manager.siteOf(tabId),
+          globalThis.chrome?.i18n?.getMessage("hook_imported_name") || "Hook",
+        );
       case "getIgnores":
       case "setIgnores": {
         const { method, url } = command.payload;

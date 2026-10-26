@@ -20,8 +20,10 @@ temas; capturas de regresión visual a 320, 800 y 1280 px.
 
 - El selector de acción de 002 suma "Modificar con hook". Al elegirla:
   - **Barra** (`Toolbar`, como la de Sources sobre el editor): menú "Plantillas" (`Menu` de 004),
-    `IconButton` "Importar hook…", "Exportar hook", "Descargar tipos"; a la derecha, el uso
-    ("Hooks: 12 KB de 5 MB") en gris.
+    `IconButton` "Exportar hook" y "Descargar tipos"; a la derecha, el uso ("Hooks: 12 KB de
+    5 MB") en gris. **"Importar hook…"** va en la cabecera de la lista de reglas, junto a "Nueva
+    regla" (y en su estado vacío): importar crea siempre una regla nueva (análisis H4), así que no
+    pertenece al editor de otra regla.
   - **Editor** (contenido ancho): CodeMirror con el aspecto del editor de Sources: fuente y
     tamaño monoespaciados de DevTools, números de línea en el margen con su color, línea activa
     resaltada, colores de sintaxis de DevTools en claro y oscuro (tokens nuevos

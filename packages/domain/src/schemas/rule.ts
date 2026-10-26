@@ -92,3 +92,19 @@ export const RuleSchema = z
   })
   .superRefine(checkStage);
 export type Rule = z.infer<typeof RuleSchema>;
+
+/**
+ * Configuración de una regla que viaja en un archivo de hook `.ts` (006,
+ * contracts/hook-file.md): sin permisos, sitio, identidad, orden, estado ni acción.
+ */
+export const HookFileConfigSchema = z
+  .strictObject({
+    name: DRAFT_SHAPE.name,
+    stage: DRAFT_SHAPE.stage,
+    prefilter: DRAFT_SHAPE.prefilter,
+    methods: DRAFT_SHAPE.methods.default([]),
+    resourceTypes: DRAFT_SHAPE.resourceTypes.default([]),
+    conditions: DRAFT_SHAPE.conditions.default([]),
+  })
+  .superRefine(checkStage);
+export type HookFileConfig = z.infer<typeof HookFileConfigSchema>;

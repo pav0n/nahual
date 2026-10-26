@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type { Page } from "@playwright/test";
 import { expectNoHorizontalScroll, expectNoSeriousViolations } from "./fixtures/axe.ts";
 import {
@@ -239,4 +242,70 @@ test("006 FR-026: consola solo con teclado hasta abrir un request", async ({
   await expect(
     panel.locator(".detail").getByRole("tab", { name: "Hooks", selected: true }),
   ).toBeVisible();
+});
+
+const importFixture = () => {
+  const folder = mkdtempSync(path.join(tmpdir(), "nahual-a11y-"));
+  const file = path.join(folder, "hook.ts");
+  writeFileSync(
+    file,
+    `/* @nahual-hook 1\n{"name":"Importado","stage":"response","prefilter":{"kind":"glob","pattern":"*\\/hooks/items*"},"resourceTypes":["Fetch"],"conditions":[]}\n*/\nexport default (ctx: HookContext) => {\n  return ctx;\n};\n`,
+  );
+  return file;
+};
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`006 US3: diálogo de importación en tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await openSection(panel, "Rules");
+    await panel.getByLabel("Import hook…").setInputFiles(importFixture());
+    await expect(panel.getByRole("dialog", { name: "Import hook" })).toBeVisible();
+    await expectNoSeriousViolations(panel, "diálogo de importación");
+    await expectNoHorizontalScroll(panel);
+  });
+}
+
+test("006 FR-036: importar solo con teclado (revisar, cancelar, importar)", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1000, height: 900 });
+  await attach(panel);
+  await app.reload();
+  await openSection(panel, "Rules");
+  const file = importFixture();
+  const open = async () => {
+    const chooser = panel.waitForEvent("filechooser");
+    expect(await tabTo(panel, panel.getByRole("button", { name: "Import hook…" }))).toBe(true);
+    await panel.keyboard.press("Enter");
+    await (await chooser).setFiles(file);
+  };
+  await open();
+  const dialog = panel.getByRole("dialog", { name: "Import hook" });
+  // La vista previa del código es enfocable para leerla con teclado.
+  expect(await tabTo(panel, dialog.getByLabel("Imported hook code"))).toBe(true);
+  expect(await tabTo(panel, dialog.getByRole("button", { name: "Cancel" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  await expect(panel.locator(".rule-item")).toHaveCount(0);
+  await open();
+  expect(await tabTo(panel, dialog.getByRole("button", { name: "Import" }))).toBe(true);
+  await panel.keyboard.press("Enter");
+  await expect(panel.locator(".rule-item").filter({ hasText: "Importado" })).toBeVisible();
 });

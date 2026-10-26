@@ -2,6 +2,7 @@
 export * from "./chain.ts";
 export * from "./context.ts";
 export * from "./hash.ts";
+export * from "./hook-file.ts";
 export * from "./mask.ts";
 export * from "./schemas.ts";
 export * from "./console.ts";

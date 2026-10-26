@@ -285,3 +285,64 @@ describe("RuleStore: hooks (006, FR-016, FR-034, research R10)", () => {
     expect(stored()).toHaveLength(before);
   }, 20_000);
 });
+
+describe("RuleStore: importar un hook (006, FR-036, FR-037)", () => {
+  const config = {
+    name: "Importado",
+    stage: "response",
+    prefilter: { kind: "glob", pattern: "*/api/*" },
+    resourceTypes: ["Fetch"],
+    conditions: [],
+  };
+
+  it("crea siempre una regla nueva, desactivada, importada, sin permisos y sin comprobar", async () => {
+    const store = await open();
+    expect(
+      await store.importHook({ config, source: "export default (c) => c;" }, SITE, "Hook"),
+    ).toEqual({ ok: true });
+    const [rule] = store.all();
+    expect(rule).toMatchObject({
+      name: "Importado",
+      site: SITE,
+      enabled: false,
+      stage: "response",
+      prefilter: { kind: "glob", pattern: "*/api/*" },
+      action: {
+        kind: "hook",
+        imported: true,
+        permissions: { changeDestination: false, readSensitive: false },
+        check: { ok: false },
+      },
+    });
+  });
+
+  it("sin configuración: nombre por defecto y prefiltro de todo el sitio, para configurarla", async () => {
+    const store = await open();
+    expect(await store.importHook({ config: null, source: "x" }, SITE, "Hook importado")).toEqual({
+      ok: true,
+    });
+    expect(store.all()[0]).toMatchObject({
+      name: "Hook importado",
+      enabled: false,
+      stage: "request",
+    });
+  });
+
+  it("configuración inválida, código de más de 100 KB o sin sitio ⇒ error sin escribir nada", async () => {
+    const store = await open();
+    expect(
+      await store.importHook({ config: { ...config, stage: "otra" }, source: "x" }, SITE, "H"),
+    ).toMatchObject({
+      ok: false,
+      code: "rule_invalid",
+    });
+    expect(
+      await store.importHook({ config, source: "x".repeat(102_401) }, SITE, "H"),
+    ).toMatchObject({ ok: false, code: "rule_invalid" });
+    expect(await store.importHook({ config, source: "x" }, null, "H")).toMatchObject({
+      ok: false,
+      code: "no_site",
+    });
+    expect(stored()).toEqual([]);
+  });
+});

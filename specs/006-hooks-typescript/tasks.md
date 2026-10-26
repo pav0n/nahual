@@ -180,19 +180,19 @@ funciona igual.
 
 ### Lógica (prueba primero)
 
-- [ ] T053 [P] [US3] `hr/hook-file.ts` (contracts/hook-file.md): `serializeHookFile(rule)` con el bloque `/* @nahual-hook 1` + JSON (`name` 1–80 con el schema de `Rule.name`, `stage`, `prefilter`, `resourceTypes`, `conditions`) + `*/` y el código; toda `/` precedida de `*` escrita como `\/`; nunca permisos, sitio, `id`, `order`, `enabled` ni `check`; `parseHookFile(text)` ⇒ `{ config | null, configError?, source }`; pruebas: ida y vuelta idéntica, prefiltro `*/api/*`, bloque ausente, JSON inválido, schema inválido, `import type` de `./nahual-hooks` admitido, nombre de 81 caracteres rechazado
-- [ ] T054 [US3] Prueba primero en `tests/integration/rule-store.test.ts` y luego comando `importHook` en `bg/app.ts` y `bg/rule-store.ts`: crea siempre una regla **nueva** en el sitio actual: con `config` si es válida, si no con una configuración vacía para que el dev la complete; nunca reemplaza el código de una regla existente; siempre `enabled: false`, `imported: true`, permisos en `false`, `check.ok: false`; límites de T029 (FR-036, FR-037)
+- [X] T053 [P] [US3] `hr/hook-file.ts` (contracts/hook-file.md): `serializeHookFile(rule)` con el bloque `/* @nahual-hook 1` + JSON (`name` 1–80 con el schema de `Rule.name`, `stage`, `prefilter`, `resourceTypes`, `conditions`) + `*/` y el código; toda `/` precedida de `*` escrita como `\/`; nunca permisos, sitio, `id`, `order`, `enabled` ni `check`; `parseHookFile(text)` ⇒ `{ config | null, configError?, source }`; pruebas: ida y vuelta idéntica, prefiltro `*/api/*`, bloque ausente, JSON inválido, schema inválido, `import type` de `./nahual-hooks` admitido, nombre de 81 caracteres rechazado
+- [X] T054 [US3] Prueba primero en `tests/integration/rule-store.test.ts` y luego comando `importHook` en `bg/app.ts` y `bg/rule-store.ts`: crea siempre una regla **nueva** en el sitio actual: con `config` si es válida, si no con una configuración vacía para que el dev la complete; nunca reemplaza el código de una regla existente; siempre `enabled: false`, `imported: true`, permisos en `false`, `check.ok: false`; límites de T029 (FR-036, FR-037)
 
 ### Panel
 
-- [ ] T055 [US3] `panel/components/hooks/ImportHookDialog.tsx` (`Dialog` de 004, contracts/panel-ui.md) y el handler "Importar hook…" de `HookEditor.tsx`: `<input type=file accept=".ts">`; rechazo si `File.size > 102,400`, si `TextDecoder("utf-8", { fatal: true })` falla o no se puede leer (FR-038); vista previa con la configuración como lista de definición o el aviso "El archivo no trae configuración…" con el motivo, el código en un `pre` de solo lectura con números de línea y el aviso "Se guardará como regla nueva y desactivada…"; "Importar" envía `importHook` (siempre regla nueva, FR-036)
-- [ ] T056 [P] [US3] "Exportar hook" y "Descargar tipos" en `HookEditor.tsx`: `Blob` + enlace `download` (`<nombre>.ts` con `serializeHookFile`; `nahual-hooks.d.ts` desde `hook-context.d.ts?raw`), sin red (FR-035, FR-039)
-- [ ] T057 [P] [US3] Etiqueta "importado" en `RuleList.tsx` y en el editor; claves i18n de US3 en locales
+- [X] T055 [US3] `panel/components/hooks/ImportHookDialog.tsx` (`Dialog` de 004, contracts/panel-ui.md) y el handler "Importar hook…" de `HookEditor.tsx`: `<input type=file accept=".ts">`; rechazo si `File.size > 102,400`, si `TextDecoder("utf-8", { fatal: true })` falla o no se puede leer (FR-038); vista previa con la configuración como lista de definición o el aviso "El archivo no trae configuración…" con el motivo, el código en un `pre` de solo lectura con números de línea y el aviso "Se guardará como regla nueva y desactivada…"; "Importar" envía `importHook` (siempre regla nueva, FR-036)
+- [X] T056 [P] [US3] "Exportar hook" y "Descargar tipos" en `HookEditor.tsx`: `Blob` + enlace `download` (`<nombre>.ts` con `serializeHookFile`; `nahual-hooks.d.ts` desde `hook-context.d.ts?raw`), sin red (FR-035, FR-039)
+- [X] T057 [P] [US3] Etiqueta "importado" en `RuleList.tsx` y en el editor; claves i18n de US3 en locales
 
 ### E2E y checkpoint
 
-- [ ] T058 [US3] `e2e/hooks-share.spec.ts`: escenarios 1–7 de US3 (exportar y comprobar el bloque y el código descargados; importar con vista previa; regla desactivada, "importado" y sin permisos, 0 ejecuciones hasta activarla (SC-006); archivo sin bloque; > 100 KB y binario rechazados; importado con errores no se activa; tipos descargados compilan un hook con `tsc`)
-- [ ] T059 [US3] axe del diálogo de importación en claro y oscuro a 320 px y recorrido con teclado (abrir, revisar, importar, cancelar) en `e2e/a11y.spec.ts`; capturas del diálogo en `e2e/visual/panel.visual.spec.ts`
+- [X] T058 [US3] `e2e/hooks-share.spec.ts`: escenarios 1–7 de US3 (exportar y comprobar el bloque y el código descargados; importar con vista previa; regla desactivada, "importado" y sin permisos, 0 ejecuciones hasta activarla (SC-006); archivo sin bloque; > 100 KB y binario rechazados; importado con errores no se activa; tipos descargados compilan un hook con `tsc`)
+- [X] T059 [US3] axe del diálogo de importación en claro y oscuro a 320 px y recorrido con teclado (abrir, revisar, importar, cancelar) en `e2e/a11y.spec.ts`; capturas del diálogo en `e2e/visual/panel.visual.spec.ts`
 
 **Checkpoint (demostrable)**: pasos 15–17 de quickstart.md; `pnpm e2e` en verde.
 

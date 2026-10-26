@@ -2212,5 +2212,53 @@
   },
   "hook_suspended_reason": {
     "message": "Suspended until the panel closes after 5 errors in a row."
+  },
+  "hook_import": {
+    "message": "Import hook…"
+  },
+  "hook_import_title": {
+    "message": "Import hook"
+  },
+  "hook_import_disabled_note": {
+    "message": "It will be saved as a new, disabled rule. Review the code before enabling it."
+  },
+  "hook_import_code": {
+    "message": "Imported hook code"
+  },
+  "hook_import_confirm": {
+    "message": "Import"
+  },
+  "hook_import_types": {
+    "message": "Resource types"
+  },
+  "hook_import_all_types": {
+    "message": "All"
+  },
+  "hook_file_too_large": {
+    "message": "The file is over $1: it was not imported."
+  },
+  "hook_file_not_text": {
+    "message": "The file is not UTF-8 text or could not be read: it was not imported."
+  },
+  "hook_file_no_config": {
+    "message": "The file has no configuration: only the code will be imported, into a new rule you will need to configure."
+  },
+  "hook_file_bad_json": {
+    "message": "The file's configuration is not valid JSON: only the code will be imported."
+  },
+  "hook_file_bad_config": {
+    "message": "The file's configuration is not valid: only the code will be imported."
+  },
+  "hook_imported": {
+    "message": "imported"
+  },
+  "hook_imported_name": {
+    "message": "Imported hook"
+  },
+  "hook_export": {
+    "message": "Export hook"
+  },
+  "hook_download_types": {
+    "message": "Download types"
   }
 }

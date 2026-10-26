@@ -1931,3 +1931,48 @@ tr[data-result="hook_failed"] .hook-result {
   width: 16px;
   height: 16px;
 }
+
+/* Importar un hook: vista previa del código como un archivo en Sources (solo lectura). */
+.import-dialog {
+  width: min(720px, calc(100vw - 16px));
+}
+
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.import-code {
+  margin: 0;
+  max-height: 50vh;
+  overflow: auto;
+  border: 1px solid var(--nh-divider);
+  background: var(--nh-bg);
+  font-family: var(--nh-source-font);
+  font-size: var(--nh-source-size);
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.import-line {
+  display: block;
+  padding-right: 8px;
+}
+
+.import-line-number {
+  display: inline-block;
+  min-width: 3.5ch;
+  padding: 0 6px;
+  margin-right: 6px;
+  text-align: right;
+  color: var(--nh-editor-gutter);
+  border-right: 1px solid var(--nh-divider);
+  user-select: none;
+}
+
+.import-error {
+  flex-basis: 100%;
+  margin: 0;
+}

@@ -1,4 +1,5 @@
 import {
+  HookFileConfigSchema,
   LIMITS,
   RuleSchema,
   compileJsonPath,
@@ -27,6 +28,15 @@ export interface RuleStore {
   remove(ruleId: string): Promise<CommandResult>;
   restore(ruleId: string): Promise<CommandResult>;
   setEnabled(ruleId: string, enabled: boolean): Promise<CommandResult>;
+  /**
+   * 006 (FR-036, FR-037): crea siempre una regla nueva con el hook importado, desactivada, sin
+   * permisos y sin comprobar; `defaultName` si el archivo no traía configuración.
+   */
+  importHook(
+    input: { config: Record<string, unknown> | null; source: string },
+    site: string | null,
+    defaultName: string,
+  ): Promise<CommandResult>;
   /** Nuevo orden completo de las reglas de un sitio (FR-016). */
   reorder(site: string, ruleIds: string[]): Promise<CommandResult>;
 }
@@ -239,6 +249,35 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
           ) ?? next
         );
       });
+    },
+
+    importHook({ config, source }, site, defaultName) {
+      if (site === null) return Promise.resolve({ ok: false, code: "no_site" });
+      const parsed = config === null ? null : HookFileConfigSchema.safeParse(config);
+      if (parsed && !parsed.success)
+        return Promise.resolve(invalid("config", "hook_file_bad_config"));
+      const base = parsed?.data ?? {
+        name: defaultName,
+        stage: "request" as const,
+        prefilter: { kind: "glob" as const, pattern: "*" },
+        methods: [],
+        resourceTypes: [],
+        conditions: [],
+      };
+      return this.save(
+        {
+          ...base,
+          enabled: false,
+          action: {
+            kind: "hook",
+            source,
+            imported: true,
+            permissions: { changeDestination: false, readSensitive: false },
+            check: { hash: hashSource(source), ok: false },
+          },
+        },
+        site,
+      );
     },
 
     reorder(site, ruleIds) {
