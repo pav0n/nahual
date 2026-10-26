@@ -457,3 +457,16 @@ Apertura del panel (7 aperturas tras una de calentamiento, mediana, desde la nav
 servicio de lenguaje de TypeScript ni Sucrase, y mide como mucho 1,10 × la de 005.
 `tests/dist/no-network.test.ts` admite `declare function eval(` porque el chunk del servicio de
 tipos lleva `lib.es2022.d.ts` como texto.
+
+### Estabilidad (T065)
+
+`pnpm e2e` (198 pruebas, 4 workers) tres veces seguidas y la suite visual:
+
+- Primera serie: 198/198, 192 pasadas y 1 fallo, 198/198; visual 2/2. El fallo fue
+  `hooks-a11y.spec.ts` "editor del hook solo con teclado", por dos causas de la prueba y no de
+  la extensión: pedía sugerencias antes de que el servicio de tipos terminara de arrancar en frío
+  (más de 5 s con el suite en paralelo), y pulsaba Enter dentro de los 75 ms en que CodeMirror
+  ignora aceptar tras abrir la lista (`interactionDelay`, protege de aceptar por accidente). La
+  prueba ahora espera "No problems." y la opción seleccionada; 10/10 repetida sola.
+- Segunda serie, con la corrección: 198/198 las tres veces (5.1, 5.1 y 5.2 min).
+- Sigue presente la intermitencia conocida de 003 (CORS); no apareció en estas corridas.
