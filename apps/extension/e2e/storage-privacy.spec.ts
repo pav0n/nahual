@@ -1,9 +1,12 @@
 import {
   addProductionOrigin,
+  appFetch,
   attachAndReload,
   callApi,
   corsCall,
   createRule,
+  hookExecutions,
+  installHook,
   openApp,
   openPanel,
   openQueue,
@@ -251,4 +254,71 @@ test("el acceso a un origen solo se pide al enviar en contexto limpio, para ese 
   expect(await calls()).toEqual([localhost]);
   await expect(repeaterResult(panel)).toContainText(`Access to ${localhost} was not granted`);
   expect(servers.received.slice(before).filter((x) => x.path === "/no-cors")).toEqual([]);
+});
+
+// 006 contracts/storage.md: los hooks no dejan en ningún almacenamiento lo que registran, lo que
+// guardan en `state` ni los headers sensibles que leen; `nahual.rules.v1` solo suma la acción.
+test("los hooks no guardan registros, state ni valores sensibles en ningún almacenamiento", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await attachAndReload(panel, app);
+  await installHook(panel, {
+    name: "Guarda token",
+    stage: "request",
+    prefilter: "*/echo*",
+    permissions: { readSensitive: true },
+    source: `export default (ctx) => {
+  ctx.state.auth = ctx.request.headers["authorization"];
+  ctx.state.url = ctx.request.url;
+  ctx.log(ctx.request.headers, ctx.request.url);
+};`,
+  });
+  await appFetch(app, `${servers.apiOrigin}/echo?token=secret-hook-query`, {
+    headers: { authorization: "Bearer secret-hook-auth" },
+  });
+  await expect.poll(async () => (await hookExecutions(panel)).length).toBe(1);
+  const drawer = panel.getByRole("region", { name: "Hooks console" });
+  await drawer.getByRole("button", { name: /^Expand/ }).click();
+  await drawer.getByRole("button", { name: "Show sensitive values" }).click();
+  await expect(drawer.locator(".console-row").first()).toContainText("secret-hook-auth");
+  await panel.waitForTimeout(400);
+
+  const local = await nahualWorker.evaluate(() => chrome.storage.local.get(null));
+  const session = await nahualWorker.evaluate(() => chrome.storage.session.get(null));
+  expect(Object.keys(local).sort()).toEqual(["nahual.rules.v1", "nahual.settings.v1"]);
+  const rules = (local["nahual.rules.v1"] as { rules: { action: Record<string, unknown> }[] })
+    .rules;
+  expect(rules.map((r) => r.action.kind)).toEqual(["hook"]);
+  expect(Object.keys(rules[0]?.action ?? {}).sort()).toEqual([
+    "check",
+    "imported",
+    "kind",
+    "permissions",
+    "source",
+  ]);
+  const page = await panel.evaluate(async () => ({
+    local: Object.fromEntries(Object.keys(localStorage).map((k) => [k, localStorage.getItem(k)])),
+    session: Object.fromEntries(
+      Object.keys(sessionStorage).map((k) => [k, sessionStorage.getItem(k)]),
+    ),
+    databases: (await indexedDB.databases()).map((d) => d.name),
+  }));
+  for (const key of Object.keys(page.local)) expect(key).toBe("nahual.ui.v1");
+  expect(page.databases).toEqual([]);
+  for (const stored of [local, session, page.local, page.session]) {
+    const text = JSON.stringify(stored);
+    for (const secret of [
+      "secret-hook-auth",
+      "secret-hook-query",
+      "secret-session-value",
+      servers.apiOrigin,
+    ])
+      expect(text, secret).not.toContain(secret);
+  }
 });
