@@ -484,6 +484,14 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
         // La última página no trae `next` y la segunda trae `deletedAt` nulo: inferencia Zod.
         return send(200, page < 3 ? { items, next: `/export/items?page=${page + 1}` } : { items });
       }
+      // T069: ~1 MB de JSON con tipos mezclados (rendimiento de los exportadores).
+      case "GET /export/large":
+        return send(200, {
+          items: Array.from({ length: 7_200 }, (_, i) => ({
+            ...exportItem(i + 1),
+            note: `item-${i}-${"x".repeat(64)}`,
+          })),
+        });
       case "POST /export/items": {
         try {
           return send(201, { created: true, received: JSON.parse(body) as unknown });

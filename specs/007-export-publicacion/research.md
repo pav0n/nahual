@@ -440,3 +440,16 @@ Cambios aceptados en las capturas de 004–006:
 - Las capturas de referencia de 006 ya no coincidían con la interfaz de 006 (faltaban "Import
   hook…" y los botones de exportar e importar del editor). Se regeneraron todas y se revisaron a
   mano.
+
+### Rendimiento (T069)
+
+- Carga inicial del panel (imports estáticos de `panel.html`, build de producción): 006 = 651 817
+  bytes (medido en `main`), 007 = 665 306 bytes (+2,1 %; límite +10 %). Los exportadores, la
+  colección de Postman, la configuración portable y el conversor de Requestly van en chunks
+  diferidos (`ExportDialog-*`, `portable-*`, `requestly-*`); `tests/dist/bundles.test.ts` lo
+  comprueba con una cadena propia de cada módulo.
+- `e2e/export-perf.spec.ts` (`@perf`), body de ~1 MB (por debajo de `exportInlineBodyBytes`), del
+  clic al código en el visor: cURL 90 ms, fetch 118 ms, Vitest 140 ms, MSW 180 ms, Zod 99 ms,
+  Postman 115 ms (límite 300 ms). Lote de 50 requests a MSW: 217 ms (límite 3 s).
+- `e2e/hooks-perf.spec.ts` (`@perf`), 300 fetch secuenciales con una regla "Solo registrar": p95
+  con todas las reglas (como 006) 2,2 ms; con un perfil activo 1,9 ms (Δ −0,3 ms).

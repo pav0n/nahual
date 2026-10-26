@@ -64,3 +64,56 @@ test(
     expect(overhead.p95).toBeLessThan(10);
   },
 );
+
+test(
+  "007 T069: con un perfil activo, el p95 del tráfico no supera el de todas las reglas (006)",
+  { tag: "@perf" },
+  async ({ context, nahualWorker, extensionId, servers }) => {
+    test.setTimeout(180_000);
+    const app = await context.newPage();
+    await app.goto(`${servers.appOrigin}/load`);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/load`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await attachAndReload(panel, app);
+    const url = `${servers.apiOrigin}/data`;
+
+    await openSection(panel, "Rules");
+    await panel.getByRole("button", { name: /^(Create your first rule|New rule)$/ }).click();
+    const editor = panel.locator(".editor");
+    await editor.getByLabel("Name", { exact: true }).fill("Registrar");
+    await editor.getByLabel("URL prefilter").fill("*/data*");
+    await editor.getByLabel("Stage").selectOption("request");
+    await editor.getByLabel("Action", { exact: true }).selectOption("log");
+    await editor.getByRole("button", { name: "Save rule" }).click();
+    const rule = panel.locator(".rule-item").filter({ hasText: "Registrar" });
+    await expect(rule).toBeVisible();
+    // Comportamiento de 006: sin perfiles, todas las reglas.
+    const all = await load(app, url);
+
+    await panel.getByRole("button", { name: "Settings", exact: true }).click();
+    const settings = panel.getByRole("dialog", { name: "Settings" });
+    await settings.getByRole("tab", { name: "Profiles" }).click();
+    await settings.getByLabel("New profile").fill("QA staging");
+    await settings.getByRole("button", { name: "Create profile" }).click();
+    await expect(
+      settings.getByRole("button", { name: "Delete profile: QA staging" }),
+    ).toBeVisible();
+    await settings.getByRole("button", { name: "Close" }).click();
+    await rule.getByRole("button", { name: "Assign profiles: Registrar" }).click();
+    await panel.getByRole("menuitemcheckbox", { name: "QA staging" }).click();
+    await panel.keyboard.press("Escape");
+    await panel.getByRole("button", { name: /^This tab's rule profile:/ }).click();
+    await panel
+      .getByRole("menu", { name: "Rule profile" })
+      .getByRole("menuitemcheckbox", { name: /^QA staging/ })
+      .click();
+    await expect(panel.getByRole("button", { name: /^This tab's rule profile:/ })).toContainText(
+      "QA staging",
+    );
+    const profiled = await load(app, url);
+    const delta = { p50: profiled.p50 - all.p50, p95: profiled.p95 - all.p95 };
+    console.log(`[007-t069] ${JSON.stringify({ all, profiled, delta })}`);
+    // Mismo trabajo por request; el margen es el ruido de la medición (como SC-002 de 006).
+    expect(delta.p95).toBeLessThan(5);
+  },
+);
