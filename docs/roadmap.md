@@ -6,23 +6,6 @@ flujo de Spec Kit completo; nada de aquí está decidido hasta su spec.
 
 ## Pedido para próximas releases
 
-### Servidor MCP
-
-Correr un servidor MCP (Model Context Protocol) para que un agente de IA trabaje con Nahual: leer
-el tráfico capturado de una pestaña, consultar un intercambio, enviar al repeater y crear o
-activar reglas, hooks y perfiles.
-
-A resolver en la spec:
-- Cómo llega el agente a la extensión. Una extensión MV3 no puede abrir un servidor; las opciones
-  son un host de Native Messaging (permiso `nativeMessaging` y un binario instalado aparte) o un
-  puente local. Es una decisión transversal: va en un ADR nuevo, y el permiso se justifica en
-  `plan.md`.
-- Seguridad por defecto: qué herramientas expone, si las que cambian el tráfico piden
-  confirmación en el panel, y la redacción de valores sensibles en todo lo que lee el agente
-  (la misma de `sensitive.ts`).
-- Local-first: solo conexiones locales, sin red propia ni telemetría.
-- Qué hace cuando no hay pestaña adjunta o hay varias.
-
 ### Modificar requests y responses con archivos y bodies binarios
 
 Hoy los bodies binarios, los mayores de 5 MB y `multipart/form-data` se reenvían intactos:
