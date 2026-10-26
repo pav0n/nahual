@@ -66,15 +66,24 @@ export function Menu({ open, anchor, label, items, onClose, returnFocus, info, i
       setPosition(null);
       return;
     }
-    const { width, height } = ref.current.getBoundingClientRect();
-    setPosition(
-      placeMenu(
-        anchor,
-        { width, height },
-        { width: window.innerWidth, height: window.innerHeight },
-      ),
-    );
-  }, [open, anchor, items.length]);
+    const place = (event?: Event) => {
+      if (!ref.current) return;
+      const { width, height } = ref.current.getBoundingClientRect();
+      // Tras un cambio de tamaño, el disparador (si lo hay) pudo moverse con la barra.
+      const trigger = event ? returnFocus?.current : null;
+      setPosition(
+        placeMenu(
+          trigger ? anchorOf(trigger) : anchor,
+          { width, height },
+          { width: window.innerWidth, height: window.innerHeight },
+        ),
+      );
+    };
+    place();
+    // Si el panel cambia de tamaño con el menú abierto, el menú no queda fuera de la vista.
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [open, anchor, items.length, returnFocus]);
 
   const placed = position !== null;
   useEffect(() => {

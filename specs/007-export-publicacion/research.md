@@ -393,3 +393,50 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
 ## Modelo de amenazas (cambios de 007)
 
 Ver la tabla en [plan.md](./plan.md#constitution-check).
+
+## Resultados
+
+### Accesibilidad (T067, SC-012)
+
+`e2e/export-a11y.spec.ts` y `e2e/profiles-a11y.spec.ts`: axe (WCAG 2.2 AA, serios y críticos) y
+sin scroll horizontal en claro y oscuro a 320, 800 y 1280 px, en "Exportar como…" (los seis
+formatos y la confirmación de incluir valores sensibles), Ajustes ⇒ Perfiles e Importar y
+exportar, la vista previa de importación con no soportadas, el menú de perfil y la lista de reglas
+con un perfil activo. Recorridos solo con teclado: `Alt+Shift+E`, flechas entre formatos, copiar
+con Enter; `Alt+Shift+O`, flechas, Enter y Esc devuelve el foco al disparador.
+
+- Encontrado y corregido: el visor de solo lectura con scroll (código largo) fallaba
+  `scrollable-region-focusable`, porque axe no cuenta `contenteditable` como enfocable. El contenido
+  del visor lleva `tabindex="0"`; ya era enfocable y no añade otra parada de Tab.
+- El visor no atrapa Tab (no tiene `indentWithTab`, a diferencia del editor de hooks), así que Tab
+  sale del código y Esc cierra el diálogo, como en el resto del panel.
+
+### Regresión visual (T068)
+
+Bloque nuevo en `e2e/visual/panel.visual.spec.ts`: exportar (cURL y MSW), Ajustes ⇒ Perfiles e
+Importar y exportar, vista previa de importación, menú de perfil y reglas con perfil activo, en
+ambos temas y los tres anchos (36 capturas). Comparación lado a lado con la vista previa de
+importar un hook (006) y el menú de sesión (004): mismo diálogo, mismo visor, mismos tokens y
+densidad, y el selector de perfil usa el mismo disparador y el mismo menú que el estado de sesión.
+
+Cambios aceptados en las capturas de 004–006:
+
+- Barra: "All rules" (selector de perfil) antes del estado de sesión; a 320 px solo el icono.
+- Ajustes: secciones Perfiles e Importar y exportar; Atajos lista `Alt+Shift+E` y `Alt+Shift+O`.
+- Reglas: botón "Assign profiles" (en el panel izquierdo de 1280 px, "Delete" pasa a una segunda
+  fila) y, en el editor, el grupo "Profiles".
+- Detalle del tráfico: botón "Export as…"; a 800 px las tres acciones ocupan dos filas.
+- Desvío corregido de 004: `Menu` calculaba su posición solo al abrirse. Si el panel cambiaba de
+  tamaño con el menú abierto, el menú quedaba fuera de la vista; las capturas de 320 y 800 px del
+  menú de sesión y del menú contextual salían sin menú. Ahora se recoloca con `resize`, junto al
+  disparador.
+- Desvío corregido de 004: los `display: flex` de los paneles de pestañas pisaban el `display: none`
+  de `[hidden]`, así que los paneles ocultos (vacíos) ocupaban sitio. En Ajustes, Atajos caía
+  debajo de la navegación. Regla general `.tabpanel[role="tabpanel"][hidden] { display: none }`.
+- Importar y exportar usa el mismo espaciado vertical que las demás secciones de Ajustes.
+- La tolerancia de `toHaveScreenshot` (`maxDiffPixelRatio: 0.01`) deja pasar cambios pequeños, como
+  "All rules" en la barra, sin actualizar la referencia. Se regeneraron todas con
+  `--update-snapshots=all`.
+- Las capturas de referencia de 006 ya no coincidían con la interfaz de 006 (faltaban "Import
+  hook…" y los botones de exportar e importar del editor). Se regeneraron todas y se revisaron a
+  mano.

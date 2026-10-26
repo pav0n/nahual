@@ -276,6 +276,13 @@ ul.plain {
   min-width: 0;
 }
 
+/* Los `display: flex` de los paneles (Ajustes, detalle, repeater) pisaban el `display: none` de
+   `[hidden]`: los paneles ocultos, vacíos, ocupaban sitio (en Ajustes, Atajos caía debajo de la
+   navegación). Más específico que todos ellos. */
+.tabpanel[role="tabpanel"][hidden] {
+  display: none;
+}
+
 .topbar {
   display: flex;
   flex-wrap: wrap;
@@ -1294,6 +1301,18 @@ pre.body {
 
 dialog.settings {
   width: min(560px, calc(100vw - 16px));
+}
+
+/* 007: Importar y exportar con el mismo ritmo que el resto de secciones (gap del panel). */
+.data-settings,
+.data-settings > section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-settings {
+  gap: 16px;
 }
 
 .settings-layout {

@@ -212,6 +212,12 @@ export function readOnlyExtensions(
     syntaxHighlighting(highlight),
     theme,
     keymap.of(defaultKeymap),
-    EditorView.contentAttributes.of({ "aria-label": label, "aria-readonly": "true" }),
+    // `tabindex`: axe no cuenta `contenteditable` como enfocable y el visor tiene scroll
+    // (scrollable-region-focusable); ya era enfocable, no añade otra parada de Tab.
+    EditorView.contentAttributes.of({
+      "aria-label": label,
+      "aria-readonly": "true",
+      tabindex: "0",
+    }),
   ];
 }
