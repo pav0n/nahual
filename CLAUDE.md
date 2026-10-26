@@ -10,6 +10,8 @@ especificaciones con GitHub Spec Kit.
   Carga solo el archivo de la feature en curso.
 - **Decisiones transversales:** `docs/adr/` (p. ej. por qué CDP y `chrome.debugger`). Un cambio
   de una de ellas va en un ADR nuevo.
+- **Trabajo futuro:** `docs/roadmap.md` (lo pedido para próximas releases y lo que cada feature
+  dejó fuera de alcance).
 - **Orden:** 001 → 002 → 003 → 004 (rediseño del panel); 005 y 006 tras 004 en cualquier orden; 007 al final.
 - **Flujo:** specify → clarify → plan → tasks → analyze → implement. Un PR de especificación y
   otro de implementación por feature.
