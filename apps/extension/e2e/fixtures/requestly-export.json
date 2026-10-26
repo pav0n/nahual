@@ -1,0 +1,263 @@
+[
+  {
+    "id": "Group_qa",
+    "objectType": "group",
+    "name": "QA staging",
+    "status": "Active",
+    "children": [],
+    "creationDate": 1761400000000,
+    "modificationDate": 1761400000000
+  },
+  {
+    "id": "Group_empty",
+    "objectType": "group",
+    "name": "Solo no soportadas",
+    "status": "Inactive",
+    "children": []
+  },
+  {
+    "id": "Redirect_1",
+    "objectType": "rule",
+    "ruleType": "Redirect",
+    "name": "API a tercer origen",
+    "status": "Active",
+    "groupId": "Group_qa",
+    "pairs": [
+      {
+        "id": "p1",
+        "source": {
+          "key": "Url",
+          "operator": "Wildcard_Matches",
+          "value": "__API__/export/redirect/*",
+          "filters": []
+        },
+        "destinationType": "url",
+        "destination": "__THIRD__/leak?from=$1"
+      }
+    ],
+    "creationDate": 1761400000000,
+    "currentOwner": "someone"
+  },
+  {
+    "id": "Headers_req",
+    "objectType": "rule",
+    "ruleType": "Headers",
+    "name": "Header de request",
+    "status": "Active",
+    "groupId": "Group_qa",
+    "pairs": [
+      {
+        "id": "p2",
+        "source": {
+          "key": "Url",
+          "operator": "Contains",
+          "value": "/echo",
+          "filters": { "requestMethod": ["POST"] }
+        },
+        "modifications": {
+          "Request": [
+            { "id": "m1", "header": "X-Nahual-Test", "type": "Add", "value": "from-requestly" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "Headers_res",
+    "objectType": "rule",
+    "ruleType": "Headers",
+    "name": "Header de response",
+    "status": "Inactive",
+    "pairs": [
+      {
+        "id": "p3",
+        "source": { "key": "host", "operator": "Equals", "value": "127.0.0.1" },
+        "modifications": {
+          "Response": [{ "id": "m2", "header": "X-Frame-Options", "type": "Remove" }]
+        }
+      }
+    ]
+  },
+  {
+    "id": "Headers_both",
+    "objectType": "rule",
+    "ruleType": "Headers",
+    "name": "Headers en ambas etapas",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p4",
+        "source": { "key": "path", "operator": "Contains", "value": "/export/" },
+        "modifications": {
+          "Request": [{ "id": "m3", "header": "X-Trace", "type": "Modify", "value": "on\"*/${x}" }],
+          "Response": [{ "id": "m4", "header": "X-Served-By", "type": "Add", "value": "nahual" }]
+        }
+      }
+    ]
+  },
+  {
+    "id": "Response_static",
+    "objectType": "rule",
+    "ruleType": "Response",
+    "name": "API caida",
+    "status": "Active",
+    "groupId": "Group_qa",
+    "pairs": [
+      {
+        "id": "p5",
+        "source": { "key": "Url", "operator": "Equals", "value": "__API__/api/error" },
+        "response": {
+          "type": "static",
+          "value": "{\"error\":\"mantenimiento\"}",
+          "statusCode": "503",
+          "resourceType": "restApi"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Response_local",
+    "objectType": "rule",
+    "ruleType": "Response",
+    "name": "Respuesta sin request",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p6",
+        "source": { "key": "Url", "operator": "Matches", "value": "/api/empty$" },
+        "response": {
+          "type": "static",
+          "value": "lista vacia",
+          "statusCode": "200",
+          "serveWithoutRequest": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "Response_code",
+    "objectType": "rule",
+    "ruleType": "Response",
+    "name": "Respuesta con codigo",
+    "status": "Active",
+    "groupId": "Group_empty",
+    "pairs": [
+      {
+        "id": "p7",
+        "source": { "key": "Url", "operator": "Contains", "value": "/api/" },
+        "response": {
+          "type": "code",
+          "value": "function modifyResponse(args) { return args.response; }"
+        }
+      }
+    ]
+  },
+  {
+    "id": "QueryParam_1",
+    "objectType": "rule",
+    "ruleType": "QueryParam",
+    "name": "Quitar utm",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p8",
+        "source": { "key": "Url", "operator": "Contains", "value": "utm_" },
+        "modifications": [{ "id": "m5", "param": "utm_source", "type": "Remove" }]
+      }
+    ]
+  },
+  {
+    "id": "Script_1",
+    "objectType": "rule",
+    "ruleType": "Script",
+    "name": "Inyectar script",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p9",
+        "source": { "key": "Url", "operator": "Contains", "value": "127.0.0.1" },
+        "scripts": [
+          {
+            "id": "s1",
+            "codeType": "js",
+            "loadTime": "afterPageLoad",
+            "type": "code",
+            "value": "alert(1)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "Headers_payload",
+    "objectType": "rule",
+    "ruleType": "Headers",
+    "name": "Filtro por payload",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p10",
+        "source": {
+          "key": "Url",
+          "operator": "Contains",
+          "value": "/graphql",
+          "filters": { "requestPayload": { "key": "operationName", "value": "GetUser" } }
+        },
+        "modifications": {
+          "Request": [{ "id": "m6", "header": "X-Op", "type": "Add", "value": "user" }]
+        }
+      }
+    ]
+  },
+  {
+    "id": "Redirect_badregex",
+    "objectType": "rule",
+    "ruleType": "Redirect",
+    "name": "Regex invalida",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p11",
+        "source": { "key": "Url", "operator": "Matches", "value": "/(unclosed" },
+        "destinationType": "url",
+        "destination": "https://example.com/"
+      }
+    ]
+  },
+  {
+    "id": "Redirect_local",
+    "objectType": "rule",
+    "ruleType": "Redirect",
+    "name": "Map local",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p12",
+        "source": { "key": "Url", "operator": "Contains", "value": "/app.js" },
+        "destinationType": "map_local",
+        "destination": "file:///home/dev/app.js"
+      }
+    ]
+  },
+  {
+    "id": "Redirect_mixed",
+    "objectType": "rule",
+    "ruleType": "Redirect",
+    "name": "Dos parejas, una no convertible",
+    "status": "Active",
+    "pairs": [
+      {
+        "id": "p13",
+        "source": { "key": "Url", "operator": "Contains", "value": "/a" },
+        "destinationType": "url",
+        "destination": "https://example.com/a"
+      },
+      {
+        "id": "p14",
+        "source": { "key": "Url", "operator": "Contains", "value": "/b" },
+        "destinationType": "mock_or_file_picker",
+        "destination": "mock-id"
+      }
+    ]
+  }
+]

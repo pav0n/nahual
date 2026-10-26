@@ -238,6 +238,14 @@ function diffBig(seed: number) {
   });
 }
 
+/** 007: token que la API de `/export/*` acepta en `authorization`. */
+export const EXPORT_TOKEN = "Bearer secret-export-token";
+
+/** Elemento de `/export/items`: los pares tienen `deletedAt` nulo; los impares, una fecha. */
+function exportItem(id: number) {
+  return { id, name: `item-${id}`, deletedAt: id % 2 === 0 ? null : "2026-10-25T20:00:00.000Z" };
+}
+
 let bigBody: string | null = null;
 /** ~6 MB de JSON: por encima del límite de 5 MB de body evaluable. */
 function big() {
@@ -329,6 +337,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
           return;
         }
       }
+      if (url.pathname.startsWith("/export/")) return exportRoute(url, req, res, body);
       switch (url.pathname) {
         case "/echo-headers":
           return json(res, 200, { headers: req.headers });
@@ -430,6 +439,52 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
       }
     })();
   });
+
+  /**
+   * 007: API de los exportadores (quickstart, `tooling/export-smoke`). Cada respuesta lleva
+   * `set-cookie` y `x-request-id`; un `authorization` distinto del token de prueba recibe 401,
+   * para comprobar que el test exportado usa la variable de entorno y no el marcador.
+   */
+  function exportRoute(url: URL, req: IncomingMessage, res: ServerResponse, body: string) {
+    const auth = req.headers.authorization;
+    const headers = {
+      "content-type": "application/json",
+      "set-cookie": "export_session=secret-export-cookie; Path=/",
+      "x-request-id": `req-${url.pathname.length}-${url.search.length}`,
+    };
+    const send = (status: number, value: unknown) => {
+      res.writeHead(status, headers);
+      res.end(JSON.stringify(value));
+    };
+    if (auth !== undefined && auth !== EXPORT_TOKEN) return send(401, { error: "unauthorized" });
+    const item = /^\/export\/items\/(\d+)$/.exec(url.pathname);
+    if (item && req.method === "GET") return send(200, exportItem(Number(item[1])));
+    switch (`${req.method} ${url.pathname}`) {
+      case "GET /export/items": {
+        const page = Number(url.searchParams.get("page") ?? 1);
+        const items = [1, 2].map((n) => exportItem((page - 1) * 2 + n));
+        // La última página no trae `next` y la segunda trae `deletedAt` nulo: inferencia Zod.
+        return send(200, page < 3 ? { items, next: `/export/items?page=${page + 1}` } : { items });
+      }
+      case "POST /export/items": {
+        try {
+          return send(201, { created: true, received: JSON.parse(body) as unknown });
+        } catch {
+          return send(400, { error: "invalid json" });
+        }
+      }
+      case "POST /export/form":
+        return send(200, { fields: Object.fromEntries(new URLSearchParams(body)) });
+      case "POST /export/upload":
+        return send(200, { parts: [...body.matchAll(/; name="([^"]+)"/g)].map((m) => m[1]) });
+      case "GET /export/binary":
+        res.writeHead(200, { "content-type": "image/png", "content-length": String(PNG.length) });
+        res.end(PNG);
+        return;
+      default:
+        res.writeHead(404).end();
+    }
+  }
 
   /**
    * Rutas CORS de 003 (quickstart). Cada una provoca una causa de bloqueo concreta; `/cors/ok`
