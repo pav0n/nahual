@@ -21,6 +21,7 @@ import { Menu, anchorOf } from "../common/Menu.tsx";
 import type { Anchor } from "../common/menu-logic.ts";
 import { Toolbar } from "../common/Toolbar.tsx";
 import type { RuleEditorSlotProps } from "../rules/editor-slots.ts";
+import { downloadText } from "../common/download.ts";
 import { toRulePayload } from "../rules/rule-form.ts";
 import { hookEditorExtensions } from "./codemirror-setup.ts";
 
@@ -105,15 +106,6 @@ export default function HookEditor({ form, setForm, issues, onSave }: RuleEditor
     editor.focus();
   };
 
-  /** Descarga sin red: un `Blob` y un enlace `download` (FR-035, FR-039). */
-  const download = (name: string, text: string) => {
-    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = name;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1_000);
-  };
   const exportHook = () => {
     const { form: current } = latest.current;
     const config = {
@@ -125,9 +117,9 @@ export default function HookEditor({ form, setForm, issues, onSave }: RuleEditor
       conditions: toRulePayload(current).conditions as never,
     };
     const fileName = `${config.name.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "hook"}.ts`;
-    download(fileName, serializeHookFile(config, (current.action as HookAction).source));
+    downloadText(fileName, serializeHookFile(config, (current.action as HookAction).source));
   };
-  const downloadTypes = () => download("nahual-hooks.d.ts", hookContextTypes);
+  const downloadTypes = () => downloadText("nahual-hooks.d.ts", hookContextTypes);
 
   const others = rules.filter((r) => r.id !== form.id && r.action.kind === "hook");
   const used =

@@ -3,29 +3,10 @@ import { useMemo, useRef, useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { Dialog } from "../common/Dialog.tsx";
+import { copyText } from "../common/clipboard.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
 
 type CopyState = "idle" | "copied" | "manual";
-
-/**
- * Copia dentro del gesto del usuario (research R14): `navigator.clipboard` y, si DevTools lo
- * bloquea, `execCommand("copy")` sobre el texto seleccionado. Sin permiso `clipboardWrite`.
- */
-async function copyText(text: string, area: HTMLTextAreaElement | null): Promise<CopyState> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return "copied";
-  } catch {
-    if (!area) return "manual";
-    area.focus();
-    area.select();
-    try {
-      return document.execCommand("copy") ? "copied" : "manual";
-    } catch {
-      return "manual";
-    }
-  }
-}
 
 /**
  * Reporte para backend (historia 3): lo que el servidor debe permitir, con ejemplo opcional por

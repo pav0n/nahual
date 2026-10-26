@@ -1,3 +1,4 @@
+import { EXPORT_FORMATS, type ExportFormat } from "@nahual/domain";
 import { z } from "zod";
 
 /**
@@ -12,6 +13,8 @@ export interface UiPrefs {
   split: { traffic: number; rules: number; paused: number; repeater: number };
   /** Alto en px del cajón inferior. */
   drawerHeight: number;
+  /** 007: último formato elegido en "Exportar como…" (FR-018); nunca el código. */
+  exportFormat: ExportFormat;
 }
 
 export type SplitKey = keyof UiPrefs["split"];
@@ -20,6 +23,7 @@ export const DEFAULT_UI_PREFS: UiPrefs = {
   version: 1,
   split: { traffic: 0.5, rules: 0.34, paused: 0.34, repeater: 0.5 },
   drawerHeight: 180,
+  exportFormat: "curl",
 };
 
 const fraction = (fallback: number) => z.number().min(0.2).max(0.8).catch(fallback);
@@ -36,6 +40,8 @@ const UiPrefsSchema = z.object({
     })
     .catch(DEFAULT_UI_PREFS.split),
   drawerHeight: z.number().int().min(120).max(600).catch(DEFAULT_UI_PREFS.drawerHeight),
+  // 007: las preferencias de 006 no lo tienen y toman el default.
+  exportFormat: z.enum(EXPORT_FORMATS).catch(DEFAULT_UI_PREFS.exportFormat),
 });
 
 type PrefsStorage = Pick<Storage, "getItem" | "setItem">;
@@ -58,6 +64,7 @@ const copy = (prefs: UiPrefs): UiPrefs => ({
     repeater: prefs.split.repeater,
   },
   drawerHeight: prefs.drawerHeight,
+  exportFormat: prefs.exportFormat,
 });
 
 export function readUiPrefs(storage: Pick<Storage, "getItem"> | null = defaultStorage()): UiPrefs {

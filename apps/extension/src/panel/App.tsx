@@ -52,6 +52,9 @@ export function App({ tabId }: { tabId: number | null }) {
       // La sección se monta en el mismo ciclo: se enfoca en el siguiente.
       requestAnimationFrame(() => document.getElementById(SEARCH_INPUT_ID)?.focus());
     },
+    // 007: los conectan "Exportar como…" (T026) y el selector de perfil (T046).
+    exportRequest: () => {},
+    openProfileMenu: () => {},
   });
 
   if (tabId === null) {

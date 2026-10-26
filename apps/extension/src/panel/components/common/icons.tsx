@@ -28,7 +28,8 @@ export type IconName =
   | "copy"
   | "error"
   | "download"
-  | "export";
+  | "export"
+  | "profile";
 
 const PATHS: Record<IconName, ReactNode> = {
   pause: <path d="M7.5 5v10M12.5 5v10" />,
@@ -83,6 +84,8 @@ const PATHS: Record<IconName, ReactNode> = {
   edit: <path d="M4.5 15.5l.8-3.3 7.4-7.4 2.5 2.5-7.4 7.4zM11.2 6.3l2.5 2.5" />,
   download: <path d="M10 4v8.5M6.5 9l3.5 3.5L13.5 9M5 15.5h10" />,
   export: <path d="M10 13V4.5M6.5 8L10 4.5 13.5 8M5 15.5h10" />,
+  // 007: perfil de reglas, capas apiladas (un grupo de reglas que se activa entero).
+  profile: <path d="M10 4l6 3-6 3-6-3zM4 10l6 3 6-3M4 13l6 3 6-3" />,
   error: (
     <>
       <circle cx="10" cy="10" r="6.5" />

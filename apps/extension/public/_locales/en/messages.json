@@ -2266,5 +2266,344 @@
   },
   "hook_download_types": {
     "message": "Download types"
+  },
+  "shortcut_desc_export_request": {
+    "message": "Export the selected request as code"
+  },
+  "shortcut_desc_open_profile_menu": {
+    "message": "Choose this tab's rule profile"
+  },
+  "action_export_as": {
+    "message": "Export as…"
+  },
+  "export_dialog_title": {
+    "message": "Export $1"
+  },
+  "export_dialog_title_many": {
+    "message": "Export $1 requests"
+  },
+  "export_formats_label": {
+    "message": "Format"
+  },
+  "export_format_curl": {
+    "message": "cURL"
+  },
+  "export_format_fetch": {
+    "message": "fetch"
+  },
+  "export_format_vitest": {
+    "message": "Vitest test"
+  },
+  "export_format_msw": {
+    "message": "MSW handler"
+  },
+  "export_format_zod": {
+    "message": "Zod schema"
+  },
+  "export_format_postman": {
+    "message": "Postman"
+  },
+  "export_copy": {
+    "message": "Copy"
+  },
+  "export_download": {
+    "message": "Download"
+  },
+  "export_copied": {
+    "message": "Code copied"
+  },
+  "export_copy_manual": {
+    "message": "Couldn't copy: select the code and copy it manually"
+  },
+  "export_downloaded": {
+    "message": "Downloaded $1"
+  },
+  "export_redacted_count": {
+    "message": "$1 sensitive values redacted"
+  },
+  "export_redacted_none": {
+    "message": "No sensitive values"
+  },
+  "export_omitted": {
+    "message": "$1 omitted"
+  },
+  "export_merged": {
+    "message": "$1 merged by endpoint"
+  },
+  "export_include_sensitive": {
+    "message": "Include sensitive values"
+  },
+  "export_include_sensitive_confirm_title": {
+    "message": "Include sensitive values?"
+  },
+  "export_include_sensitive_confirm_body": {
+    "message": "The code will contain real credentials (cookies, tokens, passwords). Anyone who gets it can use them. This applies to this export only."
+  },
+  "export_include_sensitive_confirm_ok": {
+    "message": "Include"
+  },
+  "export_format_needs_response": {
+    "message": "Needs a captured response"
+  },
+  "export_format_needs_json": {
+    "message": "Needs a JSON response"
+  },
+  "export_loading_bodies": {
+    "message": "Loading bodies $1 of $2…"
+  },
+  "export_generating": {
+    "message": "Generating…"
+  },
+  "export_nothing": {
+    "message": "Nothing to export"
+  },
+  "export_nothing_hint": {
+    "message": "The selected requests have no response or are preflights."
+  },
+  "export_reason_no_response": {
+    "message": "no response"
+  },
+  "export_reason_preflight": {
+    "message": "preflight"
+  },
+  "export_reason_not_json": {
+    "message": "the response isn't JSON"
+  },
+  "export_reason_body_unavailable": {
+    "message": "body unavailable"
+  },
+  "export_non_json_note": {
+    "message": "Non-JSON bodies aren't redacted."
+  },
+  "batch_export_msw": {
+    "message": "Export MSW handlers"
+  },
+  "batch_export_zod": {
+    "message": "Export Zod schema"
+  },
+  "batch_export_postman": {
+    "message": "Export Postman collection"
+  },
+  "batch_export_zod_same_endpoint": {
+    "message": "Select only requests with the same method and path"
+  },
+  "profile_status_all": {
+    "message": "All rules"
+  },
+  "profile_status_named": {
+    "message": "Profile: $1"
+  },
+  "profile_status_label": {
+    "message": "This tab's rule profile"
+  },
+  "profile_menu_label": {
+    "message": "Rule profile"
+  },
+  "profile_menu_manage": {
+    "message": "Manage profiles…"
+  },
+  "profile_menu_empty_suffix": {
+    "message": "$1 (no rules)"
+  },
+  "profile_settings_title": {
+    "message": "Profiles"
+  },
+  "profile_settings_intro": {
+    "message": "Group this site's rules and turn a group on per tab. \"All rules\" applies them all, as before."
+  },
+  "profile_other_sites": {
+    "message": "Profiles from other sites ($1)"
+  },
+  "profile_name": {
+    "message": "Profile name"
+  },
+  "profile_create": {
+    "message": "Create profile"
+  },
+  "profile_new_name": {
+    "message": "New profile"
+  },
+  "profile_duplicate": {
+    "message": "Duplicate profile"
+  },
+  "profile_copy_name": {
+    "message": "$1 (copy)"
+  },
+  "profile_delete": {
+    "message": "Delete profile"
+  },
+  "profile_deleted_undo": {
+    "message": "Profile \"$1\" deleted"
+  },
+  "profile_empty_state": {
+    "message": "No profiles"
+  },
+  "profile_empty_state_hint": {
+    "message": "Create a profile to turn a group of rules on with one click."
+  },
+  "profile_active_empty": {
+    "message": "This profile has no rules"
+  },
+  "profile_empty_add_selected": {
+    "message": "Add the selected rules"
+  },
+  "profile_rule_inactive": {
+    "message": "Not active with $1"
+  },
+  "profile_rule_profiles": {
+    "message": "Profiles"
+  },
+  "profile_rule_assign": {
+    "message": "Assign profiles"
+  },
+  "profile_rule_count": {
+    "message": "$1 rules"
+  },
+  "profile_error_required": {
+    "message": "Enter a name"
+  },
+  "profile_error_too_long": {
+    "message": "60 characters max"
+  },
+  "profile_error_duplicate": {
+    "message": "There's already a profile with that name on this site"
+  },
+  "profile_error_limit": {
+    "message": "50 profiles per site max"
+  },
+  "profile_not_found": {
+    "message": "The profile no longer exists"
+  },
+  "notice_profile_deleted_active": {
+    "message": "The active profile was deleted. This tab uses all rules; choose another profile if you need one."
+  },
+  "notice_profiles_version": {
+    "message": "Profiles were saved by a newer version of Nahual and weren't loaded. Update Nahual."
+  },
+  "config_section_title": {
+    "message": "Import and export"
+  },
+  "config_export_title": {
+    "message": "Export configuration"
+  },
+  "config_export_summary": {
+    "message": "$1 rules on $2 sites · $3 hooks · $4 profiles · $5 production origins"
+  },
+  "config_export_cors_note": {
+    "message": "CORS relaxations are never exported."
+  },
+  "config_download": {
+    "message": "Download"
+  },
+  "config_import": {
+    "message": "Import configuration"
+  },
+  "config_import_hint": {
+    "message": "Imported items are added turned off; nothing is replaced."
+  },
+  "config_import_preview_title": {
+    "message": "Import configuration"
+  },
+  "config_import_confirm": {
+    "message": "Import (turned off)"
+  },
+  "config_imported_undo": {
+    "message": "Imported $1 rules and $2 profiles"
+  },
+  "config_origin_new": {
+    "message": "new"
+  },
+  "config_origin_existing": {
+    "message": "already present"
+  },
+  "config_profile_renamed": {
+    "message": "will be renamed to \"$1\""
+  },
+  "config_rule_redacted": {
+    "message": "Has redacted values: fill them in before turning it on"
+  },
+  "config_migrated": {
+    "message": "File from an earlier version, converted"
+  },
+  "rule_error_redacted_value": {
+    "message": "Fill in the redacted values before turning the rule on"
+  },
+  "config_error_too_large": {
+    "message": "The file is over 10 MB. Export fewer rules or split the file."
+  },
+  "config_error_not_json": {
+    "message": "The file isn't JSON. Choose a file exported by Nahual."
+  },
+  "config_error_not_nahual": {
+    "message": "This isn't a Nahual configuration. For Requestly rules, use \"Import from Requestly\"."
+  },
+  "config_error_newer_version": {
+    "message": "The file is from a newer version of Nahual. Update Nahual and try again."
+  },
+  "config_error_invalid": {
+    "message": "The file is invalid at $1. Export it again from Nahual."
+  },
+  "config_error_limit": {
+    "message": "A limit would be exceeded: $1 would go from $2 to $3 (max $4). Delete something before importing."
+  },
+  "notice_import_undone": {
+    "message": "An import was undone from another tab."
+  },
+  "undo_expired": {
+    "message": "It can no longer be undone"
+  },
+  "requestly_import": {
+    "message": "Import from Requestly"
+  },
+  "requestly_unsupported_title": {
+    "message": "Not supported ($1)"
+  },
+  "requestly_error_format": {
+    "message": "This isn't a Requestly rules export (a JSON array of rules is expected)."
+  },
+  "requestly_unsupported_rule_type": {
+    "message": "rule type with no Nahual equivalent"
+  },
+  "requestly_unsupported_response_code": {
+    "message": "response generated by code"
+  },
+  "requestly_unsupported_redirect_destination": {
+    "message": "redirect to a local file or a mock"
+  },
+  "requestly_unsupported_regex_invalid": {
+    "message": "invalid regular expression"
+  },
+  "requestly_unsupported_regex_too_long": {
+    "message": "regular expression over 512 characters"
+  },
+  "requestly_unsupported_filter": {
+    "message": "filter with no equivalent"
+  },
+  "requestly_unsupported_empty_pairs": {
+    "message": "rule without conditions"
+  },
+  "requestly_unsupported_source_key": {
+    "message": "condition on an unsupported field"
+  },
+  "requestly_unsupported_source_operator": {
+    "message": "unsupported operator"
+  },
+  "rule_imported_requestly": {
+    "message": "imported from Requestly"
+  },
+  "error_profile_invalid": {
+    "message": "The profile has errors. Check the name."
+  },
+  "error_profile_not_found": {
+    "message": "The profile no longer exists."
+  },
+  "error_config_invalid": {
+    "message": "The configuration is invalid."
+  },
+  "error_config_limit": {
+    "message": "The import would exceed a limit."
+  },
+  "error_undo_expired": {
+    "message": "It can no longer be undone."
   }
 }
