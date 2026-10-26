@@ -2623,5 +2623,23 @@
   },
   "requestly_error_no_site": {
     "message": "Conecta Nahual a una pestaña para importar sus reglas: se importan para el sitio de esa pestaña."
+  },
+  "help_export_title": {
+    "message": "Exportar al código"
+  },
+  "help_export_body": {
+    "message": "Clic derecho en un request ⇒ «Exportar como…» (o Alt+Shift+E con la fila seleccionada; en el repeater, el botón de exportar). Elige cURL, fetch, test de Vitest, handler de MSW, schema de Zod o colección de Postman, revisa el código y cópialo o descárgalo. Los valores sensibles van redactados salvo que confirmes incluirlos. Con varias filas marcadas, la barra exporta un solo archivo de MSW, un schema de Zod o una colección de Postman."
+  },
+  "help_profiles_title": {
+    "message": "Perfiles de reglas"
+  },
+  "help_profiles_body": {
+    "message": "Agrupa reglas en perfiles («QA staging», «Bug 1234») y activa uno por pestaña desde la barra o con Alt+Shift+O. Con un perfil activo solo se aplican sus reglas; las demás muestran «No actúa con…». Crea, renombra y elimina perfiles en Ajustes ⇒ Perfiles, y asigna reglas desde la lista de reglas."
+  },
+  "help_data_title": {
+    "message": "Importar y exportar"
+  },
+  "help_data_body": {
+    "message": "En Ajustes ⇒ Importar y exportar descargas toda tu configuración (reglas, hooks, perfiles y orígenes de producción) como JSON, con los valores sensibles redactados. Al importar un archivo, o un export de Requestly, ves una vista previa; todo entra desactivado y puedes deshacerlo durante 10 segundos. Las relajaciones de CORS nunca se exportan."
   }
 }

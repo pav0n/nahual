@@ -2623,5 +2623,23 @@
   },
   "requestly_error_no_site": {
     "message": "Attach Nahual to a tab to import the rules: they're imported for that tab's site."
+  },
+  "help_export_title": {
+    "message": "Export to code"
+  },
+  "help_export_body": {
+    "message": "Right-click a request ⇒ “Export as…” (or Alt+Shift+E with the row selected; in the repeater, the export button). Pick cURL, fetch, Vitest test, MSW handler, Zod schema or Postman collection, review the code, and copy or download it. Sensitive values are redacted unless you confirm including them. With several rows checked, the bar exports a single MSW file, a Zod schema or a Postman collection."
+  },
+  "help_profiles_title": {
+    "message": "Rule profiles"
+  },
+  "help_profiles_body": {
+    "message": "Group rules into profiles (“QA staging”, “Bug 1234”) and turn one on per tab from the bar or with Alt+Shift+O. With a profile on, only its rules apply; the others show “Not active with…”. Create, rename and delete profiles in Settings ⇒ Profiles, and assign rules from the rule list."
+  },
+  "help_data_title": {
+    "message": "Import and export"
+  },
+  "help_data_body": {
+    "message": "In Settings ⇒ Import and export you download your whole configuration (rules, hooks, profiles and production origins) as JSON, with sensitive values redacted. When you import a file, or a Requestly export, you get a preview; everything comes in turned off and you can undo it for 10 seconds. CORS relaxations are never exported."
   }
 }
