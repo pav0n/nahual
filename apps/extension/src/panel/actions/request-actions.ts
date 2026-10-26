@@ -23,10 +23,12 @@ export interface ActionEffects {
   requestRelax(exchangeId: string): void;
   /** Abre una pestaña del repeater con el request (005, FR-002). */
   sendToRepeater(exchange: CapturedExchange): void;
+  /** Abre "Exportar como…" con esos requests (007, FR-008). */
+  openExport(exchangeIds: string[]): void;
 }
 
 export interface RequestAction {
-  id: "createRule" | "sendToRepeater" | "relaxCors";
+  id: "createRule" | "sendToRepeater" | "export" | "relaxCors";
   labelKey: string;
   shortcut?: ShortcutId;
   appliesTo(exchange: CapturedExchange, state: ActionState): boolean;
@@ -65,6 +67,14 @@ export const REQUEST_ACTIONS: readonly RequestAction[] = [
     labelKey: "action_send_to_repeater",
     appliesTo: () => true,
     run: (exchange, effects) => effects.sendToRepeater(exchange),
+  },
+  {
+    // 007 (FR-008, contracts/panel-ui.md): un preflight no se exporta.
+    id: "export",
+    labelKey: "action_export_as",
+    shortcut: "exportRequest",
+    appliesTo: (exchange) => !exchange.isPreflight,
+    run: (exchange, effects) => effects.openExport([exchange.id]),
   },
   {
     id: "relaxCors",

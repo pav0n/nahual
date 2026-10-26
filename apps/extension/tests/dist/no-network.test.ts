@@ -40,6 +40,13 @@ const ALLOWED = [
 /** 006: el chunk de la página sandbox de hooks, el único donde se evalúa código. */
 const isSandboxChunk = (file: string) => path.basename(file).startsWith("sandbox-");
 
+/**
+ * 007: el chunk de "Exportar como…" genera código para el proyecto del dev; su `fetch(` es texto
+ * de una plantilla (empieza un template literal), nunca una llamada de la extensión.
+ */
+const isExportChunk = (file: string) => path.basename(file).startsWith("ExportDialog-");
+const TEMPLATE_FETCH = /`fetch\(\$\{/g;
+
 describe("bundles de producción", () => {
   const files = listFiles(DIST).filter((f) => f.endsWith(".js") && !isSandboxChunk(f));
 
@@ -58,6 +65,7 @@ describe("bundles de producción", () => {
           const context = code.slice(start, match.index + 80);
           // Los permitidos de 005 terminan con `$`: se comparan con lo que precede a la llamada.
           const before = code.slice(start, match.index);
+          if (isExportChunk(file) && code.startsWith("`fetch(${", match.index - 1)) continue;
           if (!ALLOWED.some((allowed) => allowed.test(context) || allowed.test(before)))
             hits.push(context);
         }
@@ -114,7 +122,9 @@ describe("red propia del repeater (005, research R14)", () => {
   )?.[1];
 
   it("hay exactamente dos fetch( en el build: el del contexto limpio y el texto de la plantilla", () => {
-    const hits = files.flatMap((f) => [...code(f).matchAll(/\bfetch\(/g)].map(() => f));
+    const hits = files
+      .filter((f) => !isExportChunk(f))
+      .flatMap((f) => [...code(f).matchAll(/\bfetch\(/g)].map(() => f));
     expect(hits).toHaveLength(2);
     expect(new Set(hits).size).toBe(1);
     expect(swChunk && hits[0]?.endsWith(swChunk)).toBe(true);
@@ -126,6 +136,15 @@ describe("red propia del repeater (005, research R14)", () => {
     const sw = code(path.join(DIST, swChunk ?? ""));
     expect(sw.includes(PAGE_SEND)).toBe(true);
     expect(sw.includes(PAGE_ABORT)).toBe(true);
+  });
+
+  it("007: en el chunk de exportar, todo fetch( es texto de la plantilla de código", () => {
+    const exportChunks = files.filter(isExportChunk);
+    expect(exportChunks).toHaveLength(1);
+    const text = code(exportChunks[0] ?? "");
+    const all = [...text.matchAll(/\bfetch\(/g)].length;
+    expect(all).toBeGreaterThan(0);
+    expect([...text.matchAll(TEMPLATE_FETCH)].length).toBe(all);
   });
 
   it("el panel no hace red: el contexto limpio solo existe en el SW", () => {

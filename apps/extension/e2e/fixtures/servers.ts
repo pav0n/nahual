@@ -48,7 +48,19 @@ const CALLS = [
   ["graphql-user", "POST", "/graphql"],
   ["graphql-user-errors", "POST", "/graphql?errors=1"],
   ["graphql-list", "POST", "/graphql"],
+  // 007: API de los exportadores (con Authorization, cookie y ?token=).
+  ["export-items", "GET", "/export/items?page=1"],
+  ["export-items-2", "GET", "/export/items?page=2"],
+  ["export-items-3", "GET", "/export/items?page=3"],
+  ["export-item", "GET", "/export/items/4"],
+  ["export-post", "POST", "/export/items?token=secret-query-token&lang=es"],
 ] as const;
+
+/** 007: headers de las llamadas de exportación (la API acepta `authorization` por CORS). */
+const CALL_HEADERS: Record<string, Record<string, string>> = {
+  "export-items": { accept: "application/json", authorization: "Bearer secret-export-token" },
+  "export-post": { authorization: "Bearer secret-export-token" },
+};
 
 /**
  * Llamadas CORS de 003 (quickstart): `[id, origen, método, ruta, credenciales, headers, body]`.
@@ -107,7 +119,12 @@ ${buttons}
 <script>
   const API = ${JSON.stringify(apiOrigin)};
   const CALLS = ${JSON.stringify(CALLS)};
-  const BODIES = ${JSON.stringify({ ...GRAPHQL_BODIES, echo: JSON.stringify({ hello: "nahual" }) })};
+  const BODIES = ${JSON.stringify({
+    ...GRAPHQL_BODIES,
+    echo: JSON.stringify({ hello: "nahual" }),
+    "export-post": JSON.stringify({ name: "x", password: "secret-body-password" }),
+  })};
+  const HEADERS = ${JSON.stringify(CALL_HEADERS)};
   window.call = async (id) => {
     const [, method, path] = CALLS.find((c) => c[0] === id);
     const init = { method, credentials: "include" };
@@ -115,6 +132,7 @@ ${buttons}
       init.body = BODIES[id];
       init.headers = { "content-type": "application/json" };
     }
+    if (HEADERS[id]) init.headers = { ...init.headers, ...HEADERS[id] };
     try {
       const res = await fetch(API + path, init);
       const text = await res.text();

@@ -2608,5 +2608,8 @@
   },
   "export_format_single": {
     "message": "Solo para un request"
+  },
+  "export_reason_batch_limit": {
+    "message": "más de 50 en el lote"
   }
 }

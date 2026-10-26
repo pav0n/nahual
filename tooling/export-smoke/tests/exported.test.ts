@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { exportAs, type ExportSource } from "@nahual/domain";
+import { exportAs, type ExportSource } from "@nahual/domain/export";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { ZodType } from "zod";
 import {

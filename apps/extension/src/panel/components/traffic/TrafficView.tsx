@@ -137,11 +137,26 @@ export function TrafficView() {
       {batch.length > 0 ? (
         <Toolbar label={t("traffic_batch_label")} className="batch-bar">
           <span className="count">{t("traffic_selected_count", String(selectedIds.length))}</span>
-          {batch.map((action) => (
-            <button key={action.id} type="button" onClick={() => action.run(selectedIds)}>
-              {action.label ?? t(action.labelKey)}
-            </button>
-          ))}
+          {batch.map((action) => {
+            const enabled =
+              action.enabled?.(exchanges.filter((e) => selectedIds.includes(e.id))) ?? true;
+            return (
+              // `aria-disabled` y no `disabled`: sigue enfocable y anuncia el motivo (FR-006).
+              <button
+                key={action.id}
+                type="button"
+                aria-disabled={!enabled}
+                title={
+                  !enabled && action.disabledReasonKey ? t(action.disabledReasonKey) : undefined
+                }
+                onClick={() => {
+                  if (enabled) action.run(selectedIds);
+                }}
+              >
+                {action.label ?? t(action.labelKey)}
+              </button>
+            );
+          })}
         </Toolbar>
       ) : null}
       {exchanges.length === 0 ? (

@@ -205,8 +205,8 @@ test("FR-028: selección múltiple con la acción por lote; sin el gancho no exi
 }) => {
   const { app, panel } = await setup({ context, nahualWorker, extensionId, servers });
   await panel.setViewportSize({ width: 1000, height: 800 });
-  // Sin el gancho: ni casillas, ni cajón, ni secciones de más.
-  await expect(panel.getByRole("checkbox", { name: /^Select/ })).toHaveCount(0);
+  // Sin el gancho: ni cajón ni secciones de más. Las casillas sí existen desde 007, que registra
+  // las primeras acciones por lote (exportar).
   await expect(panel.getByRole("region", { name: "Slot drawer" })).toHaveCount(0);
   await expect(panel.getByRole("tab", { name: /^Slot/ })).toHaveCount(0);
 

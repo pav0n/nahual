@@ -97,6 +97,14 @@ export function RepeaterView() {
             onChange={(mode) => store().setRepeaterMode(tab.id, mode)}
           />
           <span className="toolbar-spacer" />
+          <button
+            type="button"
+            onClick={() =>
+              store().openExport({ kind: "repeater", tabId: tab.id, sendId: shown?.sendId ?? null })
+            }
+          >
+            {t("action_export_as")}
+          </button>
           {pending && latest ? (
             <button type="button" onClick={() => cancelRepeaterSend(latest.sendId)}>
               {t("action_cancel")}

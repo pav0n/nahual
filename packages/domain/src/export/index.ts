@@ -19,6 +19,8 @@ import { vitestCode } from "./vitest.ts";
 import { zodSchema } from "./zod.ts";
 
 export type { ExportMerge, ExportOmission } from "./common.ts";
+export * from "./source.ts";
+export * from "./formats.ts";
 
 /** Qué necesita cada formato (data-model "ExportFormat"). */
 export const FORMATS: Record<

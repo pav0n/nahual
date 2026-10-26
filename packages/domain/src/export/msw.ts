@@ -15,8 +15,21 @@ import type { ExportSource } from "./source.ts";
 
 const WIDTH = 100;
 const METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "options"]);
-/** Los pone el runtime al responder; copiarlos rompería la respuesta (research R5). */
-const DROP = new Set(["content-length", "content-encoding", "transfer-encoding"]);
+/**
+ * Los pone el runtime al responder (copiarlos rompería la respuesta) o son de la conexión y la
+ * hora de la captura: cambian cada vez y no describen la API (research R5).
+ */
+const DROP = new Set([
+  "content-length",
+  "content-encoding",
+  "transfer-encoding",
+  "connection",
+  "keep-alive",
+  "date",
+  "te",
+  "trailer",
+  "upgrade",
+]);
 
 /** URL sin query ni fragmento: MSW no usa la query para emparejar y avisa si está. */
 function withoutQuery(url: string): string {

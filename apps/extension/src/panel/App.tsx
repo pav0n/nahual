@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { t } from "../shared/i18n.ts";
 import { toggleAttach } from "./attach-control.ts";
 import { command } from "./commands.ts";
@@ -22,6 +22,18 @@ import "./theme.css";
 import { applyTheme } from "./theme.ts";
 import { useShortcuts } from "./use-shortcuts.ts";
 import { useSwConnection } from "./use-sw-connection.ts";
+
+// 007: el diálogo y los exportadores, en un chunk aparte que se carga al exportar la primera vez.
+const ExportDialog = lazy(() => import("./components/export/ExportDialog.tsx"));
+
+function ExportDialogSlot() {
+  const opened = usePanelStore((s) => s.exportSeq > 0);
+  return opened ? (
+    <Suspense fallback={null}>
+      <ExportDialog />
+    </Suspense>
+  ) : null;
+}
 
 export function App({ tabId }: { tabId: number | null }) {
   useSwConnection(tabId);
@@ -52,8 +64,13 @@ export function App({ tabId }: { tabId: number | null }) {
       // La sección se monta en el mismo ciclo: se enfoca en el siguiente.
       requestAnimationFrame(() => document.getElementById(SEARCH_INPUT_ID)?.focus());
     },
-    // 007: los conectan "Exportar como…" (T026) y el selector de perfil (T046).
-    exportRequest: () => {},
+    // 007: exporta el request seleccionado en Tráfico (FR-008); el selector de perfil, T046.
+    exportRequest: () => {
+      const { selectedExchangeId, exchanges, openExport } = usePanelStore.getState();
+      const selected = exchanges.find((e) => e.id === selectedExchangeId);
+      if (selected && !selected.isPreflight)
+        openExport({ kind: "traffic", exchangeIds: [selected.id] });
+    },
     openProfileMenu: () => {},
   });
 
@@ -75,6 +92,7 @@ export function App({ tabId }: { tabId: number | null }) {
           {continueAll.dialog}
           <SettingsDialog />
           <CorsReportDialog />
+          <ExportDialogSlot />
           <Onboarding />
           <ToastRegion />
         </>

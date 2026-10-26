@@ -25,6 +25,8 @@ const effects: ActionEffects = {
   },
   requestRelax: (exchangeId) => usePanelStore.getState().requestRelax(exchangeId),
   sendToRepeater: (exchange) => void openRepeaterFromExchange(exchange),
+  openExport: (exchangeIds) =>
+    usePanelStore.getState().openExport({ kind: "traffic", exchangeIds }),
 };
 
 /** Estado que la aplicabilidad necesita, del store. */

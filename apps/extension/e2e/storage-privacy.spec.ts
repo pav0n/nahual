@@ -129,7 +129,8 @@ test("las preferencias de interfaz no guardan datos de tráfico", async ({
   );
   expect(Object.keys(prefs)).toEqual(["nahual.ui.v1"]);
   const parsed = JSON.parse(prefs["nahual.ui.v1"] ?? "{}") as Record<string, unknown>;
-  expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "split", "version"]);
+  // 007: `exportFormat` es el último formato elegido, nunca el código (FR-018).
+  expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "exportFormat", "split", "version"]);
   expect(Object.keys(parsed.split as object).sort()).toEqual([
     "paused",
     "repeater",

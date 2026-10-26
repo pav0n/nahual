@@ -34,8 +34,20 @@ const none = { relaxations: [] };
 const ids = (list: readonly { id: string }[]) => list.map((a) => a.id);
 
 describe("catálogo de acciones del request (004, research R6, FR-020/022)", () => {
-  it("orden: crear regla, enviar al repeater (005), permitir CORS", () => {
-    expect(ids(REQUEST_ACTIONS)).toEqual(["createRule", "sendToRepeater", "relaxCors"]);
+  it("orden: crear regla, enviar al repeater (005), exportar (007), permitir CORS", () => {
+    expect(ids(REQUEST_ACTIONS)).toEqual(["createRule", "sendToRepeater", "export", "relaxCors"]);
+  });
+
+  it("exportar (007, FR-008): cualquier request salvo preflight, con su atajo", () => {
+    expect(ids(applicableActions(exchange(), none))).toContain("export");
+    expect(
+      ids(applicableActions(exchange({ isPreflight: true, method: "OPTIONS" }), none)),
+    ).not.toContain("export");
+    const action = REQUEST_ACTIONS.find((a) => a.id === "export");
+    expect(action?.shortcut).toBe("exportRequest");
+    const effects = { openExport: vi.fn() } as unknown as ActionEffects;
+    action?.run(exchange({ id: "ex-9" }), effects);
+    expect(effects.openExport).toHaveBeenCalledWith(["ex-9"]);
   });
 
   it("ids únicos; atajos y textos existen", () => {
@@ -68,15 +80,21 @@ describe("catálogo de acciones del request (004, research R6, FR-020/022)", () 
   });
 
   it("permitir CORS solo para bloqueados sin relajación activa que los cubra", () => {
-    expect(ids(applicableActions(exchange(), none))).toEqual(["createRule", "sendToRepeater"]);
+    expect(ids(applicableActions(exchange(), none))).toEqual([
+      "createRule",
+      "sendToRepeater",
+      "export",
+    ]);
     expect(ids(applicableActions(blocked(), none))).toEqual([
       "createRule",
       "sendToRepeater",
+      "export",
       "relaxCors",
     ]);
     expect(ids(applicableActions(blocked(), { relaxations: [relaxation()] }))).toEqual([
       "createRule",
       "sendToRepeater",
+      "export",
     ]);
     // Una relajación de otro par de orígenes no la cubre.
     expect(
@@ -85,7 +103,7 @@ describe("catálogo de acciones del request (004, research R6, FR-020/022)", () 
           relaxations: [relaxation({ apiOrigin: "https://otra.test" })],
         }),
       ),
-    ).toEqual(["createRule", "sendToRepeater", "relaxCors"]);
+    ).toEqual(["createRule", "sendToRepeater", "export", "relaxCors"]);
   });
 
   it("permitir CORS nunca para un preflight", () => {
@@ -95,7 +113,7 @@ describe("catálogo de acciones del request (004, research R6, FR-020/022)", () 
 
   it("permitir CORS no aplica si el diagnóstico no es relajable (003 FR-007)", () => {
     const fixed = blocked({ cors: { diagnosis: diagnosis({ relaxable: false }) } });
-    expect(ids(applicableActions(fixed, none))).toEqual(["createRule", "sendToRepeater"]);
+    expect(ids(applicableActions(fixed, none))).toEqual(["createRule", "sendToRepeater", "export"]);
   });
 
   it("crear regla abre Reglas con el borrador; permitir CORS abre la confirmación en el detalle", () => {
@@ -104,8 +122,9 @@ describe("catálogo de acciones del request (004, research R6, FR-020/022)", () 
       openDetail: vi.fn(),
       requestRelax: vi.fn(),
       sendToRepeater: vi.fn(),
+      openExport: vi.fn(),
     };
-    const [createRule, sendToRepeater, relaxCors] = REQUEST_ACTIONS;
+    const [createRule, sendToRepeater, , relaxCors] = REQUEST_ACTIONS;
     sendToRepeater?.run(exchange(), effects);
     expect(effects.sendToRepeater).toHaveBeenCalledWith(exchange());
     createRule?.run(exchange(), effects);

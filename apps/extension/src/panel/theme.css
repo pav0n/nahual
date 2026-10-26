@@ -157,7 +157,8 @@ button:hover:not(:disabled) {
   background: var(--nh-hover);
 }
 
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
   cursor: default;
   opacity: 0.6;
 }
@@ -1975,4 +1976,40 @@ tr[data-result="hook_failed"] .hook-result {
 .import-error {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* 007: "Exportar como…" reutiliza el diálogo de importar hook y el editor de Sources. */
+.export-panel {
+  min-width: 0;
+}
+
+.export-code .cm-editor {
+  max-height: 50vh;
+}
+
+.export-code .cm-scroller {
+  overflow: auto;
+}
+
+.export-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.export-omitted ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.export-actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.export-actions button .icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  margin-right: 4px;
 }

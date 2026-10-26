@@ -193,3 +193,25 @@ export function hookEditorExtensions(
     EditorView.contentAttributes.of({ "aria-label": t("hook_editor_label") }),
   ];
 }
+
+/**
+ * Visor de solo lectura con el mismo aspecto (007, FR-003): vista previa de "Exportar como…" y de
+ * las importaciones. Se puede enfocar, seleccionar y recorrer con el teclado; no se edita.
+ */
+export function readOnlyExtensions(
+  language: "typescript" | "json" | "text",
+  label: string,
+): Extension[] {
+  return [
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    drawSelection(),
+    EditorState.readOnly.of(true),
+    EditorState.tabSize.of(2),
+    ...(language === "text" ? [] : [javascript({ typescript: language === "typescript" })]),
+    syntaxHighlighting(highlight),
+    theme,
+    keymap.of(defaultKeymap),
+    EditorView.contentAttributes.of({ "aria-label": label, "aria-readonly": "true" }),
+  ];
+}

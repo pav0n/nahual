@@ -1,4 +1,4 @@
-import type { RuleDraft } from "@nahual/domain";
+import type { ExportFormat, RuleDraft } from "@nahual/domain";
 import type { SliceCreator } from "./types.ts";
 
 /** Secciones de la barra superior (004, data-model `PanelSection`); 005 añade `repeater`. */
@@ -13,7 +13,18 @@ export interface Toast {
   onAction?: () => void;
 }
 
+/** Qué exporta el diálogo "Exportar como…" (007, contracts/panel-ui.md). */
+export type ExportRequest =
+  | { kind: "traffic"; exchangeIds: string[]; format?: ExportFormat }
+  | { kind: "repeater"; tabId: string; sendId: string | null };
+
 export interface UiSlice {
+  /** 007: diálogo de exportación abierto, o `null`. */
+  exportRequest: ExportRequest | null;
+  /** Sube con cada apertura: monta el diálogo la primera vez y le da estado limpio cada vez. */
+  exportSeq: number;
+  openExport(request: ExportRequest): void;
+  closeExport(): void;
   section: PanelSection;
   toasts: Toast[];
   /** Onboarding reabierto desde "Ayuda" (FR-027). */
@@ -55,6 +66,17 @@ export interface UiSlice {
 let toastSeq = 0;
 
 export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
+  exportRequest: null,
+  exportSeq: 0,
+  openExport: (request) =>
+    set((s) => {
+      s.exportRequest = request;
+      s.exportSeq += 1;
+    }),
+  closeExport: () =>
+    set((s) => {
+      s.exportRequest = null;
+    }),
   section: "traffic",
   // Plegado, como la consola de DevTools: se despliega a petición (006).
   drawerExpanded: false,

@@ -69,6 +69,27 @@ describe("handlers MSW (007, research R5, FR-014, FR-016)", () => {
     );
   });
 
+  it("no copia headers de transporte ni la fecha (cambian en cada captura)", () => {
+    const source = sourceOf(getItems);
+    const response = nth(
+      [source.response].filter((r) => r !== null),
+      0,
+    );
+    source.response = {
+      ...response,
+      headers: [
+        ...response.headers,
+        { name: "Connection", value: "keep-alive" },
+        { name: "keep-alive", value: "timeout=5" },
+        { name: "date", value: "Mon, 26 Oct 2026 05:59:42 GMT" },
+        { name: "transfer-encoding", value: "chunked" },
+      ],
+    };
+    const { code } = msw([source], OPTIONS);
+    for (const name of ["connection", "keep-alive", "date", "transfer-encoding"])
+      expect(code).not.toContain(`"${name}"`);
+  });
+
   it("nunca filtra valores sensibles ni set-cookie redactado", () => {
     const { code } = render([getItems, postItem]);
     expect(leaked(code)).toEqual([]);
