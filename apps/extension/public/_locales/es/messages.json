@@ -2152,5 +2152,65 @@
   },
   "hooks_chain": {
     "message": "Cadena: $1 hooks, $2"
+  },
+  "hook_console": {
+    "message": "Consola de hooks"
+  },
+  "hook_console_toolbar": {
+    "message": "Herramientas de la consola de hooks"
+  },
+  "hook_console_clear": {
+    "message": "Limpiar consola"
+  },
+  "hook_console_filter": {
+    "message": "Filtrar"
+  },
+  "hook_console_logs": {
+    "message": "Registros"
+  },
+  "hook_console_errors": {
+    "message": "Errores"
+  },
+  "hook_console_rule": {
+    "message": "Regla"
+  },
+  "hook_console_all_rules": {
+    "message": "Todas las reglas"
+  },
+  "hook_console_show_sensitive": {
+    "message": "Mostrar valores sensibles"
+  },
+  "hook_console_clear_state": {
+    "message": "Vaciar estado"
+  },
+  "hook_console_empty": {
+    "message": "Los registros y errores de tus hooks aparecerán aquí. Usa ctx.log() para escribir en esta consola."
+  },
+  "hook_console_entries": {
+    "message": "Registros de los hooks"
+  },
+  "hook_console_repeated": {
+    "message": "Repetido $1 veces"
+  },
+  "hook_console_cleared": {
+    "message": "Consola de hooks limpia."
+  },
+  "hook_state_cleared": {
+    "message": "Estado compartido de los hooks vaciado."
+  },
+  "hook_errors_unread": {
+    "message": "$1 errores de hooks sin leer"
+  },
+  "hook_suspended_toast": {
+    "message": "El hook «$1» se suspendió tras 5 errores seguidos."
+  },
+  "hook_resume": {
+    "message": "Reanudar"
+  },
+  "hook_suspended": {
+    "message": "suspendido"
+  },
+  "hook_suspended_reason": {
+    "message": "Suspendido hasta cerrar el panel tras 5 errores seguidos."
   }
 }

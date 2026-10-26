@@ -191,3 +191,35 @@ describe("HookHost", () => {
     expect(h.state.snapshot()).toEqual({ value: {}, version: 0 });
   });
 });
+
+describe("HookHost: suspensión (FR-022, SC-013)", () => {
+  it("tras 5 errores seguidos el hook se salta sin ir al sandbox; reanudar lo vuelve a ejecutar", async () => {
+    const { createSuspensions } = await import("@nahual/hook-runtime");
+    const suspensions = createSuspensions();
+    const sandbox = fakeSandbox({
+      boom: () => ({
+        kind: "error",
+        type: "timeout",
+        message: "x",
+        line: null,
+        logs: [],
+        durationMs: 2000,
+      }),
+    });
+    const results: { executions: { result: string }[] }[] = [];
+    const h = createHookHost({
+      sandbox: sandbox.client,
+      send: (r) => results.push(r as never),
+      record: () => undefined,
+      isSuspended: (id) => suspensions.isSuspended(id),
+      onOutcome: (id, failed) => void suspensions.record(id, failed),
+    });
+    const hook = item("boom");
+    for (let i = 0; i < 6; i++) await h.run(payload([hook]));
+    expect(sandbox.requests).toHaveLength(5);
+    expect(results.at(-1)?.executions[0]?.result).toBe("hook_skipped_suspended");
+    suspensions.resume(hook.ruleId);
+    await h.run(payload([hook]));
+    expect(sandbox.requests).toHaveLength(6);
+  });
+});

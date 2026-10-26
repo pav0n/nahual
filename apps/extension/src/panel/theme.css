@@ -1856,3 +1856,78 @@ tr[data-result="hook_failed"] .hook-result {
   overflow-wrap: anywhere;
   font-family: var(--nh-source-font);
 }
+
+/* Consola de hooks en el cajón, como Console de DevTools (006, contracts/panel-ui.md). */
+.hook-console {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.hook-console .toolbar {
+  border-bottom: 1px solid var(--nh-divider);
+}
+
+.console-filter {
+  width: 160px;
+  min-width: 80px;
+  flex: 0 1 160px;
+}
+
+.toolbar-text-button {
+  border-color: transparent;
+  background: transparent;
+  padding: 0 6px;
+}
+
+.console-empty {
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.hook-console .console-rows {
+  overflow: auto;
+  flex: 1 1 auto;
+  border-top: none;
+}
+
+.console-link {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+/* Burbuja de repeticiones, como la de Console. */
+.console-count {
+  flex: none;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--nh-console-badge);
+  color: var(--nh-bg);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.console-row[data-level="log"] .console-count {
+  background: var(--nh-text-2);
+}
+
+/* Contador de errores de la barra superior, como el de DevTools. */
+.hook-error-counter {
+  width: auto;
+  gap: 2px;
+  padding: 0 4px;
+  color: var(--nh-error);
+}
+
+.hook-error-counter .icon {
+  width: 16px;
+  height: 16px;
+}

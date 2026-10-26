@@ -2,6 +2,7 @@ import type { Rule } from "@nahual/domain";
 import type { ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
+import { resumeHook } from "../../hooks/runtime.ts";
 import { setRuleEnabled } from "../../settings-commands.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
@@ -35,6 +36,7 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
   const rules = usePanelStore((s) => s.rules);
   const site = usePanelStore((s) => s.session?.site ?? null);
   const pushToast = usePanelStore((s) => s.pushToast);
+  const suspended = usePanelStore((s) => s.hookSuspended);
 
   const current = rules.filter((r) => r.site === site).sort((a, b) => a.order - b.order);
   const others = rules.filter((r) => r.site !== site);
@@ -80,6 +82,15 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
         />
       </div>
       {isBlocked(rule) ? <p className="field-warning">{t("hook_error_not_checked")}</p> : null}
+      {suspended.includes(rule.id) ? (
+        <p className="field-warning row">
+          <span className="tag">{t("hook_suspended")}</span>
+          <span className="grow">{t("hook_suspended_reason")}</span>
+          <button type="button" onClick={() => resumeHook(rule.id)}>
+            {t("hook_resume")}
+          </button>
+        </p>
+      ) : null}
       <div className="row">
         {reorderControls && !showSite ? reorderControls(rule, index, siteRules) : null}
         <button

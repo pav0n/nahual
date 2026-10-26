@@ -77,6 +77,8 @@ test("US1-1/2/3: editor con ejemplo, autocompletado y un error de tipo que bloqu
   await panel.keyboard.press("Control+Space");
   const options = panel.locator(".cm-tooltip-autocomplete li");
   await expect(options.filter({ hasText: "respond" })).toBeVisible({ timeout: 1_000 });
+  await panel.keyboard.insertText("sta");
+  await panel.keyboard.press("Control+Space");
   await expect(options.filter({ hasText: "state" })).toBeVisible();
   await panel.keyboard.press("Escape");
 

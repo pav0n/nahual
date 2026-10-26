@@ -4,6 +4,8 @@ export * from "./context.ts";
 export * from "./hash.ts";
 export * from "./mask.ts";
 export * from "./schemas.ts";
+export * from "./console.ts";
 export * from "./state.ts";
+export * from "./suspension.ts";
 export * from "./templates.ts";
 export * from "./validate.ts";

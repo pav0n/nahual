@@ -54,6 +54,7 @@ const dynamic = (panel: Page): Locator[] => [
   // 006: duraciones de los hooks.
   panel.locator(".timing-table .num"),
   panel.locator(".hooks-tab > section > p.muted"),
+  panel.locator(".hook-error-counter"),
 ];
 
 async function shoot(panel: Page, name: string) {
@@ -210,5 +211,16 @@ for (const theme of THEMES) {
     await panel.locator(".detail").getByRole("tab", { name: "Hooks" }).click();
     await expect(panel.locator(".hooks-tab").getByText(/boom/)).toBeVisible();
     await shoot(panel, `${theme}-hooks-tab`);
+
+    // 006: consola de hooks en el cajón (como Console) con el contador de errores.
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    await expect(panel.getByRole("button", { name: /unread hook errors/ })).toBeVisible();
+    await panel.getByRole("button", { name: /unread hook errors/ }).click();
+    await panel
+      .getByRole("region", { name: "Hooks console" })
+      .getByRole("button", { name: "Logs" })
+      .click();
+    await expect(panel.locator(".hook-console .console-row").first()).toBeVisible();
+    await shoot(panel, `${theme}-hooks-console`);
   });
 }

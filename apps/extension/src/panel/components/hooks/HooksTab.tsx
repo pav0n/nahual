@@ -7,7 +7,7 @@ import { Icon } from "../common/icons.tsx";
 const RESULT_ICON = {
   hooked: "relaxed",
   hook_unchanged: "attached",
-  hook_failed: "warning",
+  hook_failed: "error",
   hook_responded: "relaxed",
   hook_skipped_suspended: "paused",
 } as const;
@@ -71,7 +71,7 @@ export function HooksTab({ exchangeId }: { exchangeId: string }) {
               <ul key={`${e.id}-logs`} className="plain console-rows" aria-label={e.ruleName}>
                 {e.error ? (
                   <li className="console-row" data-level="error">
-                    <Icon name="warning" />
+                    <Icon name="error" />
                     <span className="console-text mono">
                       {t(`hook_error_type_${e.error.type}`)}: {hookMessage(e.error.message)}
                       {e.error.line ? ` · ${t("hook_line", String(e.error.line))}` : ""}

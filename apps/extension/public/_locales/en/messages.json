@@ -2152,5 +2152,65 @@
   },
   "hooks_chain": {
     "message": "Chain: $1 hooks, $2"
+  },
+  "hook_console": {
+    "message": "Hooks console"
+  },
+  "hook_console_toolbar": {
+    "message": "Hooks console tools"
+  },
+  "hook_console_clear": {
+    "message": "Clear console"
+  },
+  "hook_console_filter": {
+    "message": "Filter"
+  },
+  "hook_console_logs": {
+    "message": "Logs"
+  },
+  "hook_console_errors": {
+    "message": "Errors"
+  },
+  "hook_console_rule": {
+    "message": "Rule"
+  },
+  "hook_console_all_rules": {
+    "message": "All rules"
+  },
+  "hook_console_show_sensitive": {
+    "message": "Show sensitive values"
+  },
+  "hook_console_clear_state": {
+    "message": "Clear state"
+  },
+  "hook_console_empty": {
+    "message": "Your hooks' logs and errors will appear here. Use ctx.log() to write to this console."
+  },
+  "hook_console_entries": {
+    "message": "Hook logs"
+  },
+  "hook_console_repeated": {
+    "message": "Repeated $1 times"
+  },
+  "hook_console_cleared": {
+    "message": "Hooks console cleared."
+  },
+  "hook_state_cleared": {
+    "message": "Hooks' shared state cleared."
+  },
+  "hook_errors_unread": {
+    "message": "$1 unread hook errors"
+  },
+  "hook_suspended_toast": {
+    "message": "Hook “$1” was suspended after 5 errors in a row."
+  },
+  "hook_resume": {
+    "message": "Resume"
+  },
+  "hook_suspended": {
+    "message": "suspended"
+  },
+  "hook_suspended_reason": {
+    "message": "Suspended until the panel closes after 5 errors in a row."
   }
 }

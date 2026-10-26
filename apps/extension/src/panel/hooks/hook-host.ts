@@ -46,6 +46,8 @@ export interface HookExecution {
   ruleId: string;
   ruleName: string;
   stage: Stage;
+  /** Request sobre el que actuó (para el enlace de la consola). */
+  request: { method: string; url: string };
   result: ChainExecution["result"];
   durationMs: number;
   parts: HookPart[];
@@ -162,6 +164,7 @@ export function createHookHost(options: HookHostOptions) {
           ruleId: item.ruleId,
           ruleName: item.ruleName,
           stage: payload.stage,
+          request: { method: payload.context.request.method, url: payload.context.request.url },
           at: Date.now(),
         };
         if (options.isSuspended?.(item.ruleId)) {

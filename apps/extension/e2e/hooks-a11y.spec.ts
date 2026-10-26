@@ -154,3 +154,89 @@ test("006 FR-018: editor del hook solo con teclado", async ({
   };
   expect(echo.headers["x-kb"]).toBe("1");
 });
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`006 US2: consola de hooks y contador en tema ${colorScheme}, a 320 px`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    const app = await openApp(context, servers.appOrigin);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme });
+    await panel.setViewportSize({ width: 320, height: 900 });
+    await attach(panel);
+    await app.reload();
+    await installHook(panel, {
+      name: "Consola",
+      stage: "response",
+      prefilter: "*/hooks/items*",
+      source: `export default (ctx) => { ctx.log("items", 3); };`,
+    });
+    const drawer = panel.getByRole("region", { name: "Hooks console" });
+    await drawer.getByRole("button", { name: /^Expand/ }).click();
+    await expect(drawer.getByText(/Your hooks' logs and errors will appear here/)).toBeVisible();
+    await expectNoSeriousViolations(panel, "consola vacía");
+    await expectNoHorizontalScroll(panel);
+
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    await installHook(panel, {
+      name: "Falla",
+      stage: "response",
+      prefilter: "*/hooks/items*",
+      source: `export default () => { throw new Error("boom"); };`,
+    });
+    await drawer.getByRole("button", { name: /^Collapse/ }).click();
+    // Solo errores seguidos del mismo hook se agrupan (como Console): fuera el que registra.
+    await openSection(panel, "Rules");
+    await panel.locator(".rule-item").filter({ hasText: "Consola" }).getByRole("switch").uncheck();
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    const counter = panel.getByRole("button", { name: /unread hook errors/ });
+    await expect(counter).toBeVisible();
+    await expectNoSeriousViolations(panel, "contador de errores");
+    await counter.click();
+    await expect(drawer.locator(".console-count")).toHaveText("2");
+    await expectNoSeriousViolations(panel, "consola con errores agrupados");
+    await drawer.getByRole("button", { name: "Logs" }).click();
+    await expect(drawer.locator(".console-row[data-level=log]").first()).toBeVisible();
+    await expectNoSeriousViolations(panel, "consola con registros");
+    await expectNoHorizontalScroll(panel);
+  });
+}
+
+test("006 FR-026: consola solo con teclado hasta abrir un request", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1000, height: 900 });
+  await attach(panel);
+  await app.reload();
+  await installHook(panel, {
+    name: "Teclado",
+    stage: "response",
+    prefilter: "*/hooks/items*",
+    source: `export default (ctx) => { ctx.log("uno"); ctx.log("dos"); };`,
+  });
+  await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+  const drawer = panel.getByRole("region", { name: "Hooks console" });
+  const expand = drawer.getByRole("button", { name: /^Expand/ });
+  expect(await tabTo(panel, expand)).toBe(true);
+  await panel.keyboard.press("Enter");
+  const links = drawer.locator(".console-link");
+  await expect(links).toHaveCount(2);
+  expect(await tabTo(panel, links.first())).toBe(true);
+  await panel.keyboard.press("ArrowDown");
+  await expect(links.nth(1)).toBeFocused();
+  await panel.keyboard.press("Enter");
+  await expect(
+    panel.locator(".detail").getByRole("tab", { name: "Hooks", selected: true }),
+  ).toBeVisible();
+});

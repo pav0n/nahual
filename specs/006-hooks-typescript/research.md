@@ -403,3 +403,15 @@ y 1280 px.
   porque una lista con scroll propio no es enfocable y axe la marca (`scrollable-region-focusable`).
 - **Teclado**: "Esc y luego Tab" sale del editor (lo trae CodeMirror, con 2 s de margen); con las
   sugerencias abiertas, la primera Esc las cierra, como en Sources.
+
+### Ajustes de implementación (US2)
+
+- **Cajón plegado y solo con hooks**: el cajón de 004 se mostraba siempre que tenía contenido y
+  desplegado. Con la consola de hooks registrada, aparecería en todos los paneles. Ahora, como la
+  consola de DevTools, empieza plegado (`drawerExpanded` en el store) y solo aparece si hay reglas
+  con hook o registros (`DRAWER_SLOT.visible`). El contador de errores lo despliega filtrado a
+  errores; ver la consola marca los errores como leídos.
+- **Agrupado**: solo se agrupan errores consecutivos del mismo hook y mismo mensaje (Console
+  hace lo mismo); un registro de otro hook en medio corta el grupo.
+- **Icono de error**: círculo con ×, como Console (`icons.tsx`, `error`), en la consola, el
+  contador y la pestaña Hooks.

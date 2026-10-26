@@ -147,6 +147,9 @@ export function installTestSlots(): void {
       });
       DRAWER_SLOT.label = "Slot drawer";
       DRAWER_SLOT.content = SlotDrawer;
+      // La consola de hooks (006) solo aparece con hooks; el contenido simulado, siempre y abierto.
+      delete DRAWER_SLOT.visible;
+      usePanelStore.getState().setDrawerExpanded(true);
       RULE_EDITOR_SLOTS.push(SlotWideEditor);
       usePanelStore.getState().bumpSlots();
     },
