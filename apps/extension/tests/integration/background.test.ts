@@ -42,12 +42,13 @@ beforeEach(async () => {
 });
 
 describe("background: arranque y hello", () => {
-  it("hello responde ack, settings, rules y state", async () => {
+  it("hello responde ack, settings, rules, profiles (007) y state", async () => {
     const port = await openPanel();
     expect(received(port).map((m) => m.type)).toEqual([
       "ack",
       "settings",
       "rules",
+      "profiles",
       "relaxations",
       "state",
     ]);

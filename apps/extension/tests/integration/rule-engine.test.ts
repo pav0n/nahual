@@ -28,6 +28,8 @@ let paused: PausedItemView[];
 let resolved: { pausedId: string; outcome: string; errorKey?: string }[];
 /** Tipo de recurso que la captura de Network conoce por `networkId`. */
 let networkTypes: Map<string, string>;
+/** 007: perfil activo de la pestaña 1. */
+let activeProfile: string | null;
 
 const flush = async () => {
   for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -51,6 +53,7 @@ beforeEach(async () => {
   cdp.respond("Fetch.getResponseBody", () => ({ body: '{"items":[]}', base64Encoded: false }));
   rules = [rule()];
   networkTypes = new Map();
+  activeProfile = null;
   settings = { ...DEFAULT_SETTINGS };
   effects = [];
   paused = [];
@@ -60,6 +63,7 @@ beforeEach(async () => {
     rules: () => rules,
     settings: () => settings,
     siteOf: () => SITE,
+    activeProfileOf: () => activeProfile,
     capture: {
       exchangeIdOf: (_tab, networkId) => networkId,
       resourceTypeOf: (_tab, networkId) => networkTypes.get(networkId) ?? null,
@@ -687,5 +691,23 @@ describe("RuleEngine + relajación CORS como último paso (003, research R9)", (
       }),
     );
     expect(JSON.stringify(relaxed)).not.toContain("secret");
+  });
+});
+
+describe("RuleEngine: perfil activo (007, FR-020)", () => {
+  const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+
+  it("con un perfil activo, una regla de fuera del perfil no actúa", async () => {
+    activeProfile = P;
+    await engine.handle(1, response500());
+    expect(engine.queueSize(1)).toBe(0);
+    expect(cdp.calls("Fetch.continueResponse")).toEqual([{ requestId: "fetch-1" }]);
+  });
+
+  it("una regla del perfil activo sí actúa", async () => {
+    activeProfile = P;
+    rules = [rule({ profileIds: [P] })];
+    await engine.handle(1, response500());
+    expect(engine.queueSize(1)).toBe(1);
   });
 });
