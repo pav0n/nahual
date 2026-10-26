@@ -6,10 +6,11 @@
 Extensión de Chrome para desarrolladores frontend: intercept condicional, CORS de desarrollo
 seguro, repeater + diff, hooks en TypeScript y exportación al código. Todo local, sin cuenta.
 
-**Estado:** features `002-captura-intercept`, `003-cors-desarrollo`, `004-rediseno-panel` y
-`005-repeater-diff`: ver el tráfico de la pestaña, crear reglas y pausar, simular o retrasar solo lo
-que cumple una condición, entender y relajar CORS de desarrollo de forma acotada, reenviar requests y
-comparar sus respuestas, en un panel con el aspecto de DevTools. Ver
+**Estado:** features `002-captura-intercept` a `006-hooks-typescript` terminadas y
+`007-export-publicacion` en curso: ver el tráfico de la pestaña, crear reglas y pausar, simular o
+retrasar solo lo que cumple una condición, entender y relajar CORS de desarrollo de forma acotada,
+reenviar requests y comparar sus respuestas, modificarlos con hooks en TypeScript y exportarlos a
+código, en un panel con el aspecto de DevTools. Ver
 `.specify/memory/constitution.md`, `docs/adr/`, `docs/speckit-inputs/` y `specs/`.
 
 ## Qué hace
@@ -75,6 +76,16 @@ comparar sus respuestas, en un panel con el aspecto de DevTools. Ver
   debugger o reiniciar Nahual. Los orígenes de producción se marcan en Ajustes ⇒ CORS de
   desarrollo y nunca se relajan. "Generar reporte para backend" produce un texto copiable con lo que el servidor debe
   configurar y ejemplos para Express, NestJS, AWS API Gateway y Google Cloud Run.
+- **Exportar a código**: "Exportar como…" (en las acciones de un request, en la barra del repeater
+  o con `Alt+Shift+E`) muestra el código antes de copiarlo o descargarlo: **cURL**, **fetch()**,
+  **test Vitest** de contrato (llama a la API real y comprueba el status y la forma del body),
+  **handler MSW**, **schema Zod** inferido de la respuesta y **colección de Postman**. Con varias
+  filas marcadas en Tráfico, tres acciones por lote: un archivo de handlers MSW, un schema Zod de
+  varias respuestas del mismo endpoint (campos ausentes ⇒ opcionales, `null` ⇒ nullable) y una
+  colección de Postman. Cookies, tokens y contraseñas salen redactados (`<redacted>`, variables de
+  entorno en el test Vitest, variables vacías en Postman); incluirlos pide confirmación y vale solo
+  para esa exportación. Nada se guarda salvo el último formato elegido. Lo exportado se ejecuta de
+  verdad en CI (`tooling/export-smoke`, con Vitest 5, MSW 3 y Zod 4).
 - **Seguro por defecto**: nada sale del navegador salvo lo que reenvíes desde el repeater; el
   historial, el repeater y la consola y el `state` de los hooks viven en memoria; todo request
   pausado continúa sin cambios si vence su timeout, si Nahual falla o si se suelta el debugger.
@@ -97,6 +108,7 @@ los listan desde ahí.
 | `Ctrl+Enter` / `Cmd+Enter` | Enviar el request de la pestaña del repeater |
 | `J` / `K` | Cambio siguiente / anterior en el diff |
 | `Ctrl+S` / `Cmd+S` | Guardar la regla que se edita |
+| `Alt+Shift+E` | Exportar como código el request seleccionado |
 
 ## Requisitos
 
@@ -117,6 +129,9 @@ pnpm --filter @nahual/extension e2e:visual  # capturas de regresión visual (cla
 EXPERIMENTS=1 pnpm --filter @nahual/extension e2e   # experimentos de research.md
 ```
 
+Las E2E esperan la interfaz en inglés. Si el sistema está en otro idioma, Chromium sin interfaz
+ignora `--lang`: ejecútalas con `LANG=en_US.UTF-8 pnpm e2e`.
+
 ## Cargar la extensión
 
 1. `chrome://extensions` → Modo desarrollador → **Cargar descomprimida** → `apps/extension/dist`.
@@ -132,6 +147,45 @@ pnpm --filter @nahual/extension fixture:serve
 Guías de validación:
 [`specs/002-captura-intercept/quickstart.md`](specs/002-captura-intercept/quickstart.md) y
 [`specs/003-cors-desarrollo/quickstart.md`](specs/003-cors-desarrollo/quickstart.md).
+
+## Instalar un release sin empaquetar
+
+Mientras la Chrome Web Store revisa una versión, o para equipos que la prefieren así (FR-046):
+
+1. Descarga `nahual.zip` del release en GitHub.
+2. Verifica que es el que construyó CI (el SHA-256 está en las notas del release):
+
+   ```bash
+   echo "<sha256 del release>  nahual.zip" | sha256sum -c -
+   gh attestation verify nahual.zip --repo <owner>/nahual
+   ```
+
+3. Descomprímelo en una carpeta y cárgala en `chrome://extensions` → Modo desarrollador →
+   **Cargar descomprimida**. Sin la tienda no hay actualizaciones automáticas: repite con cada
+   release.
+
+## Verificar la reproducibilidad
+
+Con el mismo Node (`.nvmrc`) y pnpm (`packageManager`), el mismo commit da el mismo paquete:
+
+```bash
+export SOURCE_DATE_EPOCH=1767225600
+pnpm install --frozen-lockfile && pnpm build --force && node scripts/build-zip.mjs
+node scripts/build-sbom.mjs   # SBOM CycloneDX 1.6 de las dependencias de producción
+```
+
+El SHA-256 que imprime `build-zip.mjs` debe coincidir con el del release.
+
+## Publicación
+
+El paquete publicado sale solo de CI (`.github/workflows/release.yml`, constitución VII): al
+subir un tag `vX.Y.Z` que coincide con la versión de `apps/extension/package.json`, el job
+`build` repite las comprobaciones de CI, construye dos veces y compara, genera el SBOM, firma
+atestaciones de procedencia y del SBOM y crea el release. El job `publish` espera la aprobación
+de un mantenedor en el environment `chrome-web-store` (el único con las credenciales de la
+tienda), verifica el SHA-256 y la atestación del zip y lo sube y publica con la API de la Chrome
+Web Store. El primer envío se hace a mano con el zip del release; listing, permisos, política de
+privacidad y checklist en [`docs/store/`](docs/store/).
 
 ## Desarrollo
 
