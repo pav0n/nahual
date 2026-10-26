@@ -29,18 +29,24 @@ Nahual es la captura real.
 
 ## Video
 
-`demo.webm` (1280×800, tema oscuro, unos 15 s) es la grabación del panel durante el recorrido.
-La Chrome Web Store no aloja videos: se sube a YouTube y se pega el enlace en el listing.
+`demo.webm` (1280×800, tema oscuro, unos 70 s) lo genera `apps/extension/e2e/store/video.spec.ts`:
+graba el panel real y dibuja encima una portada, un subtítulo por paso y un resalte en cada
+control antes de usarlo. La Chrome Web Store no aloja videos: se sube a YouTube y se pega el enlace
+en el listing.
+
+Sin pantalla, Chrome no dibuja la barra de depuración pero encoge el área grabada, así que la
+grabación usa `--silent-debugger-extension-api` y el video no la muestra; la captura 1 sí.
 
 Guion:
 
-1. Panel sin adjuntar; "Session" ⇒ "Attach". El estado pasa a "Attached", la página se recarga y
-   aparece su tráfico.
-2. Nueva regla "Pause items" para `*/api/items` en la etapa Response.
-3. La página pide `/api/items`: el request aparece en **Paused**; "Continue unchanged".
-4. En **Traffic**, clic derecho en `/export/items` ⇒ "Export as…": cURL con valores redactados y
-   luego el handler MSW.
-5. "Session" ⇒ "Detach": Chrome quita la barra de depuración.
-
-Para un video más largo con narración, el mismo guion sirve grabando la pantalla con Chrome
-visible; así sale también la barra de depuración real.
+| Paso | Subtítulo | Qué se ve |
+|---|---|---|
+| Portada | NAHUAL · DevTools traffic toolkit | "Pause, rewrite, replay and export your app's traffic, right inside DevTools, on the tab you're already debugging." |
+| 1 | Attach to the tab you're debugging | Adjuntar y recargar; aparece el tráfico. "No proxy, no certificates, no separate browser: your real session." |
+| 2 | Pause only what matters · Edit the response in flight · The page got your response | Regla "status ≥ 500"; un `500` queda pausado; se cambia a `200` con otro body y continúa; el detalle muestra la respuesta editada |
+| 3 | Know why CORS blocked it · Relax it for this tab only | La causa explicada; "Allow CORS for development" ⇒ "Allow"; el reintento pasa |
+| 4 | Rewrite traffic with TypeScript hooks · Caught before it runs · See every run | Se escribe un hook con un error de tipos, que se marca; se corrige, se guarda y la pestaña Hooks del request muestra la ejecución, el cambio y el tiempo |
+| 5 | Replay any request and diff the result | Repeater a otra URL y diff contra el original |
+| 6 | Turn real traffic into tests and mocks | "Export as…": cURL, Vitest, MSW y Zod, con los secretos redactados |
+| ✓ | Detach when you're done | Soltar la pestaña |
+| Cierre | Free · Local · No account · No telemetry | |

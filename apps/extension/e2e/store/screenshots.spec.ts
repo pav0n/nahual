@@ -1,67 +1,29 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import path from "node:path";
-import { chromium, type BrowserContext, type Page } from "@playwright/test";
-import { NAHUAL_DIST, expect, test as base } from "../fixtures/extension.ts";
+import type { BrowserContext, Page } from "@playwright/test";
+import { expect } from "../fixtures/extension.ts";
 import {
   attachAndReload,
   callApi,
   corsCall,
   createRule,
-  detach,
-  openApp,
   openCorsDetail,
-  openPanel,
   openQueue,
   openSection,
   pausedEditor,
   pausedOption,
   requestRow,
-  startFetch,
-  tabIdOf,
   trafficRow,
 } from "../fixtures/panel.ts";
-import { startServers, type TestServers } from "../fixtures/servers.ts";
+import { ASSETS, LOGO, SIZE, settle, setup, test } from "./store.ts";
 
 // 007 T038: capturas (1280×800, claro y oscuro) y video del listing de la Chrome Web Store, en
 // docs/store/assets/. `pnpm --filter @nahual/extension e2e:store` tras `pnpm build:test`.
 // Cada captura es un cartel: un titular con lo que DevTools no hace (o no hace fácil) y el panel
-// real debajo. Qué muestra cada archivo y el guion del video: docs/store/assets/README.md.
+// real debajo. Qué muestra cada archivo: docs/store/assets/README.md. El video: video.spec.ts.
 
-const ROOT = path.resolve(import.meta.dirname, "../../../..");
-const ASSETS = path.join(ROOT, "docs/store/assets");
-const LOGO = readFileSync(path.join(ROOT, "docs/brand/nahual.svg"), "utf8");
-const SIZE = { width: 1280, height: 800 };
 /** El panel se captura a 1280 px y el cartel lo muestra a 1120 (×0,875). */
 const PANEL = { width: 1280, height: 660 };
-
-/** Puertos fijos y con aspecto de desarrollo local: las URLs salen en las capturas. */
-const test = base.extend<{ servers: TestServers }>({
-  // eslint-disable-next-line no-empty-pattern -- Playwright exige desestructurar los fixtures.
-  servers: async ({}, use) => {
-    const servers = await startServers({ app: 5173, api: 8787, third: 8788 });
-    await use(servers);
-    await servers.close();
-  },
-});
-
-async function setup(
-  context: BrowserContext,
-  worker: Parameters<typeof tabIdOf>[0],
-  id: string,
-  servers: TestServers,
-) {
-  const app = await openApp(context, servers.appOrigin);
-  const tabId = await tabIdOf(worker, `${servers.appOrigin}/`);
-  const panel = await openPanel(context, id, tabId);
-  await panel.setViewportSize(SIZE);
-  return { app, panel };
-}
-
-/** Sin avisos pasajeros ni foco en la captura. */
-async function settle(panel: Page) {
-  await expect(panel.locator(".toast")).toHaveCount(0, { timeout: 15_000 });
-  await panel.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-}
 
 interface Poster {
   file: string;
@@ -240,66 +202,3 @@ for (const theme of ["light", "dark"] as const) {
     await panel.keyboard.press("Escape");
   });
 }
-
-/** Video: el contexto se abre con grabación (el fixture común no graba). */
-const video = test.extend<{ context: BrowserContext }>({
-  // eslint-disable-next-line no-empty-pattern -- Playwright exige desestructurar los fixtures.
-  context: async ({}, use, info) => {
-    const context = await chromium.launchPersistentContext("", {
-      channel: "chromium",
-      headless: process.env.HEADED !== "1",
-      args: [
-        "--lang=en-US",
-        `--disable-extensions-except=${NAHUAL_DIST}`,
-        `--load-extension=${NAHUAL_DIST}`,
-      ],
-      viewport: SIZE,
-      recordVideo: { dir: info.outputPath("video"), size: SIZE },
-    });
-    await use(context);
-    await context.close();
-  },
-});
-
-video(
-  "video del listing: adjuntar, pausar, exportar y soltar",
-  async ({ context, nahualWorker, extensionId, servers }) => {
-    test.setTimeout(120_000);
-    const { app, panel } = await setup(context, nahualWorker, extensionId, servers);
-    await panel.emulateMedia({ colorScheme: "dark" });
-    const beat = () => panel.waitForTimeout(1_200);
-    await beat();
-
-    await attachAndReload(panel, app);
-    await callApi(app, "items");
-    await beat();
-
-    await createRule(panel, { name: "Pause items", pattern: "*/api/items", stage: "response" });
-    await beat();
-    const pending = startFetch(app, `${servers.apiOrigin}/api/items`);
-    await openQueue(panel);
-    await expect(pausedOption(panel, "/api/items")).toBeVisible();
-    await beat();
-    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
-    await pending;
-    await beat();
-
-    await callApi(app, "export-items");
-    await openSection(panel, "Traffic");
-    await requestRow(panel, "/export/items").last().click({ button: "right" });
-    await beat();
-    await panel.getByRole("menuitem", { name: "Export as…" }).click();
-    const exportDialog = panel.getByRole("dialog", { name: /^Export/ });
-    await expect(exportDialog.locator(".cm-content")).toBeVisible();
-    await beat();
-    await exportDialog.getByRole("tab", { name: "MSW handler", exact: true }).click();
-    await beat();
-    await panel.keyboard.press("Escape");
-
-    await detach(panel);
-    await beat();
-    const recording = panel.video();
-    await panel.close();
-    await recording?.saveAs(path.join(ASSETS, "demo.webm"));
-  },
-);
