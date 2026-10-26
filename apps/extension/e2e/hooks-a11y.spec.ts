@@ -119,6 +119,11 @@ test("006 FR-018: editor del hook solo con teclado", async ({
   expect(await tabTo(panel, action)).toBe(true);
   await action.selectOption("hook");
   await expect(panel.locator(".cm-editor")).toBeVisible({ timeout: 15_000 });
+  // El servicio de tipos arranca en frío (TypeScript y sus lib): como en hooks-write, se espera a
+  // que compruebe la plantilla antes de pedir sugerencias.
+  await expect(panel.getByRole("status").filter({ hasText: "No problems." })).toBeVisible({
+    timeout: 15_000,
+  });
 
   // Entra al editor con Tab, escribe y acepta una sugerencia con Enter.
   const code = panel.locator(".cm-content");
@@ -127,8 +132,12 @@ test("006 FR-018: editor del hook solo con teclado", async ({
   await panel.keyboard.insertText("export default (ctx: HookContext) => {\n  ctx.setHe");
   await panel.keyboard.press("Control+Space");
   await expect(
-    panel.locator(".cm-tooltip-autocomplete li").filter({ hasText: "setHeader" }),
+    panel
+      .locator(".cm-tooltip-autocomplete li[aria-selected=true]")
+      .filter({ hasText: "setHeader" }),
   ).toBeVisible();
+  // CodeMirror ignora aceptar durante 75 ms tras abrir la lista (`interactionDelay`).
+  await panel.waitForTimeout(150);
   await panel.keyboard.press("Enter");
   await panel.keyboard.insertText('("x-kb", "1");\n  return ctx;\n};');
   // Tab inserta tabulación; Esc y luego Tab sale del editor sin cerrar la regla. Si las
