@@ -41,6 +41,37 @@ export async function parseImport(text: string): Promise<ParseResult> {
   return parseConfig(text, existingConfig(), (name) => t("profile_imported_name", name));
 }
 
+/**
+ * Convierte un export de Requestly para el sitio de la pestaña y lo valida como cualquier
+ * configuración (007, FR-034 a FR-037). El conversor se carga solo aquí.
+ */
+export async function parseRequestly(
+  text: string,
+): Promise<
+  | (Extract<ParseResult, { ok: true }> & { unsupported: { name: string; reasonKey: string }[] })
+  | { ok: false; message: string }
+> {
+  const site = usePanelStore.getState().session?.site;
+  if (!site) return { ok: false, message: t("requestly_error_no_site") };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return { ok: false, message: t("config_error_not_json") };
+  }
+  const [{ convertRequestly }, { parseConfigObject }] = await Promise.all([
+    import("@nahual/domain/requestly"),
+    import("@nahual/domain/portable"),
+  ]);
+  const converted = convertRequestly(raw, site);
+  if (!converted.ok) return { ok: false, message: t(converted.errorKey) };
+  const parsed = parseConfigObject(converted.config, existingConfig(), (name) =>
+    t("profile_imported_name", name),
+  );
+  if (!parsed.ok) return { ok: false, message: rejectionText(parsed) };
+  return { ...parsed, unsupported: converted.unsupported };
+}
+
 /** Mensaje de un rechazo, con causa y solución (FR-029, principio III). */
 export function rejectionText(result: Extract<ParseResult, { ok: false }>): string {
   if (result.errorKey === "config_error_invalid") return t(result.errorKey, result.path ?? "");

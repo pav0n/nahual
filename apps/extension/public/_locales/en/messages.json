@@ -2614,5 +2614,14 @@
   },
   "profile_imported_name": {
     "message": "$1 (imported)"
+  },
+  "requestly_unsupported_invalid": {
+    "message": "unrecognized rule format"
+  },
+  "requestly_import_hint": {
+    "message": "Rules exported from Requestly: redirect, modify headers and static response. Anything else is listed with the reason."
+  },
+  "requestly_error_no_site": {
+    "message": "Attach Nahual to a tab to import the rules: they're imported for that tab's site."
   }
 }

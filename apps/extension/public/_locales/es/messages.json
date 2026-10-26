@@ -2614,5 +2614,14 @@
   },
   "profile_imported_name": {
     "message": "$1 (importado)"
+  },
+  "requestly_unsupported_invalid": {
+    "message": "formato de regla no reconocido"
+  },
+  "requestly_import_hint": {
+    "message": "Reglas exportadas de Requestly: redirect, modificar headers y respuesta estática. Lo demás se lista con el motivo."
+  },
+  "requestly_error_no_site": {
+    "message": "Conecta Nahual a una pestaña para importar sus reglas: se importan para el sitio de esa pestaña."
   }
 }

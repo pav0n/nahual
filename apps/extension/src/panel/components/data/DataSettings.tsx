@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import { t } from "../../../shared/i18n.ts";
-import { parseImport, readImportFile, rejectionText } from "../../import/run-import.ts";
+import {
+  parseImport,
+  parseRequestly,
+  readImportFile,
+  rejectionText,
+} from "../../import/run-import.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { ConfirmDialog } from "../common/ConfirmDialog.tsx";
 import { downloadText } from "../common/download.ts";
@@ -25,6 +30,7 @@ export function DataSettings() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingImport | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const requestlyInput = useRef<HTMLInputElement>(null);
 
   const sites = new Set(rules.map((r) => r.site)).size;
   const hooks = rules.filter((r) => r.action.kind === "hook").length;
@@ -70,6 +76,28 @@ export function DataSettings() {
     });
   };
 
+  const chooseRequestly = async (file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    const read = await readImportFile(file);
+    if (!read.ok) {
+      setError(t(read.errorKey));
+      return;
+    }
+    const result = await parseRequestly(read.text);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setPending({
+      source: "requestly",
+      config: result.config,
+      preview: result.preview,
+      migratedFrom: null,
+      unsupported: result.unsupported,
+    });
+  };
+
   return (
     <div className="data-settings">
       <section aria-labelledby="config-export-title">
@@ -103,7 +131,11 @@ export function DataSettings() {
           <button type="button" onClick={() => input.current?.click()}>
             {t("config_import")}
           </button>
+          <button type="button" onClick={() => requestlyInput.current?.click()}>
+            {t("requestly_import")}
+          </button>
         </div>
+        <p className="muted">{t("requestly_import_hint")}</p>
         <input
           ref={input}
           type="file"
@@ -112,6 +144,17 @@ export function DataSettings() {
           aria-label={t("config_import")}
           onChange={(event) => {
             void choose(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+        <input
+          ref={requestlyInput}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          aria-label={t("requestly_import")}
+          onChange={(event) => {
+            void chooseRequestly(event.target.files?.[0]);
             event.target.value = "";
           }}
         />
