@@ -32,7 +32,7 @@ prueba `tooling/export-smoke` (workspace privado, fuera del bundle y del SBOM) a
 devDependencies exactas **msw 3.0.0** y reutiliza vitest 5.0.3 y zod 4.6.6 (R1, R12).
 Justificación en [Dependencias](#dependencias-justificación).
 
-**Storage**: `nahual.rules.v1` amplía cada regla con `profileIds` e `imported` (misma versión);
+**Storage**: `nahual.rules.v1` amplía cada regla con `profileIds` e `importedFrom` (misma versión);
 clave nueva `nahual.profiles.v1`; `nahual.settings.v1` recibe orígenes de producción
 importados; `nahual.ui.v1` gana `exportFormat` ([contracts/storage.md](./contracts/storage.md)).
 
@@ -196,7 +196,7 @@ apps/extension/
 │   ├── profile-store.ts              # NUEVO: nahual.profiles.v1, lastActive, deshacer
 │   ├── active-profiles.ts            # NUEVO: perfil activo por pestaña (memoria)
 │   ├── import-service.ts             # NUEVO: importConfig/undoImport, escritura única
-│   ├── rule-store.ts                 # profileIds, imported, rule_error_redacted_value
+│   ├── rule-store.ts                 # profileIds, importedFrom, rule_error_redacted_value
 │   ├── rule-engine.ts                # context.activeProfileId
 │   ├── settings-store.ts             # addProductionOrigins
 │   └── app.ts                        # cableado v6
@@ -216,7 +216,7 @@ apps/extension/
 │   ├── components/rules/RuleEditor.tsx, RuleList.tsx   # perfiles, "No actúa con…"
 │   ├── components/repeater/RepeaterTabs.tsx            # botón Exportar
 │   └── _locales/{es,en}              # export_*, profile_*, config_*, requestly_*
-├── tests/integration/profiles.test.ts, import-config.test.ts
+├── tests/integration/profile-store.test.ts, active-profiles.test.ts, import-config.test.ts  # + background.test.ts ampliada
 ├── tests/dist/manifest.test.ts, sbom.test.ts
 └── e2e/export.spec.ts, export-batch.spec.ts, profiles.spec.ts, import-config.spec.ts,
     import-requestly.spec.ts, store/screenshots.spec.ts, fixtures/requestly-export.json
@@ -269,6 +269,8 @@ extensión, slices del store, componentes por área.
   siguiente `Fetch.requestPaused`.
 - **Interfaz**: cada pieza nueva se compara con su vecina de 004–006 en claro y oscuro antes de
   darla por terminada; la demo de cierre con un dev registra tiempos y diferencias (SC-013).
+- **Fuera de esta feature**: la errata `006-export-publicacion` de la constitución se corrige en
+  un PR propio que modifica solo ese archivo (gobernanza).
 
 ## Complexity Tracking
 

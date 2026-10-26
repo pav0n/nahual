@@ -83,7 +83,7 @@ Ver research R8. Nombre: `nahual-<sitio>.postman_collection.json`. Subconjunto g
 con `PostmanCollectionSchema` (Zod) en las pruebas:
 
 ```json
-{ "info": { "name": "Nahual · http://localhost:3000", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+{ "info": { "name": "Nahual · http://localhost:3000", "description": "Captured 2026-10-25T20:00:00.000Z", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
   "variable": [{ "key": "nahual_authorization", "value": "" }],
   "item": [{ "name": "GET /api/items", "request": { "method": "GET", "header": [{ "key": "authorization", "value": "{{nahual_authorization}}" }],
              "url": { "raw": "http://127.0.0.1:4311/api/items?page=1", "host": ["127.0.0.1"], "port": "4311", "path": ["api", "items"], "query": [{ "key": "page", "value": "1" }] } },

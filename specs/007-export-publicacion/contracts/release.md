@@ -15,12 +15,13 @@ comentario). `permissions` mínimos por job.
 3. `pnpm lint && pnpm typecheck && pnpm test && pnpm audit --prod --audit-level high &&
    node scripts/check-licenses.mjs && pnpm verify:dist && pnpm --filter @nahual/export-smoke test`.
 4. Build reproducible: dos `pnpm build --force` + `scripts/build-zip.mjs`, mismo SHA-256 o fallo
-   (igual que CI; `SOURCE_DATE_EPOCH` fijo).
+   (igual que CI; `SOURCE_DATE_EPOCH` fijo). Al fallar, el paso lista en el resumen del job los
+   archivos de `dist/` cuyo SHA-256 difiere entre los dos builds.
 5. `node scripts/build-sbom.mjs` ⇒ `apps/extension/nahual.sbom.cdx.json` (CycloneDX 1.6, solo
    producción, determinista; [data-model](../data-model.md)).
 6. `actions/attest-build-provenance@v4` con `subject-path: apps/extension/nahual.zip`;
-   `actions/attest-sbom` con el SBOM (versión mayor vigente, verificada en tasks; respaldo:
-   `actions/attest` con predicado CycloneDX).
+   `actions/attest-sbom` con el SBOM, fijada por SHA de su última mayor estable comprobada al
+   implementar; respaldo: `actions/attest` con `predicate-type` `https://cyclonedx.org/bom`.
 7. `gh release create "$TAG" nahual.zip nahual.sbom.cdx.json --notes` con el SHA-256 del zip,
    el comando de verificación y el enlace a `docs/store/`.
 

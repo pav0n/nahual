@@ -10,7 +10,7 @@ mismo tema (parte de la definición de terminado, como en 006).
 | Lista | Entrada nueva | Archivo |
 |---|---|---|
 | `REQUEST_ACTIONS` | `export` ("Exportar como…", `Alt+Shift+E`), tras `sendToRepeater`; aplica si `!isPreflight` | `panel/actions/request-actions.ts` |
-| `BATCH_ACTIONS` | `exportMsw` (min 2), `exportZod` (min 2, habilitada solo si todas las filas comparten método + ruta), `exportPostman` (min 1) | `panel/actions/batch-actions.ts` |
+| `BATCH_ACTIONS` | `exportMsw` (min 2), `exportZod` (min 2, habilitada solo si todas las filas comparten método + ruta), `exportPostman` (min 2) | `panel/actions/batch-actions.ts` |
 | `STATUS_ITEMS` | `profile` (antes de `session`) | `panel/shell/status-items.ts` |
 | `SETTINGS_SECTIONS` | `profiles` ("Perfiles"), `data` ("Importar y exportar"), tras `shortcuts` | `panel/settings/sections.ts` |
 | `SHORTCUTS` | `exportRequest` `Alt+Shift+E` (global), `openProfileMenu` `Alt+Shift+O` (global) | `panel/shortcuts.ts` |

@@ -22,7 +22,7 @@ salen con `z.infer`. Los límites viven en `LIMITS`.
 | Campo nuevo | Tipo | Reglas |
 |---|---|---|
 | `profileIds` | `string[]` (uuid), ≤ `profilesPerRuleMax`, `.default([])` | En `DRAFT_SHAPE` (el editor lo edita); cada id debe existir en un perfil del mismo sitio (el SW lo comprueba al guardar) |
-| `imported` | `"config" \| "requestly"`, opcional | Lo pone el SW al importar; el dev no lo cambia; la lista muestra "importado" / "importado de Requestly" |
+| `importedFrom` | `"config" \| "requestly"`, opcional | Lo pone el SW al importar; el dev no lo cambia; la lista muestra "importado" / "importado de Requestly". Distinto de `HookAction.imported` (booleano, 006) |
 
 Misma clave `nahual.rules.v1` y misma versión: los campos son opcionales con default.
 
@@ -36,7 +36,9 @@ Misma clave `nahual.rules.v1` y misma versión: los campos son opcionales con de
 | `createdAt`, `updatedAt` | number | |
 
 **`ProfilesState`** (`nahual.profiles.v1`): `{ version: 1, profiles: Profile[], lastActive:
-Record<site, profileId> }`. `lastActive` se limpia de ids que ya no existen al leer y al borrar.
+Record<site, profileId> }`. `lastActive` se limpia de ids que ya no existen al leer y al borrar. Duplicar un perfil crea
+el nuevo y copia su pertenencia en todas sus reglas en una sola escritura de
+`nahual.profiles.v1` + `nahual.rules.v1`.
 
 **Perfil activo por pestaña** (memoria del SW): `activeProfileId: string | null` por `tabId`;
 `null` = "Todas las reglas". Transiciones: `hello` ⇒ `lastActive[site] ?? null`; navegación a otro

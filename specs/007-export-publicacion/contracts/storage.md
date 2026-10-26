@@ -4,7 +4,7 @@
 
 | Clave | Cambio | Contenido |
 |---|---|---|
-| `nahual.rules.v1` | ampliada, misma versión | cada regla puede llevar `profileIds: uuid[]` (default `[]`) e `imported: "config" \| "requestly"` |
+| `nahual.rules.v1` | ampliada, misma versión | cada regla puede llevar `profileIds: uuid[]` (default `[]`) e `importedFrom: "config" \| "requestly"` |
 | `nahual.profiles.v1` | **nueva** | `{ version: 1, profiles: Profile[], lastActive: Record<site, uuid> }` |
 | `nahual.settings.v1` | sin cambios de forma | `productionOrigins` recibe orígenes importados (añadidos, nunca quitados) |
 

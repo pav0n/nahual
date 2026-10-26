@@ -40,7 +40,8 @@ ignoran. Un archivo que no es un array, está vacío o no tiene ningún registro
 `xmlhttprequest → xhr`, `script`, `stylesheet`, `image`, `font`, `main_frame → document`,
 `sub_frame → document`, `media`, `websocket` ⇒ no soportado; cualquier otro filtro
 (`requestPayload`, `pageUrl`…) ⇒ `requestly_unsupported_filter`. Una regla con varias parejas
-produce una regla de Nahual por pareja, numeradas "(1)", "(2)"…
+produce una regla de Nahual por pareja, numeradas "(1)", "(2)"… Si cualquier pareja no es
+convertible, la regla entera va a `unsupported` con el motivo de esa pareja (FR-036).
 
 ## Mapeo por tipo
 

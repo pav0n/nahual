@@ -40,6 +40,8 @@ R10). Nombre al descargar: `nahual-config-<AAAA-MM-DD>.json`.
 Reglas:
 
 - `nahual` y `version` son obligatorios y van primero; `version` entero ≥ 1.
+- `productionOrigins[]` con entradas válidas de `ProductionOriginEntrySchema` (003); una
+  inválida rechaza el archivo (FR-026a).
 - `sites[].rules[]` usa `RuleDraftSchema` más `id`, `order` y `profileIds`; la acción `hook` lleva
   solo `kind` y `source` (sin `permissions`, `check` ni `imported`). `enabled` se exporta tal cual
   pero **se ignora al importar** (todo entra desactivado).
@@ -72,7 +74,7 @@ Orden de comprobación; el primer fallo rechaza el archivo entero con `errorKey`
 Después, la vista previa (`ImportPreview`) y, al confirmar, el comando `importConfig`
 ([panel-protocol.md](./panel-protocol.md)). En el SW (research R10): ids nuevos para reglas y
 perfiles conservando la correspondencia, perfiles con nombre repetido ⇒ `"<nombre> (importado)"`,
-reglas al final del orden del sitio, `enabled: false`, `imported`, hooks sin permisos y con el
+reglas al final del orden del sitio, `enabled: false`, `importedFrom`, hooks sin permisos y con el
 `check` que calculó el panel, orígenes de producción añadidos sin quitar. Una regla con
 `"<nahual:redacted>"` en algún valor queda desactivada y el SW rechaza `setRuleEnabled` para
 ella con `rule_error_redacted_value` hasta que el dev lo reemplace.

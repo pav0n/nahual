@@ -171,7 +171,8 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
 
 ## R8 — Colección de Postman
 
-- **Decision**: objeto v2.1.0 con `info.name` = "Nahual · <sitio> · <fecha>" (sin
+- **Decision**: objeto v2.1.0 con `info.name` = "Nahual · <sitio>" e `info.description` = "Captured <capturedAt del primer
+  request>" (sin fecha de exportación: `capturedAt` es parte de la entrada y no rompe FR-017; sin
   `_postman_id`, que es opcional, para que la salida sea determinista, FR-017), `item[]` con un
   elemento por request (`name` = `MÉTODO /ruta`, `request` con `method`, `header[]`, `url`
   descompuesta en `raw`, `host`, `path`, `query[]`, y `body` `raw` con `options.raw.language`
@@ -207,7 +208,7 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
   migrada y, por cada hook, el `check` calculado por el Worker de tipos de 006 durante la vista
   previa. El SW vuelve a validar con Zod y límites, genera `id` nuevos para reglas y perfiles
   (manteniendo la correspondencia `profileIds`), renombra perfiles repetidos con "(importado)",
-  marca todo como `enabled: false`, `imported: "config" | "requestly"`, hooks sin permisos, y
+  marca todo como `enabled: false`, `importedFrom: "config" | "requestly"`, hooks sin permisos, y
   escribe `nahual.rules.v1`, `nahual.profiles.v1` y `nahual.settings.v1` en **una sola llamada**
   `storage.set({...})`; el estado en memoria se reemplaza solo cuando la escritura resuelve. Si
   falla (cuota), nada cambia. Guarda la instantánea anterior 10 s (`RESTORE_MS`) para
@@ -242,7 +243,10 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
   - El código de los hooks se genera desde plantillas fijas con los valores incrustados vía
     `JSON.stringify` (nunca concatenación), con un comentario inicial que cita la regla de origen.
 - **Rationale**: FR-034 a FR-038; 002 no tiene acciones redirect ni modify headers (inventario).
-  Incrustar con `JSON.stringify` evita que un valor del archivo inyecte código en el hook.
+  Incrustar con `JSON.stringify` evita que un valor del archivo inyecte código en el hook. Una
+  regla con varias parejas se importa entera o no se importa (FR-036). Las pruebas de dominio
+  comprueban los hooks generados con `typescript.transpileModule`; el Worker de tipos actúa en
+  la vista previa y en E2E.
 - **Alternatives considered**: añadir acciones nativas redirect y modify headers a 002 (cambio
   de alcance de otra feature); reutilizar código de Requestly (AGPLv3, descartado en 001).
 
@@ -306,7 +310,9 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
     CodeMirror solo lectura y las no soportadas listadas con motivo).
   - Editor de reglas: grupo de casillas "Perfiles"; lista de reglas: etiquetas de perfil y, con
     un perfil activo, las reglas que no actúan con texto "No actúa con <perfil>" e icono.
-  - Avisos: franja de indicadores para "perfil eliminado" e "importación rechazada"; `Toast` con
+  - Avisos: franja de indicadores para "perfil activo eliminado" e "importación deshecha desde
+    otra pestaña"; un archivo de importación rechazado se explica en línea junto al control que
+    lo eligió (FR-004); `Toast` con
     "Deshacer" (10 s) para eliminar perfil e importar.
 - **Rationale**: FR-001 a FR-007 y el requisito transversal del usuario; todo son componentes y
   tokens ya existentes. Mnemónicos: E de Exportar, O de perfil activO (P es "Pausar Nahual").

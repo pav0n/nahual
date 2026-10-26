@@ -9,6 +9,7 @@ al código no necesita mensajes: el panel ya tiene reglas, ajustes y `getBody`.
 | Comando | Payload | Resultado |
 |---|---|---|
 | `saveProfile` | `{ id?: uuid, name: string }` (sitio = el de la pestaña) | `ok` con `profile`, o `profile_invalid` con `issues` (`profile_error_required`, `profile_error_too_long`, `profile_error_duplicate`, `profile_error_limit`) |
+| `duplicateProfile` | `{ id, name }` | `ok` con `profile` (id nuevo; copia la pertenencia en todas las reglas del perfil de origen en una sola escritura), o `profile_invalid` / `profile_not_found` |
 | `deleteProfile` | `{ id }` | `ok`; quita el id de `profileIds` de sus reglas; pestañas con ese perfil activo pasan a `null`; conserva la instantánea 10 s |
 | `restoreProfile` | `{ id }` | `ok` si sigue en la ventana de deshacer: recupera el perfil y sus pertenencias (no la selección de las pestañas) |
 | `setActiveProfile` | `{ profileId: uuid \| null }` | `ok`; actualiza la pestaña y `lastActive[site]`; `profile_not_found` si no existe en el sitio |
@@ -26,7 +27,7 @@ al código no necesita mensajes: el panel ya tiene reglas, ajustes y `getBody`.
 | `profiles` | `{ profiles: Profile[], lastActive: Record<site, uuid> }` | Al conectar y en cada cambio |
 | `state` (existente) | + `activeProfileId: uuid \| null` | Al conectar, al navegar, tras `setActiveProfile`, `deleteProfile` e importar |
 | `notice` (existente) | `notice_profile_deleted_active`, `notice_import_undone` | Perfil activo eliminado desde otra pestaña; deshacer una importación desde otra pestaña |
-| `rules` (existente) | reglas con `profileIds` e `imported` | sin cambios de forma |
+| `rules` (existente) | reglas con `profileIds` e `importedFrom` | sin cambios de forma |
 
 ## Reglas de validación en el SW
 

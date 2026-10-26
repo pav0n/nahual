@@ -306,7 +306,7 @@ comportan igual tras activarlas y que las no soportadas se listan con su motivo.
 - **Regla importada con un valor redactado**: queda desactivada con un aviso en la regla de que
   falta completar ese valor, y no se puede activar hasta completarlo.
 - **Export de Requestly vacío, de un formato desconocido o de una versión no soportada**: se
-  rechaza con un mensaje que dice qué se esperaba.
+  rechaza en línea, junto al control de importar, con un mensaje que dice qué se esperaba.
 - **Regla de Requestly sin destino resoluble** (redirect a un mapeo local o a un archivo): se
   lista como no soportada con el motivo.
 - **Build no reproducible en CI**: el flujo de release falla antes de subir nada y muestra qué
@@ -332,10 +332,13 @@ comportan igual tras activarlas y que las no soportadas se listan con su motivo.
   como secciones nuevas de Ajustes, sin cambiar las existentes.
 - **FR-003**: El código en las vistas previas MUST mostrarse con el mismo editor de código del
   panel (el de hooks de 006), en modo solo lectura, con su resaltado y su tema.
-- **FR-004**: Los avisos y errores nuevos (perfil eliminado, importación rechazada) MUST usar la
-  franja de indicadores existente, con causa y solución; los deshacer nuevos (eliminar perfil,
-  importación) MUST usar el mismo aviso con "Deshacer" que ya usan borrar regla y limpiar tráfico,
-  y las confirmaciones (incluir valores sensibles) el mismo diálogo de confirmación del panel.
+- **FR-004**: Los avisos de cosas que ocurren fuera de la vista actual (perfil activo eliminado,
+  importación deshecha desde otra pestaña) MUST usar la franja de indicadores existente, con
+  causa y solución; un archivo de importación rechazado MUST mostrar su causa y solución en
+  línea, junto al control que lo eligió, como los campos inválidos de Ajustes en 004; los
+  deshacer nuevos (eliminar perfil, importación) MUST usar el mismo aviso con "Deshacer" que ya
+  usan borrar regla y limpiar tráfico, y las confirmaciones (incluir valores sensibles) el mismo
+  diálogo de confirmación del panel.
 - **FR-005**: Los atajos nuevos (como mínimo, abrir el selector de perfil y "Exportar como…") MUST
   declararse en el registro único de atajos de 004, sin chocar con los existentes ni con los de
   DevTools, y aparecer en Ajustes > Atajos y en Ayuda.
@@ -372,8 +375,9 @@ comportan igual tras activarlas y que las no soportadas se listan con su motivo.
   diga, no con un error genérico. Los valores redactados MUST leerse de variables de entorno con
   nombres indicados en un comentario al inicio del archivo, para que el test corra sin escribir
   credenciales en el código.
-- **FR-014**: El handler MSW MUST responder al mismo método y URL (sin los valores de query
-  sensibles) con el status, los headers no sensibles y el body de la respuesta capturada.
+- **FR-014**: El handler MSW MUST responder al mismo método y ruta (sin query: MSW no la usa
+  para emparejar; la query original queda en un comentario sobre el handler) con el status, los
+  headers no sensibles y el body de la respuesta capturada.
 - **FR-015**: El schema Zod MUST inferirse del body JSON de la respuesta: tipos de cada campo,
   objetos anidados, arrays y `null`. Con varias respuestas del mismo endpoint, los campos ausentes
   en alguna MUST ser opcionales y los que son `null` en alguna MUST admitir `null`.
@@ -462,15 +466,18 @@ comportan igual tras activarlas y que las no soportadas se listan con su motivo.
 - **FR-035**: MUST convertirse: modify response estático → regla Mock de etapa Response; redirect
   → regla con hook que cambia el destino; modify headers (de request o de response) → regla con
   hook que fija, cambia o quita esos headers. Las condiciones de origen de Requestly (URL, host,
-  ruta con igual, contiene, empieza por, comodín o regex) MUST traducirse al prefiltro y las
+  ruta con igual, contiene, comodín o regex) MUST traducirse al prefiltro y las
   condiciones de 002.
 - **FR-036**: Una regla de un tipo no soportado, o con alguna parte que no se puede reproducir,
-  MUST NOT importarse ni en parte y MUST listarse con su nombre y el motivo.
+  MUST NOT importarse ni en parte y MUST listarse con su nombre y el motivo. Una regla de
+  Requestly con varias parejas se importa entera o no se importa: si una pareja no es
+  convertible, la regla completa es no soportada.
 - **FR-037**: Las reglas importadas de Requestly MUST crearse en el sitio de la pestaña
   inspeccionada, desactivadas y marcadas como "importado de Requestly"; los grupos de Requestly
   MUST convertirse en perfiles de ese sitio.
-- **FR-038**: El código de los hooks generados MUST ser legible, con un comentario que indica la
-  regla de Requestly de origen, y pasar la validación de tipos de 006.
+- **FR-038**: El código de los hooks generados MUST ser legible: plantilla fija, un comentario
+  inicial que cita la regla de Requestly de origen, nombres descriptivos y como máximo 20 líneas
+  de plantilla más una línea por modificación de header; y MUST pasar la validación de tipos de 006.
 
 **Publicación (US2)**
 
