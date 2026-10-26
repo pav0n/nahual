@@ -9,6 +9,10 @@ Nahual es una extensión de Chrome MV3 (`chrome.debugger` + CDP) para devs front
 
 Es la feature con más superficie de ataque: el código del hook puede venir de terceros.
 
+Decisiones previas que aplican:
+- **Transpilador: Sucrase**, ya elegido en `specs/001-spike-cdp/research.md` (D2): JavaScript puro, ~48 KB gzip, sin WebAssembly. esbuild-wasm quedó descartado (~3,8 MB solo el `.wasm` y exige `wasm-unsafe-eval`). Falta medir lo que D2 dejó para esta feature: tiempo de transformación de un hook típico (< 50 ms esperado) y cobertura de sintaxis.
+- **Editor de código: por evaluar** entre Monaco y CodeMirror 6. El tamaño importa: el JS total del panel ronda 0,8 MB tras 005 y Monaco pesa varios MB. Los errores de tipo antes de guardar necesitan el servicio de lenguaje de TypeScript con cualquiera de los dos editores, así que su peso entra en la comparación.
+
 ---
 
 ## `/speckit.specify`
@@ -41,6 +45,7 @@ Casos límite: hook que intenta usar fetch, XHR, WebSocket, importScripts, chrom
 Criterios de éxito:
 - Las pruebas de escape del sandbox fallan en el 100% de los vectores listados.
 - Overhead de un hook trivial < 10 ms p95.
+- Abrir el panel no se vuelve más lento por los hooks: el editor se carga solo al abrir un hook.
 ```
 
 ## `/speckit.clarify` — preguntas sugeridas
@@ -56,23 +61,23 @@ Planifica sobre 002.
 
 packages/hook-runtime:
 - Tipos HookContext publicables como .d.ts.
-- Transpilado TS→JS con la herramienta elegida en research.md de 001 (esbuild-wasm o Sucrase).
+- Transpilado TS→JS con Sucrase (decisión D2 de 001); medir el tiempo de transformación y la cobertura de sintaxis pendientes de D2.
 - Validación del valor devuelto con Zod antes de aplicarlo.
 
 apps/extension:
 - Página sandbox (manifest sandbox.pages) embebida como iframe en el panel. Recibe { código, HookContext } por postMessage, transpila, ejecuta y devuelve el resultado o el error.
 - El panel verifica event.source y el origen del sandbox en cada mensaje; responde siempre con targetOrigin explícito, nunca "*".
 - Timeout de 2 s: si se excede, el panel recrea el iframe del sandbox (corta bucles infinitos) y el SW continúa el request sin cambios.
-- Editor Monaco con HookContext.d.ts cargado.
+- Editor con HookContext.d.ts cargado. Elegir en research.md entre Monaco y CodeMirror 6 (con el servicio de lenguaje de TypeScript para autocompletado y errores de tipo) con estos criterios: tamaño del bundle, medido; autocompletado y errores de tipo con HookContext.d.ts; funcionamiento con la CSP de las páginas de la extensión sin `unsafe-eval`; accesibilidad con teclado y lector de pantalla; tema claro y oscuro de DevTools. El editor y el chequeo de tipos se cargan solo al abrir el editor de hooks, nunca en la carga inicial del panel. Registrar el tamaño resultante como en 005.
 - Consola de logs por request.
 
 CSP:
 - extension_pages: "script-src 'self'; object-src 'self'" sin cambios.
-- sandbox: la mínima para ejecutar el hook ('unsafe-eval' o 'wasm-unsafe-eval' solo ahí, según el transpilador), con connect-src 'none', y sin acceso a chrome.* por diseño de MV3.
+- sandbox: la mínima para ejecutar el hook ('unsafe-eval' solo ahí, para ejecutar el JS transpilado; con Sucrase no hace falta 'wasm-unsafe-eval'), con connect-src 'none', y sin acceso a chrome.* por diseño de MV3.
 
 Seguridad: suite de pruebas de escape (fetch, XHR, WebSocket, importScripts, chrome, parent, top, document.cookie de la pestaña); hooks importados desactivados por defecto con vista previa; límite de tamaño; ningún permiso nuevo.
 
-Pruebas: unitarias del runtime y de la validación del resultado; E2E de una regla con hook en ambas etapas; suite de escape; prueba de bucle infinito; medición de overhead.
+Pruebas: unitarias del runtime y de la validación del resultado; E2E de una regla con hook en ambas etapas; suite de escape; prueba de bucle infinito; medición de overhead; tamaño del bundle con y sin el editor cargado.
 ```
 
 ## `/speckit.tasks`
