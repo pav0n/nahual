@@ -224,3 +224,59 @@ describe("hooks (006, contracts/panel-protocol.md)", () => {
     bad("importHook", { config: null, source: "x".repeat(102_401) });
   });
 });
+
+describe("PanelMessageSchema v6 (007, contracts/panel-protocol.md)", () => {
+  it("saveProfile con id opcional y nombre", () => {
+    ok("saveProfile", { name: "QA staging" });
+    ok("saveProfile", { id: UUID, name: "QA staging" });
+    bad("saveProfile", { id: "x", name: "QA" });
+    bad("saveProfile", {});
+    bad("saveProfile", { name: "x".repeat(200) });
+  });
+
+  it("duplicateProfile, deleteProfile y restoreProfile por id", () => {
+    ok("duplicateProfile", { id: UUID, name: "Copia" });
+    bad("duplicateProfile", { id: UUID });
+    ok("deleteProfile", { id: UUID });
+    ok("restoreProfile", { id: UUID });
+    bad("deleteProfile", { id: "x" });
+  });
+
+  it("setActiveProfile con uuid o null", () => {
+    ok("setActiveProfile", { profileId: UUID });
+    ok("setActiveProfile", { profileId: null });
+    bad("setActiveProfile", {});
+    bad("setActiveProfile", { profileId: "x" });
+  });
+
+  it("setRuleProfiles: uuids sin repetir, hasta 20", () => {
+    ok("setRuleProfiles", { ruleId: UUID, profileIds: [UUID2] });
+    ok("setRuleProfiles", { ruleId: UUID, profileIds: [] });
+    bad("setRuleProfiles", { ruleId: UUID, profileIds: [UUID2, UUID2] });
+    bad("setRuleProfiles", { ruleId: UUID, profileIds: ["x"] });
+  });
+
+  it("importConfig: configuración sin validar aquí, origen y checks de hooks", () => {
+    ok("importConfig", { config: { nahual: "config" }, source: "config", hookChecks: {} });
+    ok("importConfig", {
+      config: {},
+      source: "requestly",
+      hookChecks: { [UUID]: { hash: "ab12", ok: true } },
+    });
+    bad("importConfig", { config: {}, source: "otro", hookChecks: {} });
+    bad("importConfig", {
+      config: {},
+      source: "config",
+      hookChecks: { x: { hash: "z", ok: true } },
+    });
+  });
+
+  it("undoImport por importId", () => {
+    ok("undoImport", { importId: UUID });
+    bad("undoImport", {});
+  });
+
+  it("saveRule acepta profileIds dentro del borrador (sin validar aquí)", () => {
+    ok("saveRule", { rule: { name: "x", profileIds: [UUID] } });
+  });
+});

@@ -1,4 +1,5 @@
 import {
+  ProfilesStateSchema,
   ExchangeUpdateSchema,
   LIMITS,
   PathPatternSchema,
@@ -31,6 +32,12 @@ export const ERROR_CODES = [
   "no_site",
   "relaxation_invalid",
   "ignores_invalid",
+  // 007 (contracts/panel-protocol.md).
+  "profile_invalid",
+  "profile_not_found",
+  "config_invalid",
+  "config_limit",
+  "undo_expired",
 ] as const;
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
@@ -68,6 +75,8 @@ export const SessionStateSchema = z.strictObject({
   globalPaused: z.boolean(),
   /** Relajaciones CORS de la pestaña (003). */
   relaxationCount: z.int().min(0),
+  /** 007: perfil activo de la pestaña; `null` = "Todas las reglas" (FR-020). */
+  activeProfileId: z.uuid().nullable().default(null),
 });
 export type SessionState = z.infer<typeof SessionStateSchema>;
 
@@ -123,6 +132,8 @@ export const SwMessageSchema = z.discriminatedUnion("type", [
   ),
   message("state", SessionStateSchema),
   message("settings", SettingsSchema),
+  // 007: perfiles de todos los sitios y el último activado en cada uno (FR-022).
+  message("profiles", ProfilesStateSchema.omit({ version: true })),
   message(
     "rules",
     z.strictObject({

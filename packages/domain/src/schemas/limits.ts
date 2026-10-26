@@ -62,6 +62,16 @@ export const LIMITS = {
   hookConsoleEntriesMax: 1_000,
   hookLogEntryChars: 10_240,
   hookWorkerIdleMs: 60_000,
+  // Exportar, perfiles e importar (007, data-model).
+  exportBatchMax: 50,
+  /** Body más grande que se incrusta en el código exportado; por encima, se omite (R2). */
+  exportInlineBodyBytes: MB,
+  zodDepthMax: 10,
+  profilesPerSiteMax: 50,
+  profileNameMax: 60,
+  profilesPerRuleMax: 20,
+  importFileBytesMax: 10 * MB,
+  importUndoMs: 10_000,
 } as const;
 
 /** Token HTTP (RFC 9110, sección 5.6.2). */

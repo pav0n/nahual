@@ -20,6 +20,7 @@ const base = {
   methods: [],
   resourceTypes: ["Fetch", "XHR"],
   conditions: [],
+  profileIds: [],
 } satisfies Partial<RuleDraft>;
 
 /** Plantillas incluidas (FR-018). Una plantilla solo rellena el editor; nada se guarda solo. */

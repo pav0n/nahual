@@ -75,6 +75,8 @@ const DRAFT_SHAPE = {
   stage: StageSchema,
   conditions: z.array(ConditionSchema).max(LIMITS.conditionsMax, { error: "rule_error_too_many" }),
   action: ActionSchema,
+  /** 007: perfiles del mismo sitio a los que pertenece la regla (FR-019). */
+  profileIds: uniqueArray(z.uuid(), LIMITS.profilesPerRuleMax).default([]),
 };
 
 /** Lo que el dev edita: una regla sin identidad, sitio, posición ni fechas. */
@@ -89,6 +91,8 @@ export const RuleSchema = z
     createdAt: z.number(),
     updatedAt: z.number(),
     ...DRAFT_SHAPE,
+    /** 007: lo pone el SW al importar (FR-032); distinto de `HookAction.imported` (006). */
+    importedFrom: z.enum(["config", "requestly"]).optional(),
   })
   .superRefine(checkStage);
 export type Rule = z.infer<typeof RuleSchema>;

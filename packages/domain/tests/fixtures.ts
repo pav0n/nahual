@@ -18,6 +18,7 @@ export function rule(overrides: Partial<Rule> = {}): Rule {
     stage: "response",
     conditions: [],
     action: { kind: "pause" },
+    profileIds: [],
     createdAt: 1,
     updatedAt: 1,
     ...overrides,

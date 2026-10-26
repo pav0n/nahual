@@ -41,6 +41,7 @@ describe("regla a partir de un request (004, research R7, data-model)", () => {
       stage: "response",
       conditions: [],
       action: { kind: "pause" },
+      profileIds: [],
     });
   });
 

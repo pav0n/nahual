@@ -65,6 +65,7 @@ export function createBackground(deps: BackgroundDeps) {
         queueSize: engine.queueSize(tabId),
         globalPaused: settings.get().globalPaused,
         relaxationCount: relaxer.count(tabId),
+        activeProfileId: null,
       }),
     );
   };
@@ -291,6 +292,16 @@ export function createBackground(deps: BackgroundDeps) {
         return { ok: true };
       case "hookResult":
         return hooks.onResult(tabId, command.payload);
+      // 007: se cablean con el almacén de perfiles (T044) y la importación (T057).
+      case "saveProfile":
+      case "duplicateProfile":
+      case "deleteProfile":
+      case "restoreProfile":
+      case "setActiveProfile":
+      case "setRuleProfiles":
+      case "importConfig":
+      case "undoImport":
+        return { ok: false, code: "invalid_message" };
       case "importHook":
         return rules.importHook(
           command.payload,
