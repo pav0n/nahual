@@ -29,24 +29,24 @@ Nahual es la captura real.
 
 ## Video
 
-`demo.webm` (1280×800, tema oscuro, unos 70 s) lo genera `apps/extension/e2e/store/video.spec.ts`:
-graba el panel real y dibuja encima una portada, un subtítulo por paso y un resalte en cada
-control antes de usarlo. La Chrome Web Store no aloja videos: se sube a YouTube y se pega el enlace
-en el listing.
+`demo.webm` (1280×800, tema oscuro, unos 110 s) lo genera `apps/extension/e2e/store/video.spec.ts`:
+graba el panel real con una portada, un subtítulo por paso en una franja inferior propia (el panel
+se encoge para que el subtítulo nunca tape un control) y un resalte en cada control antes de
+usarlo. Las vistas importantes se quedan de 4 a 5 s en pantalla. La Chrome Web Store no aloja
+videos: se sube a YouTube y se pega el enlace en el listing.
 
 Sin pantalla, Chrome no dibuja la barra de depuración pero encoge el área grabada, así que la
 grabación usa `--silent-debugger-extension-api` y el video no la muestra; la captura 1 sí.
 
 Guion:
 
-| Paso | Subtítulo | Qué se ve |
+| Paso | Subtítulos | Qué se ve |
 |---|---|---|
 | Portada | NAHUAL · DevTools traffic toolkit | "Pause, rewrite, replay and export your app's traffic, right inside DevTools, on the tab you're already debugging." |
-| 1 | Attach to the tab you're debugging | Adjuntar y recargar; aparece el tráfico. "No proxy, no certificates, no separate browser: your real session." |
-| 2 | Pause only what matters · Edit the response in flight · The page got your response | Regla "status ≥ 500"; un `500` queda pausado; se cambia a `200` con otro body y continúa; el detalle muestra la respuesta editada |
-| 3 | Know why CORS blocked it · Relax it for this tab only | La causa explicada; "Allow CORS for development" ⇒ "Allow"; el reintento pasa |
-| 4 | Rewrite traffic with TypeScript hooks · Caught before it runs · See every run | Se escribe un hook con un error de tipos, que se marca; se corrige, se guarda y la pestaña Hooks del request muestra la ejecución, el cambio y el tiempo |
-| 5 | Replay any request and diff the result | Repeater a otra URL y diff contra el original |
-| 6 | Turn real traffic into tests and mocks | "Export as…": cURL, Vitest, MSW y Zod, con los secretos redactados |
-| ✓ | Detach when you're done | Soltar la pestaña |
+| 1 | Attach to the tab you're debugging | Adjuntar y recargar; aparece el tráfico |
+| 2 | Pause only what matters · A 500 is held before the page sees it · Edit the response in flight · The page got your response | Se escribe la regla con la condición status ≥ 500; un `500` queda pausado; se cambia a `200` con otro body y continúa; el detalle muestra la respuesta editada |
+| 3 | Know why CORS blocked it · Relax it for this tab only · The retry goes through | La causa explicada; "Allow CORS for development" ⇒ "Allow"; el reintento pasa y la barra avisa de la relajación |
+| 4 | Rewrite traffic with TypeScript hooks · Caught before it runs · Fixed: ready to run · See every run | Se escribe un hook con un error de tipos, que se marca; se corrige y se guarda; la pestaña Hooks muestra la ejecución, el cambio y el tiempo |
+| 5 | Replay any request and diff the result · Every change, field by field | Repeater a otra URL y diff contra el original |
+| 6 | Turn real traffic into tests and mocks · A Vitest test… · An MSW handler… | "Export as…" a Vitest y a MSW, con los secretos redactados |
 | Cierre | Free · Local · No account · No telemetry | |
