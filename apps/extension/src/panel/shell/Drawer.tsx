@@ -1,10 +1,16 @@
 import { useState, type ComponentType, type KeyboardEvent, type PointerEvent } from "react";
 import { t } from "../../shared/i18n.ts";
 import { Icon } from "../components/common/icons.tsx";
+import { usePanelStore, type PanelStore } from "../store/index.ts";
 import { uiPrefs } from "../ui-prefs.ts";
 
-/** Contenido del cajón: hoy ninguno; 006 pone la consola de hooks (contracts/panel-shell.md). */
-export const DRAWER_SLOT: { label: string; content: ComponentType | null } = {
+/** Contenido del cajón: 006 pone la consola de hooks (contracts/panel-shell.md). */
+export const DRAWER_SLOT: {
+  label: string;
+  content: ComponentType | null;
+  /** 006: el cajón solo aparece si hay algo que mostrar (como la consola de DevTools). */
+  visible?: (state: PanelStore) => boolean;
+} = {
   label: "",
   content: null,
 };
@@ -21,10 +27,12 @@ const clamp = (value: number) => Math.round(Math.min(MAX, Math.max(MIN, value)))
  */
 export function Drawer() {
   const [height, setHeight] = useState(() => uiPrefs().get().drawerHeight);
-  const [expanded, setExpanded] = useState(true);
+  const expanded = usePanelStore((s) => s.drawerExpanded);
+  const visible = usePanelStore((s) => DRAWER_SLOT.visible?.(s) ?? true);
+  const setExpanded = usePanelStore((s) => s.setDrawerExpanded);
   const [dragging, setDragging] = useState(false);
   const Content = DRAWER_SLOT.content;
-  if (!Content) return null;
+  if (!Content || !visible) return null;
 
   const save = (value: number) => {
     const next = clamp(value);

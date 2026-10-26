@@ -188,6 +188,10 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
   agotado no guarda (FR-023). Límite: 1 MB del JSON en UTF-8 al guardar (error `state_too_large`).
   Recargar o navegar no lo vacía; "Vaciar estado" en la consola, sí, con "Deshacer" durante
   10 s que restaura la copia anterior (`restore`, FR-008).
+- **Reintentos en serie**: los primeros intentos corren en paralelo; los que chocan se repiten
+  **de uno en uno** (cola del `HookHost`), cada uno con el `state` recién leído. Así 20
+  ejecuciones simultáneas que incrementan un contador terminan en 20 con 2 intentos como mucho
+  (SC-012, `hrtests/state.test.ts`).
 - **Rationale**: copia + comparación de versión (concurrencia optimista) da contadores exactos
   con ejecuciones paralelas (SC-012) sin serializar todo. Repetir un hook es seguro: no tiene
   efectos fuera de su resultado (sin red) y solo cuentan los `log()` del último intento.
@@ -243,7 +247,12 @@ Diferencias con la entrada de `/speckit-plan`, resueltas a favor de lo decidido 
   los de objetos de headers, y los parámetros de query sensibles dentro de URLs; a los textos
   sueltos les aplica la redacción por pares clave/valor de `redactDiff`. Los valores reales viajan
   aparte, solo en memoria del panel, y se muestran con "Mostrar valores sensibles" (como el diff
-  de 005) hasta cerrar la consola. No depende del permiso de leer valores sensibles. El indicador de la barra (slot `STATUS_ITEMS` de 004) cuenta errores sin leer; abrir
+  de 005) hasta cerrar la consola. No depende del permiso de leer valores sensibles.
+  **Ajuste de implementación**: el runtime del Worker es una función serializada a `Blob` y no
+  puede importar el dominio, así que el Worker solo convierte cada registro a texto (JSON con
+  límite) y la redacción la hace el **panel** (de confianza) con la redacción de texto de 005
+  (`redactText`: pares `"clave": valor`, query y líneas de header). El panel guarda el texto real
+  aparte, en memoria. El indicador de la barra (slot `STATUS_ITEMS` de 004) cuenta errores sin leer; abrir
   la consola los marca leídos.
 - **Detalle**: pestaña `hooks` en `DETAIL_TABS` (previsto en 004), visible cuando el intercambio
   tiene ejecuciones.
@@ -313,3 +322,151 @@ y 1280 px.
   `extension_pages` sigue sin `unsafe-eval`; `new Function` solo aparece en el chunk del sandbox.
   Pruebas de la mensajería: un `hello` de otra ventana, un mensaje sin `runId` conocido o con
   forma inválida se descartan.
+
+---
+
+## Resultados
+
+### Experimentos X1–X3 (2026-10-25, Chromium 156 de Playwright, Linux)
+
+- **X1** (`e2e/experiments/x1-sandbox.spec.ts`), con una sonda solo del build de pruebas en
+  `src/sandbox/sandbox.ts`:
+  - (a) crxjs copia la página de `sandbox.pages`, pero no procesa su script; se añadió a
+    `rollupOptions.input`. Con eso, el script de módulo carga con origen `null` y Chrome aplica la
+    CSP del manifest: cada bloqueo sale en consola como violación de `connect-src 'none'`.
+  - (b) el `hello` llega con `event.origin === "null"` y `event.source` igual al iframe; el canal
+    con `MessageChannel` funciona sin `targetOrigin "*"`.
+  - (c) el sandbox crea un Worker desde un `Blob` y el Worker evalúa con `new Function`.
+  - (d) desde el Worker fallan `fetch` (`TypeError`), XHR (`NetworkError`), `importScripts`
+    (`NetworkError`), un Worker anidado (`SecurityError`) e `import()` dinámico; `chrome` y `parent`
+    no existen. `WebSocket` y `EventSource` se crean sin lanzar, pero la CSP bloquea la conexión;
+    asignar `location.href` en el Worker no navega. **0 requests** en `/leak` de la API y del
+    tercer origen. La página sandbox tampoco puede hacer `fetch`.
+  - (e) `terminate()` corta un `while (true)` (respuesta a los ~310 ms con un corte de 300 ms).
+  - (f) la pila conserva `hook.js:L`; `new Function` añade **2 líneas**: la línea 3 del texto del
+    dev sale como `hook.js:5`.
+  - **Consecuencia**: R2 sin respaldo. El runtime del Worker además reemplaza `fetch`,
+    `XMLHttpRequest`, `WebSocket`, `EventSource`, `importScripts` y `Worker` por funciones que
+    lanzan `access_denied`, para que el error sea inmediato y claro aunque la CSP ya bloquee.
+- **X2** (`e2e/experiments/x2-hook-latency.spec.ts`): ida y vuelta panel ⇒ sandbox ⇒ Worker con un
+  hook trivial: Worker en frío p50 5,1 ms / p95 7,0 ms; **en caliente p50 0,1 ms / p95 0,2 ms**; en
+  caliente con un body JSON de 1,1 MB p50 4,2 ms / p95 5,1 ms. Sucrase con un hook de 46 líneas
+  (en Node) p50 0,75 ms / p95 1,3 ms (D2 de 001: < 50 ms, cumplido). El tramo SW ⇔ panel se mide
+  de punta a punta en T060. **Consecuencia**: R16 sin respaldo; un Worker por hook reutilizado
+  basta; el precalentado (R2) evita el coste en frío en la primera ejecución.
+- **X3** (builds mínimas con Vite 8.3.4 en un directorio temporal):
+
+  | Editor | Chunk del editor (gzip) | Worker de TypeScript (gzip) | Total (gzip) | `eval`/`new Function` |
+  |---|---|---|---|---|
+  | CodeMirror 6 + servicio de lenguaje propio | 149 KB | 979 KB | **1,13 MB** | ninguno |
+  | Monaco 0.52.2 (ESM, worker de TS) | 572 KB + 11 KB CSS + 81 KB worker | 1,31 MB | 1,98 MB | **sí, en su worker de TS** |
+
+  **Consecuencia**: R4 confirmada: CodeMirror. Monaco pesa un 75 % más y su worker de TypeScript
+  necesitaría `unsafe-eval` en las páginas de la extensión, que la constitución prohíbe. La
+  latencia de SC-005 se mide con el servicio real en T033.
+
+### Ajustes de implementación (Foundational)
+
+- **Preflights fuera de los hooks**: como el Mock de 002, un preflight (`OPTIONS` con
+  `Access-Control-Request-Method`) no pasa por hooks; su respuesta es del navegador y de la
+  relajación CORS (R15). `rule-engine` lo comprueba antes de mandar la cadena.
+- **Relajación sobre el resultado de un hook** (FR-013): la relajación de 003 respeta los
+  `Access-Control-*` que el dev fija a mano en una pausa ("pinned") y no actúa si el servidor ya
+  respondía con CORS válido. Para los hooks se pasa `fromHook` al ejecutor: lo que deja el hook se
+  trata como la respuesta del servidor, así que la relajación decide sobre esos headers y
+  prevalece (si un hook quita `Access-Control-Allow-Origin`, vuelve). Prueba en
+  `tests/integration/hook-runner.test.ts`.
+- **Chunk compartido**: Rollup había puesto Zod y el dominio en el chunk de entrada del panel y
+  el sandbox lo importaba (cargaba código del panel). `vite.config.ts` los separa en `shared`;
+  `tests/dist` comprueba que el único `Function(` del build está en el runtime del Worker y que
+  Sucrase va solo en el sandbox y sin su CLI. Sucrase lleva como texto el código de su
+  transformación de react-hot-loader (`eval(code)` dentro de una cadena), que Nahual no usa; se
+  permite ese fragmento exacto.
+- **`hashSource`** con aritmética de 16 bits: con `BigInt` por byte, guardar 51 hooks de 100 KB
+  tardaba más de 5 s.
+- **Suite de escape** (`e2e/hooks-escape.spec.ts`, T022/T031): 16 vectores × 2 destinos (API y
+  tercer origen) = 32 casos en verde; ningún request llega a `/leak`.
+- **Zod 4.6.6**: ver plan.md "Dependencias".
+
+### Interfaz frente a DevTools (US1, T043)
+
+- **D3** (`e2e/experiments/d3-devtools-syntax.spec.ts`, Chromium 156): tokens de sintaxis de
+  Sources (`--sys-color-token-*`), superficies de error y aviso de Console
+  (`--sys-color-surface-error`, `--sys-color-surface-yellow` y sus textos) y la fuente del editor
+  (`--source-code-font-family`: Noto Sans Mono, 11 px). Se copiaron a `--nh-syntax-*`,
+  `--nh-console-*` y `--nh-source-*`; todos superan 4,5:1 sobre su fondo en ambos temas.
+- **Revisión de las capturas** (`e2e/visual`, claro y oscuro a 320, 800 y 1280 px): el editor
+  coincide con Sources (fuente, numeración en gris, línea activa, colores, subrayado ondulado y
+  marca de error en el margen); la pestaña Hooks coincide con Timing (tabla compacta, cabecera en
+  la superficie de barra) y su error con una fila de error de Console. Diferencia que queda: la
+  caja de sugerencias muestra como mucho 10 opciones a la vez (Sources muestra más con scroll),
+  porque una lista con scroll propio no es enfocable y axe la marca (`scrollable-region-focusable`).
+- **Teclado**: "Esc y luego Tab" sale del editor (lo trae CodeMirror, con 2 s de margen); con las
+  sugerencias abiertas, la primera Esc las cierra, como en Sources.
+
+### Ajustes de implementación (US2)
+
+- **Cajón plegado y solo con hooks**: el cajón de 004 se mostraba siempre que tenía contenido y
+  desplegado. Con la consola de hooks registrada, aparecería en todos los paneles. Ahora, como la
+  consola de DevTools, empieza plegado (`drawerExpanded` en el store) y solo aparece si hay reglas
+  con hook o registros (`DRAWER_SLOT.visible`). El contador de errores lo despliega filtrado a
+  errores; ver la consola marca los errores como leídos.
+- **Agrupado**: solo se agrupan errores consecutivos del mismo hook y mismo mensaje (Console
+  hace lo mismo); un registro de otro hook en medio corta el grupo.
+- **Icono de error**: círculo con ×, como Console (`icons.tsx`, `error`), en la consola, el
+  contador y la pestaña Hooks.
+
+### Rendimiento (SC-002, T060)
+
+`e2e/hooks-perf.spec.ts` (`@perf`, método de E4: 300 requests por caso, se descartan los 20
+primeros), Chromium de Playwright, Linux:
+
+| Caso | p50 | p95 |
+|---|---|---|
+| Sin reglas | 1,1 ms | 2,0 ms |
+| Regla "Solo registrar" | 1,8 ms | 2,6 ms |
+| Misma regla con hook trivial | 3,3 ms | 5,5 ms |
+| **Overhead del hook** | **1,5 ms** | **2,9 ms** |
+
+Overhead p95 de 2,9 ms frente al límite de 10 ms. Sin reglas con hook el camino no cambia:
+`selectChain` devuelve una cadena vacía y no se envía `hookRun`.
+
+### Tamaño de los bundles (SC-007, T061)
+
+Carga inicial del panel = `panel.html` y sus imports estáticos (sin `import()` dinámico), build de
+producción. 005 se midió en un worktree de `main` (5cc7d55).
+
+| | Bytes | gzip |
+|---|---|---|
+| 005 | 606.793 | 175.864 |
+| 006 | 651.632 | 190.412 |
+| Diferencia | +7,4 % | +8,3 % |
+
+Chunks nuevos, fuera de la carga inicial:
+
+| Chunk | Bytes | gzip | Se carga |
+|---|---|---|---|
+| `HookEditor-*.js` (CodeMirror 6 y el editor) | 476.914 | 157.478 | al abrir un editor de hook |
+| `hook-types.worker-*.js` (TypeScript y `lib.es2022.d.ts`) | 4.167.532 | 1.066.672 | al abrir un editor de hook |
+| `sandbox-*.js` (Sucrase y el runtime) | 206.531 | 47.573 | con la primera regla con hook activa |
+
+Apertura del panel (7 aperturas tras una de calentamiento, mediana, desde la navegación a
+`panel.html` hasta que la pestaña Traffic es visible): 005 78 ms, 006 77 ms.
+
+`tests/dist/bundles.test.ts` fija lo anterior: la carga inicial no contiene CodeMirror, el
+servicio de lenguaje de TypeScript ni Sucrase, y mide como mucho 1,10 × la de 005.
+`tests/dist/no-network.test.ts` admite `declare function eval(` porque el chunk del servicio de
+tipos lleva `lib.es2022.d.ts` como texto.
+
+### Estabilidad (T065)
+
+`pnpm e2e` (198 pruebas, 4 workers) tres veces seguidas y la suite visual:
+
+- Primera serie: 198/198, 192 pasadas y 1 fallo, 198/198; visual 2/2. El fallo fue
+  `hooks-a11y.spec.ts` "editor del hook solo con teclado", por dos causas de la prueba y no de
+  la extensión: pedía sugerencias antes de que el servicio de tipos terminara de arrancar en frío
+  (más de 5 s con el suite en paralelo), y pulsaba Enter dentro de los 75 ms en que CodeMirror
+  ignora aceptar tras abrir la lista (`interactionDelay`, protege de aceptar por accidente). La
+  prueba ahora espera "No problems." y la opción seleccionada; 10/10 repetida sola.
+- Segunda serie, con la corrección: 198/198 las tres veces (5.1, 5.1 y 5.2 min).
+- Sigue presente la intermitencia conocida de 003 (CORS); no apareció en estas corridas.

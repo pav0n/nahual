@@ -132,6 +132,15 @@ transpilado del hook (constitución: "eval solo en el sandbox").
 | `typescript` | 5.9.3 (ya en el monorepo como dev) | Apache-2.0 | Solo el Worker de tipos del panel, al abrir un hook | Autocompletado y errores de tipo antes de guardar (FR-015, FR-016) | Sin tipos (incumple US1-3); servicio remoto (sin red propia) |
 | `@codemirror/state`, `view`, `commands`, `language`, `autocomplete`, `lint`, `lang-javascript` | ver Technical Context | MIT | Chunk del editor, al abrir un hook | Editor accesible y modular, tematizable con los tokens de DevTools, ~150 KB frente a varios MB de Monaco (R4, X3) | Monaco (pesado, tema y CSS propios); textarea (sin autocompletado) |
 
+**Zod 4.6.5 ⇒ 4.6.6** (parche de una dependencia existente, en todos los paquetes): `pnpm audit`
+marcó GHSA-mrhx-c7xc-m3w5 (agotar memoria al validar colecciones enormes con límites), ya
+presente en `main`. Con 006 Zod valida la salida de código no confiable del sandbox, así que el
+parche es obligatorio. Sin cambios de API.
+
+`@lezer/highlight` 1.2.5 (MIT) se declara directa: ya venía como transitiva de
+`@codemirror/language` y el editor necesita sus `tags` para pintar la sintaxis con los colores de
+Sources (research R13, D3).
+
 Transitivos: `@lezer/common`, `@lezer/highlight`, `@lezer/lr`, `@lezer/javascript`, `style-mod`,
 `w3c-keyname`, `crelt` (MIT). Los de Sucrase para su CLI (`commander`, `tinyglobby`, `mz`,
 `pirates`) se instalan pero no entran en el bundle del sandbox (se importa solo `transform`);
@@ -263,6 +272,26 @@ componentes.
 - **Interfaz**: ninguna vista se da por terminada sin comparar su captura con la de DevTools en
   el mismo tema (Sources, Console, contador de errores, Network); es parte de la definición de
   terminado de cada historia en este plan.
+
+## Revisión de implementación (T064)
+
+Revisión del diff de 006 contra el modelo de amenazas y la definición de terminado:
+
+| Punto | Resultado |
+|---|---|
+| Manifest y CSP | `permissions` sigue `["debugger", "storage"]`, sin `host_permissions` en producción; versión `0.6.0`. Suma `sandbox.pages: ["src/sandbox/hook-sandbox.html"]` y la CSP de `sandbox`: `sandbox allow-scripts; default-src 'none'; script-src 'self' 'unsafe-eval' blob:; worker-src blob:; connect-src 'none'; img-src 'none'; style-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'`. `extension_pages` no cambia (`script-src 'self'`) (`tests/dist/manifest.test.ts`) |
+| `eval` solo en el sandbox | `new Function` aparece únicamente en el chunk `sandbox-*` (override de ESLint limitado a `src/sandbox/**`). El resto de bundles no contiene `eval(`, `Function(` ni APIs de red, salvo los permitidos de 002/005 y el texto `declare function eval(` de `lib.es2022.d.ts` en el Worker de tipos (`tests/dist/no-network.test.ts`) |
+| Dependencias y licencias | Sucrase 3.35.1 (MIT), TypeScript 5.9.3 (Apache-2.0), CodeMirror 6 y `@lezer/highlight` 1.2.5 (MIT); Zod 4.6.5 ⇒ 4.6.6 por GHSA-mrhx-c7xc-m3w5. `pnpm audit --prod` sin vulnerabilidades. Tamaños reales: editor 476,914 B (157,478 gzip), Worker de tipos 4,167,532 B (1,066,672 gzip), sandbox 206,531 B (47,573 gzip), todos fuera de la carga inicial (research "Tamaño de los bundles") |
+| Hook importado malicioso | Se importa como regla nueva, desactivada y sin permisos; la vista previa muestra todo el código como texto y no ejecuta nada; activarla exige compilar sin errores de tipo y que el hash coincida (`rule-store` comprueba `check.ok` y `codeHash`). `*/` en el código exportado se escapa para que no cierre el bloque de configuración |
+| Escape del sandbox | 16 vectores (red, `importScripts`, `sendBeacon`, `chrome.*`, `parent`/`top`/`opener`, cookies, almacenamiento, `Worker`, `location`, `import()`) contra la API y un origen de terceros: 32/32 bloqueados, ninguno llega a `/leak` (`e2e/hooks-escape.spec.ts`). El Worker del hook niega los globales de red con `AccessDenied` y la CSP los bloquea aunque se recuperen |
+| Destino | Cambiar la URL a otro origen exige el permiso de la regla; sin él el resultado es `hook_failed` (`invalid_result`) y el request sigue intacto. El SW vuelve a validar el resultado antes de aplicarlo. El detalle y la pestaña Hooks muestran origen ⇒ destino |
+| Valores sensibles | Sin el permiso de lectura, cookies, `Authorization` y tokens llegan enmascarados y se restauran al aplicar si el hook no los tocó. Registros redactados en la consola y en la pestaña Hooks hasta "Mostrar valores sensibles". Consola, `state`, ejecuciones y suspensiones solo en memoria del panel; nada en `storage.local`, `storage.session`, `localStorage`, `sessionStorage` ni IndexedDB (`storage-privacy.spec.ts`) |
+| Envenenamiento entre hooks | Cada hook recibe una copia del resultado del anterior, validada con Zod; un hook que falla no pasa su salida a los siguientes y su `state` se descarta. `state` usa concurrencia optimista con reintentos en serie: 20 requests simultáneos dejan el contador en 20 (SC-012) |
+| Mensajes falsos | El sandbox solo acepta el `hello` del panel por su origen explícito y su `event.source`; el panel acepta solo `event.origin === "null"` del iframe propio y luego un `MessageChannel` privado. `hookRun`/`hookResult` (protocolo v5) se validan en el SW y en el panel, por `runId` |
+| Fallar de forma segura | Excepción, resultado inválido, tiempo agotado (2 s por hook, bucle infinito incluido) y un sandbox que se recarga o no responde dejan el request original; tiempo del SW `2 s × hooks + 3 s`; tras 5 errores seguidos el hook se suspende y deja de esperarse (SC-003, SC-013) |
+| Coherencia con DevTools | Editor como Sources: Noto Sans Mono 11 px, colores de sintaxis medidos en Sources (experimento D3), numeración y subrayado de errores con el mismo rojo. Consola como Console: cajón inferior plegado, filas con icono por nivel, agrupado de repetidos con contador, barra con filtro de nivel y limpiar. Contador de errores con el icono y el estilo del de Console en la barra. Pestaña Hooks como Timing de Network (tabla con duración a la derecha y filas de registro debajo). Importar como un diálogo con el código numerado. Capturas de regresión visual en ambos temas (T043); la comparación lado a lado en Chrome estable queda para T066 |
+| Rendimiento | Overhead p95 del hook trivial 2.9 ms (límite 10 ms, SC-002); carga inicial del panel +7.4 % frente a 005 y apertura 77 ms frente a 78 ms (SC-007) |
+| Definición de terminado | Por historia: dominio y `@nahual/hook-runtime` con TDD (cobertura de líneas 95.35 % y 96.93 %), integración del SW con el sandbox simulado, E2E de la historia (escritura, fallos, compartir, escape), axe sin violaciones serias en ambos temas y a 320 px, recorrido solo con teclado, textos `es`/`en`, regresión visual. Pendiente que necesita personas: la demo en Chrome estable con DevTools al lado y la prueba de SC-004 (T066) |
 
 ## Complexity Tracking
 

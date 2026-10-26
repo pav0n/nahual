@@ -1,6 +1,7 @@
 import type { SwMessage } from "@nahual/protocol";
 import { t } from "../../shared/i18n.ts";
 import { autoAttach } from "../attach-control.ts";
+import { hooksChanged, runHookChain, warmHooks } from "../hooks/runtime.ts";
 import { usePanelStore } from "./index.ts";
 
 /** Aplica un evento del SW al store. */
@@ -15,6 +16,7 @@ export function dispatchSwEvent(message: SwMessage): void {
         store.pushToast({ messageKey: "toast_queue_released" });
       }
       autoAttach.update(usePanelStore.getState().settings, message.payload);
+      warmHooks(store.rules, message.payload.site);
       break;
     case "paused":
       store.addPaused(message.payload);
@@ -55,8 +57,13 @@ export function dispatchSwEvent(message: SwMessage): void {
     case "repeaterResult":
       store.applyRepeaterResult(message.payload);
       break;
+    case "hookRun":
+      runHookChain(message.payload);
+      break;
     case "rules":
+      hooksChanged(store.rules, message.payload.rules);
       store.setRules(message.payload.rules);
+      warmHooks(message.payload.rules, store.session?.site ?? null);
       for (const d of message.payload.discarded) store.pushNotice(d.reasonKey, [String(d.count)]);
       break;
     default:

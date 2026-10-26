@@ -4,7 +4,9 @@ import { t } from "../../../shared/i18n.ts";
 import { formatBytes, formatDuration, formatStatus } from "../../format.ts";
 import { IconButton } from "../common/IconButton.tsx";
 import { TabPanel, Tabs } from "../common/Tabs.tsx";
+import { HooksTab } from "../hooks/HooksTab.tsx";
 import { PausedEditor } from "../queue/PausedEditor.tsx";
+import { usePanelStore } from "../../store/index.ts";
 import { BodyView } from "./BodyView.tsx";
 import { CorsSection } from "./CorsSection.tsx";
 import { DETAIL_TABS, detailTabsFor, initialDetailTab, type DetailTabId } from "./detail-tabs.ts";
@@ -43,7 +45,8 @@ export function ExchangeDetail({
     () => initialTab ?? initialDetailTab(exchange, paused),
   );
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const tabs = detailTabsFor(exchange, paused, relatedId !== null);
+  const hasHooks = usePanelStore((s) => (s.hookExecutions[exchange.id]?.length ?? 0) > 0);
+  const tabs = detailTabsFor(exchange, paused, relatedId !== null, hasHooks);
   const current = tabs.includes(tab) ? tab : "headers";
 
   useEffect(() => {
@@ -113,6 +116,9 @@ export function ExchangeDetail({
                 {t("traffic_rule_applied", [effect.ruleName, t(`result_${effect.result}`)])}
                 {effect.reason ? ` · ${t(`unevaluable_${effect.reason}`)}` : ""}
                 {effect.errorKey ? ` · ${t(effect.errorKey)}` : ""}
+                {effect.destination
+                  ? ` · ${t("hooks_destination", [effect.destination.from, effect.destination.to])}`
+                  : ""}
               </li>
             ))}
           </ul>
@@ -139,6 +145,11 @@ export function ExchangeDetail({
         <TabPanel idPrefix={PREFIX} id="response" hidden={current !== "response"}>
           <BodyView exchangeId={exchange.id} side="response" info={exchange.responseBody} />
         </TabPanel>
+        {hasHooks ? (
+          <TabPanel idPrefix={PREFIX} id="hooks" hidden={current !== "hooks"}>
+            <HooksTab exchangeId={exchange.id} />
+          </TabPanel>
+        ) : null}
       </div>
     </section>
   );

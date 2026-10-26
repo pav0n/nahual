@@ -6,13 +6,14 @@ import {
   type FailReason,
 } from "@nahual/domain";
 import type { Issue } from "@nahual/protocol";
+import { EXAMPLE_HOOK, hashSource } from "@nahual/hook-runtime";
 import { useState } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { Field, issueAt } from "../common/Field.tsx";
 import { MockForm, toMockAction, type MockFormValue } from "../queue/MockForm.tsx";
 import type { RuleForm } from "./rule-form.ts";
 
-const KINDS: ActionKind[] = ["pause", "mock", "fail", "delay", "log"];
+const KINDS: ActionKind[] = ["pause", "mock", "fail", "delay", "log", "hook"];
 
 const DEFAULT_MOCK: MockFormValue = {
   status: "200",
@@ -32,6 +33,15 @@ function defaultAction(kind: ActionKind): Action {
       return { kind: "delay", ms: 3000 };
     case "log":
       return { kind: "log" };
+    case "hook":
+      // 006: el ejemplo ya es válido; el editor lo vuelve a analizar al abrirse (US1-1).
+      return {
+        kind: "hook",
+        source: EXAMPLE_HOOK,
+        imported: false,
+        permissions: { changeDestination: false, readSensitive: false },
+        check: { hash: hashSource(EXAMPLE_HOOK), ok: true },
+      };
   }
 }
 

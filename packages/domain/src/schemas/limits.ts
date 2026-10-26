@@ -51,6 +51,17 @@ export const LIMITS = {
   diffChangesMax: 50_000,
   /** Myers es O(N·D): con 5,000 ediciones el peor caso queda por debajo de 1 s (research R8). */
   diffLineEditsMax: 5_000,
+  // Hooks (006, data-model).
+  hookSourceBytesMax: 102_400,
+  hookTotalBytesMax: 5 * MB,
+  hookTimeoutMs: 2_000,
+  hookStateBytesMax: MB,
+  /** Intentos en total de una ejecución que choca con otra al guardar `state` (FR-009). */
+  hookStateAttempts: 3,
+  hookSuspendAfterErrors: 5,
+  hookConsoleEntriesMax: 1_000,
+  hookLogEntryChars: 10_240,
+  hookWorkerIdleMs: 60_000,
 } as const;
 
 /** Token HTTP (RFC 9110, sección 5.6.2). */

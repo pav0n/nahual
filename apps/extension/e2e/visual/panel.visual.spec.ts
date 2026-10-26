@@ -1,7 +1,12 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
 import { test as base, expect } from "../fixtures/extension.ts";
 import {
+  appFetch,
   attachAndReload,
+  installHook,
   callApi,
   closeSettings,
   corsCall,
@@ -49,6 +54,10 @@ const dynamic = (panel: Page): Locator[] => [
   panel.locator(".diff-side select"),
   panel.locator(".diff-change").filter({ hasText: /Header (date|keep-alive)/ }),
   panel.locator(".diff-summary strong"),
+  // 006: duraciones de los hooks.
+  panel.locator(".timing-table .num"),
+  panel.locator(".hooks-tab > section > p.muted"),
+  panel.locator(".hook-error-counter"),
 ];
 
 async function shoot(panel: Page, name: string) {
@@ -167,5 +176,67 @@ for (const theme of THEMES) {
     await panel.getByRole("menuitem", { name: "Send to repeater" }).click();
     await expect(panel.locator(".repeater").getByText(/Original body, not editable/)).toBeVisible();
     await shoot(panel, `${theme}-repeater-binary`);
+
+    // 006: editor del hook (como Sources), con error, y pestaña Hooks (como Timing).
+    await openSection(panel, "Rules");
+    await panel
+      .getByRole("button", { name: /Create your first rule|New rule/ })
+      .first()
+      .click();
+    await panel.getByLabel("Name").fill("Hook visual");
+    await panel.getByLabel("Action", { exact: true }).selectOption("hook");
+    await expect(panel.locator(".cm-editor")).toBeVisible({ timeout: 15_000 });
+    await panel.locator(".cm-content").click();
+    await panel.keyboard.press("Control+A");
+    await panel.keyboard.insertText(
+      "// Cambia el estado\nexport default (ctx: HookContext) => {\n  const data = ctx.json<{ status: string }>();\n  data.status = 42;\n  ctx.response!.body = JSON.stringify(data);\n  return ctx;\n};",
+    );
+    await expect(panel.getByText(/Line 4: Type 'number' is not assignable/)).toBeVisible();
+    await panel.locator(".cm-content").blur();
+    await shoot(panel, `${theme}-hook-editor`);
+    await panel.getByRole("button", { name: "Cancel" }).click();
+    await installHook(panel, {
+      name: "Estado",
+      stage: "response",
+      prefilter: "*/hooks/items*",
+      source: `export default (ctx) => { const d = ctx.json(); d.status = "error"; ctx.log("status", d.status); ctx.response.body = JSON.stringify(d); return ctx; };`,
+    });
+    await installHook(panel, {
+      name: "Falla",
+      stage: "response",
+      prefilter: "*/hooks/items*",
+      source: `export default () => { throw new Error("boom"); };`,
+    });
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    await openSection(panel, "Traffic");
+    await panel.setViewportSize({ width: 1280, height: 640 });
+    await trafficRow(panel, "/hooks/items").last().click();
+    await panel.locator(".detail").getByRole("tab", { name: "Hooks" }).click();
+    await expect(panel.locator(".hooks-tab").getByText(/boom/)).toBeVisible();
+    await shoot(panel, `${theme}-hooks-tab`);
+
+    // 006: consola de hooks en el cajón (como Console) con el contador de errores.
+    await appFetch(app, `${servers.apiOrigin}/hooks/items`);
+    await expect(panel.getByRole("button", { name: /unread hook errors/ })).toBeVisible();
+    await panel.getByRole("button", { name: /unread hook errors/ }).click();
+    await panel
+      .getByRole("region", { name: "Hooks console" })
+      .getByRole("button", { name: "Logs" })
+      .click();
+    await expect(panel.locator(".hook-console .console-row").first()).toBeVisible();
+    await shoot(panel, `${theme}-hooks-console`);
+
+    // 006: vista previa al importar un hook (como un archivo en Sources, solo lectura).
+    await openSection(panel, "Rules");
+    const folder = mkdtempSync(path.join(tmpdir(), "nahual-visual-"));
+    const file = path.join(folder, "hook.ts");
+    writeFileSync(
+      file,
+      `/* @nahual-hook 1\n{"name":"Importado","stage":"response","prefilter":{"kind":"glob","pattern":"*\\/hooks/items*"},"resourceTypes":["Fetch"],"conditions":[]}\n*/\nexport default (ctx: HookContext) => {\n  return ctx;\n};\n`,
+    );
+    await panel.getByLabel("Import hook…").setInputFiles(file);
+    await expect(panel.getByRole("dialog", { name: "Import hook" })).toBeVisible();
+    await shoot(panel, `${theme}-hook-import`);
+    await panel.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
   });
 }

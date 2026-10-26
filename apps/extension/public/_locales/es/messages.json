@@ -1957,5 +1957,314 @@
   },
   "help_repeater_body": {
     "message": "En Tráfico, clic derecho en un request ⇒ «Enviar al repeater». Edítalo y envíalo con Ctrl/Cmd+Enter en contexto de página (con las cookies y el origen de la pestaña) o en contexto limpio (sin sesión). En el historial, «Comparar con el original» muestra qué cambió; J y K recorren los cambios."
+  },
+  "help_hooks_title": {
+    "message": "Hooks"
+  },
+  "help_hooks_body": {
+    "message": "Con la acción «Modificar con hook», una función de TypeScript recibe el request o la respuesta reales y devuelve una versión cambiada. Empieza desde una plantilla; un error de tipo impide activarla. Los errores y ctx.log aparecen en la consola de hooks, abajo, y en la pestaña Hooks de cada request. Si un hook falla, el request sigue sin cambios, y tras 5 errores seguidos se suspende."
+  },
+  "action_kind_hook": {
+    "message": "Modificar con hook"
+  },
+  "action_kind_hook_hint": {
+    "message": "Una función TypeScript que recibe el request o la respuesta real y devuelve una versión cambiada."
+  },
+  "hook_editor_title": {
+    "message": "Hook"
+  },
+  "hook_editor_label": {
+    "message": "Código del hook"
+  },
+  "hook_editor_toolbar": {
+    "message": "Herramientas del hook"
+  },
+  "hook_editor_loading": {
+    "message": "Cargando el editor…"
+  },
+  "hook_templates": {
+    "message": "Plantillas"
+  },
+  "hook_template_addHeader": {
+    "message": "Agregar header"
+  },
+  "hook_template_changeJsonField": {
+    "message": "Cambiar un campo del JSON"
+  },
+  "hook_template_emptyList": {
+    "message": "Simular lista vacía"
+  },
+  "hook_usage": {
+    "message": "Hooks: $1 de $2"
+  },
+  "hook_editor_help": {
+    "message": "Tab inserta una tabulación. Pulsa Esc y luego Tab para salir del editor. $1 guarda. Cada hook tiene 2 s para terminar."
+  },
+  "hook_checking": {
+    "message": "Comprobando el código…"
+  },
+  "hook_no_problems": {
+    "message": "Sin problemas."
+  },
+  "hook_problems_count": {
+    "message": "$1 problemas que impiden activar la regla:"
+  },
+  "hook_problem_line": {
+    "message": "Línea $1: $2"
+  },
+  "hook_saved_disabled": {
+    "message": "Con errores, la regla se guarda desactivada hasta corregirlos."
+  },
+  "hook_permissions": {
+    "message": "Permisos del hook"
+  },
+  "hook_permission_destination": {
+    "message": "Este hook puede cambiar el destino del request"
+  },
+  "hook_permission_destination_hint": {
+    "message": "Sin este permiso, cambiar el esquema, el host o el puerto se rechaza y el request va a su destino original."
+  },
+  "hook_permission_sensitive": {
+    "message": "Este hook puede leer valores sensibles"
+  },
+  "hook_permission_sensitive_hint": {
+    "message": "Sin este permiso, Authorization, Cookie y los tokens llegan como ••••••; el hook puede reemplazarlos o quitarlos, pero no leerlos."
+  },
+  "shortcut_desc_save_rule": {
+    "message": "Guardar la regla"
+  },
+  "hook_error_enum": {
+    "message": "Los hooks no admiten enum."
+  },
+  "hook_error_decorator": {
+    "message": "Los hooks no admiten decoradores."
+  },
+  "hook_error_import": {
+    "message": "Un hook no puede importar código; solo `import type` de ./nahual-hooks."
+  },
+  "hook_error_export": {
+    "message": "Un hook solo exporta su función por defecto (export default)."
+  },
+  "hook_error_no_default": {
+    "message": "Falta la función del hook: export default (ctx) => { … }."
+  },
+  "hook_error_too_large": {
+    "message": "El código del hook pasa de 100 KB."
+  },
+  "hook_error_total_size": {
+    "message": "Los hooks ocupan $1 de $2: no cabe este. Borra o acorta otros hooks."
+  },
+  "hook_error_not_checked": {
+    "message": "No se puede activar: el hook tiene errores o no se ha comprobado. Ábrelo en el editor y corrígelos."
+  },
+  "hook_error_destination": {
+    "message": "El hook cambió el destino del request y su regla no tiene el permiso: el request fue a su destino original."
+  },
+  "hook_error_readonly": {
+    "message": "El hook cambió algo de solo lectura."
+  },
+  "hook_error_respond_stage": {
+    "message": "respond() solo existe en etapa Request."
+  },
+  "hook_error_state_too_large": {
+    "message": "El estado compartido pasaría de 1 MB: no se guardó."
+  },
+  "hook_error_state_conflict": {
+    "message": "Otros hooks cambiaron el estado compartido a la vez: no se pudo guardar tras 3 intentos."
+  },
+  "hook_error_timeout": {
+    "message": "Superó el límite de 2 s."
+  },
+  "hook_error_no_panel": {
+    "message": "El panel no estaba disponible para ejecutar el hook."
+  },
+  "hook_error_sandbox_navigated": {
+    "message": "El entorno aislado intentó navegar y se reinició."
+  },
+  "result_hooked": {
+    "message": "modificado por hook"
+  },
+  "result_hook_unchanged": {
+    "message": "hook sin cambios"
+  },
+  "result_hook_failed": {
+    "message": "hook con error, sin cambios"
+  },
+  "result_hook_responded": {
+    "message": "respondido por hook"
+  },
+  "result_hook_skipped_suspended": {
+    "message": "hook suspendido"
+  },
+  "detail_tab_hooks": {
+    "message": "Hooks"
+  },
+  "hooks_tab_caption": {
+    "message": "Ejecuciones de hooks sobre este request"
+  },
+  "hooks_col_rule": {
+    "message": "Regla"
+  },
+  "hooks_col_result": {
+    "message": "Resultado"
+  },
+  "hooks_col_changes": {
+    "message": "Cambios"
+  },
+  "hooks_col_time": {
+    "message": "Tiempo"
+  },
+  "hook_part_method": {
+    "message": "método"
+  },
+  "hook_part_url": {
+    "message": "URL"
+  },
+  "hook_part_headers": {
+    "message": "headers"
+  },
+  "hook_part_body": {
+    "message": "body"
+  },
+  "hook_part_status": {
+    "message": "status"
+  },
+  "hooks_destination": {
+    "message": "Destino: $1 → $2"
+  },
+  "hook_error_type_exception": {
+    "message": "Excepción"
+  },
+  "hook_error_type_invalid_result": {
+    "message": "Resultado inválido"
+  },
+  "hook_error_type_timeout": {
+    "message": "Tiempo agotado"
+  },
+  "hook_error_type_state_conflict": {
+    "message": "Conflicto de estado"
+  },
+  "hook_error_type_state_too_large": {
+    "message": "Estado demasiado grande"
+  },
+  "hook_error_type_access_denied": {
+    "message": "Acceso no permitido"
+  },
+  "hook_line": {
+    "message": "línea $1"
+  },
+  "hooks_open_rule": {
+    "message": "Abrir regla"
+  },
+  "hooks_chain": {
+    "message": "Cadena: $1 hooks, $2"
+  },
+  "hook_console": {
+    "message": "Consola de hooks"
+  },
+  "hook_console_toolbar": {
+    "message": "Herramientas de la consola de hooks"
+  },
+  "hook_console_clear": {
+    "message": "Limpiar consola"
+  },
+  "hook_console_filter": {
+    "message": "Filtrar"
+  },
+  "hook_console_logs": {
+    "message": "Registros"
+  },
+  "hook_console_errors": {
+    "message": "Errores"
+  },
+  "hook_console_rule": {
+    "message": "Regla"
+  },
+  "hook_console_all_rules": {
+    "message": "Todas las reglas"
+  },
+  "hook_console_show_sensitive": {
+    "message": "Mostrar valores sensibles"
+  },
+  "hook_console_clear_state": {
+    "message": "Vaciar estado"
+  },
+  "hook_console_empty": {
+    "message": "Los registros y errores de tus hooks aparecerán aquí. Usa ctx.log() para escribir en esta consola."
+  },
+  "hook_console_entries": {
+    "message": "Registros de los hooks"
+  },
+  "hook_console_repeated": {
+    "message": "Repetido $1 veces"
+  },
+  "hook_console_cleared": {
+    "message": "Consola de hooks limpia."
+  },
+  "hook_state_cleared": {
+    "message": "Estado compartido de los hooks vaciado."
+  },
+  "hook_errors_unread": {
+    "message": "$1 errores de hooks sin leer"
+  },
+  "hook_suspended_toast": {
+    "message": "El hook «$1» se suspendió tras 5 errores seguidos."
+  },
+  "hook_resume": {
+    "message": "Reanudar"
+  },
+  "hook_suspended": {
+    "message": "suspendido"
+  },
+  "hook_suspended_reason": {
+    "message": "Suspendido hasta cerrar el panel tras 5 errores seguidos."
+  },
+  "hook_import": {
+    "message": "Importar hook…"
+  },
+  "hook_import_title": {
+    "message": "Importar hook"
+  },
+  "hook_import_disabled_note": {
+    "message": "Se guardará como regla nueva y desactivada. Revisa el código antes de activarlo."
+  },
+  "hook_import_code": {
+    "message": "Código del hook importado"
+  },
+  "hook_import_confirm": {
+    "message": "Importar"
+  },
+  "hook_import_types": {
+    "message": "Tipos de recurso"
+  },
+  "hook_import_all_types": {
+    "message": "Todos"
+  },
+  "hook_file_too_large": {
+    "message": "El archivo pasa de $1: no se importó."
+  },
+  "hook_file_not_text": {
+    "message": "El archivo no es texto UTF-8 o no se pudo leer: no se importó."
+  },
+  "hook_file_no_config": {
+    "message": "El archivo no trae configuración: se importará solo el código en una regla nueva que tendrás que configurar."
+  },
+  "hook_file_bad_json": {
+    "message": "La configuración del archivo no es JSON válido: se importará solo el código."
+  },
+  "hook_file_bad_config": {
+    "message": "La configuración del archivo no es válida: se importará solo el código."
+  },
+  "hook_imported": {
+    "message": "importado"
+  },
+  "hook_imported_name": {
+    "message": "Hook importado"
+  },
+  "hook_export": {
+    "message": "Exportar hook"
+  },
+  "hook_download_types": {
+    "message": "Descargar tipos"
   }
 }

@@ -256,3 +256,47 @@ describe("SwMessageSchema v4 (005)", () => {
     });
   });
 });
+
+describe("hookRun (006, contracts/panel-protocol.md)", () => {
+  const context = {
+    stage: "request",
+    resourceType: "Fetch",
+    site: "http://127.0.0.1:4310",
+    request: {
+      method: "GET",
+      url: "http://127.0.0.1:4311/hooks/items",
+      headers: { authorization: "Bearer real" },
+      body: { kind: "none", contentType: null, size: null },
+      graphql: null,
+    },
+    response: null,
+  };
+  const item = {
+    ruleId: UUID,
+    ruleName: "Hook",
+    source: "export default (ctx) => ctx;",
+    permissions: { changeDestination: false, readSensitive: false },
+  };
+
+  it("lleva la cadena completa y el contexto sin enmascarar", () => {
+    ok("hookRun", { runId: UUID2, exchangeId: "net-1", stage: "request", chain: [item], context });
+  });
+
+  it("rechaza una cadena vacía, código de más de 100 KB y un contexto inválido", () => {
+    bad("hookRun", { runId: UUID2, exchangeId: "net-1", stage: "request", chain: [], context });
+    bad("hookRun", {
+      runId: UUID2,
+      exchangeId: "net-1",
+      stage: "request",
+      chain: [{ ...item, source: "x".repeat(102_401) }],
+      context,
+    });
+    bad("hookRun", {
+      runId: UUID2,
+      exchangeId: "net-1",
+      stage: "request",
+      chain: [item],
+      context: { ...context, stage: "otra" },
+    });
+  });
+});

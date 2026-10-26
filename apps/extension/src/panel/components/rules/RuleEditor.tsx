@@ -3,6 +3,7 @@ import type { Issue } from "@nahual/protocol";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
+import { matchesShortcut, shortcutById } from "../../shortcuts.ts";
 import { Field, issueAt } from "../common/Field.tsx";
 import { ConditionEditor } from "./ConditionEditor.tsx";
 import { RULE_EDITOR_SLOTS } from "./editor-slots.ts";
@@ -19,6 +20,8 @@ const TYPES: ResourceType[] = [
   "Media",
   "Other",
 ];
+
+const SAVE_SHORTCUT = shortcutById("saveRule");
 
 interface Props {
   initial: RuleForm;
@@ -88,6 +91,11 @@ export function RuleEditor({
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape") onClose();
+          // Dentro del editor de código, CodeMirror ya guardó y marcó el evento.
+          else if (!event.defaultPrevented && matchesShortcut(SAVE_SHORTCUT, event)) {
+            event.preventDefault();
+            void save();
+          }
         }}
       >
         <Field label={t("rule_name")} error={issueAt(issues, "name")}>
@@ -227,7 +235,13 @@ export function RuleEditor({
         )}
 
         {RULE_EDITOR_SLOTS.map((Slot, index) => (
-          <Slot key={index} />
+          <Slot
+            key={index}
+            form={form}
+            setForm={setForm}
+            issues={issues}
+            onSave={() => void save()}
+          />
         ))}
 
         {issues.length > 0 ? (

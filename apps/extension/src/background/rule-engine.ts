@@ -5,7 +5,7 @@ import {
   headerValues,
   isPreflight,
   mockHeadersFor,
-  selectRule,
+  selectChain,
   validatePausedEdit,
   validateQueueMock,
   type BodyAccess,
@@ -23,6 +23,7 @@ import {
 import type { RESOLVE_ACTIONS } from "@nahual/protocol";
 import type { ActionExecutor, ExecResult, PausedTarget } from "./action-executor.ts";
 import type { DebuggerPort, RequestPausedEvent } from "./debugger-port.ts";
+import type { HookRunner } from "./hook-runner.ts";
 import { toHeaderList } from "./network-capture.ts";
 import type { CommandResult } from "./panel-port.ts";
 import { createPauseQueue, type QueueEntry } from "./pause-queue.ts";
@@ -52,6 +53,8 @@ export interface RuleEngineOptions {
     result: { pausedId: string; outcome: RuleResult; errorKey?: string },
   ): void;
   onQueueChange(tabId: number): void;
+  /** 006: cadenas de reglas con hook (sin él, una regla con hook continúa sin cambios). */
+  hooks?: HookRunner;
 }
 
 export interface RuleEngine {
@@ -335,13 +338,35 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
       stage,
       globalPaused: options.settings().globalPaused,
     };
-    let selection = selectRule(options.rules(), view(), context);
+    let selection = selectChain(options.rules(), view(), context);
     if (selection.kind === "needsBody") {
       if (bodies.request.kind === "unknown")
         bodies.request = await loadRequestBody(tabId, event, requestHeaders);
       if (bodies.response.kind === "unknown")
         bodies.response = await loadResponseBody(tabId, event, responseHeaders);
-      selection = selectRule(options.rules(), view(), context);
+      selection = selectChain(options.rules(), view(), context);
+    }
+
+    if (selection.kind === "chain") {
+      // 006: un preflight no pasa por hooks (como el Mock): su respuesta es cosa del navegador y
+      // de la relajación CORS de 003 (FR-013).
+      if (!options.hooks || isPreflight(event.request.method, requestHeaders)) {
+        await executor.continueUnchanged(tabId, target);
+        return;
+      }
+      // El hook ve los bodies aunque ninguna condición los pidiera.
+      if (bodies.request.kind === "unknown")
+        bodies.request = await loadRequestBody(tabId, event, requestHeaders);
+      if (stage === "response" && bodies.response.kind === "unknown")
+        bodies.response = await loadResponseBody(tabId, event, responseHeaders);
+      await options.hooks.run(tabId, {
+        rules: selection.rules,
+        stage,
+        target,
+        exchangeId,
+        exchange: view(),
+      });
+      return;
     }
 
     if (selection.kind !== "match") {
@@ -385,6 +410,10 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
       case "log":
         await executor.continueUnchanged(tabId, target);
         effect(tabId, item, "logged");
+        return;
+      case "hook":
+        // selectChain nunca devuelve un hook como `match`; por si acaso, sin cambios.
+        await executor.continueUnchanged(tabId, target);
         return;
     }
   }

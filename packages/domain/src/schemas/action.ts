@@ -39,6 +39,22 @@ export const MockActionSchema = mockAction(LIMITS.savedMockBodyBytes);
 export const QueueMockActionSchema = mockAction(LIMITS.bodyBytes);
 export type MockAction = z.infer<typeof MockActionSchema>;
 
+/** Acción "Modificar con hook" (006, data-model): el código y lo que puede hacer. */
+export const HookActionSchema = z.strictObject({
+  kind: z.literal("hook"),
+  source: z.string().refine((s) => utf8Bytes(s) <= LIMITS.hookSourceBytesMax, {
+    error: "hook_error_too_large",
+  }),
+  imported: z.boolean(),
+  permissions: z.strictObject({
+    changeDestination: z.boolean(),
+    readSensitive: z.boolean(),
+  }),
+  /** Último análisis del editor: sin errores de sintaxis ni de tipo para este `hash` del código. */
+  check: z.strictObject({ hash: z.string().regex(/^[0-9a-f]{1,32}$/), ok: z.boolean() }),
+});
+export type HookAction = z.infer<typeof HookActionSchema>;
+
 export const ActionSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("pause") }),
   MockActionSchema,
@@ -51,6 +67,7 @@ export const ActionSchema = z.discriminatedUnion("kind", [
       .max(LIMITS.delayMsMax, { error: "rule_error_delay" }),
   }),
   z.strictObject({ kind: z.literal("log") }),
+  HookActionSchema,
 ]);
 export type Action = z.infer<typeof ActionSchema>;
 export type ActionKind = Action["kind"];

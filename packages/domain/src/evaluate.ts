@@ -37,6 +37,13 @@ export interface SelectContext {
   globalPaused: boolean;
 }
 
+/** 006 (research R8): la regla de 002 o la cadena de reglas con hook. */
+export type ChainSelection =
+  | { kind: "match"; rule: Rule }
+  | { kind: "chain"; rules: Rule[] }
+  | { kind: "needsBody" }
+  | { kind: "none"; unevaluable?: { rule: Rule; reason: UnevaluableReason } };
+
 export type Selection =
   | { kind: "match"; rule: Rule }
   | { kind: "needsBody" }
@@ -191,5 +198,35 @@ export function selectRule(rules: Rule[], view: ExchangeView, context: SelectCon
     if (outcome.kind === "needsBody") return { kind: "needsBody" };
     if (outcome.kind === "unevaluable") unevaluable ??= { rule, reason: outcome.reason };
   }
+  return unevaluable ? { kind: "none", unevaluable } : { kind: "none" };
+}
+
+/**
+ * Como `selectRule`, pero con hooks (006, FR-012): si la primera regla que se cumple es de otra
+ * acción, se aplica sola; si es un hook, se encadenan todas las reglas con hook que se cumplen, en
+ * orden de prioridad, y las de otras acciones que se cumplen por debajo no se aplican.
+ */
+export function selectChain(
+  rules: Rule[],
+  view: ExchangeView,
+  context: SelectContext,
+): ChainSelection {
+  if (context.globalPaused || context.site === null) return { kind: "none" };
+  const candidates = rules
+    .filter((r) => r.enabled && r.site === context.site && r.stage === context.stage)
+    .sort((a, b) => a.order - b.order);
+  let unevaluable: { rule: Rule; reason: UnevaluableReason } | undefined;
+  let chain: Rule[] | null = null;
+  for (const rule of candidates) {
+    if (chain && rule.action.kind !== "hook") continue;
+    const outcome = evaluateRule(rule, view, context.stage);
+    if (outcome.kind === "needsBody") return { kind: "needsBody" };
+    if (outcome.kind === "unevaluable") unevaluable ??= { rule, reason: outcome.reason };
+    if (outcome.kind !== "pass") continue;
+    if (chain) chain.push(rule);
+    else if (rule.action.kind === "hook") chain = [rule];
+    else return { kind: "match", rule };
+  }
+  if (chain) return { kind: "chain", rules: chain };
   return unevaluable ? { kind: "none", unevaluable } : { kind: "none" };
 }

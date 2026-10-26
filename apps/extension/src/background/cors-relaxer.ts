@@ -419,18 +419,21 @@ export function createRelaxingExecutor(options: RelaxingExecutorOptions): Action
       );
     },
 
-    async continueEdited(tabId, target, edit) {
+    async continueEdited(tabId, target, edit, options) {
       const found = target.stage === "response" ? relaxationFor(tabId, target) : null;
       if (!found) return base.continueEdited(tabId, target, edit);
       const status = edit.status ?? target.status ?? 200;
+      const finalHeaders = edit.headers ?? target.responseHeaders;
       return deliver(
         tabId,
         target,
         found,
         {
           status,
-          serverHeaders: target.responseHeaders,
-          finalHeaders: edit.headers ?? target.responseHeaders,
+          // 006 (FR-013): lo que deja un hook se trata como si viniera del servidor, sin valores
+          // "fijados" por el dev: la relajación decide sobre esos headers y prevalece.
+          serverHeaders: options?.fromHook ? finalHeaders : target.responseHeaders,
+          finalHeaders,
         },
         {
           continue: (headers) => base.continueEdited(tabId, target, { ...edit, headers }),

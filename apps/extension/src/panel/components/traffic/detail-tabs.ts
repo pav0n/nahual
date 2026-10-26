@@ -1,7 +1,7 @@
 import type { CapturedExchange, PausedItemView } from "@nahual/domain";
 
 /** Pestañas del detalle (004, contracts/panel-shell.md `DETAIL_TABS`); 006 añade `hooks`. */
-export type DetailTabId = "cors" | "edit" | "headers" | "request" | "response";
+export type DetailTabId = "cors" | "edit" | "headers" | "request" | "response" | "hooks";
 
 export const DETAIL_TABS: readonly { id: DetailTabId; labelKey: string }[] = [
   { id: "cors", labelKey: "detail_tab_cors" },
@@ -9,6 +9,8 @@ export const DETAIL_TABS: readonly { id: DetailTabId; labelKey: string }[] = [
   { id: "headers", labelKey: "detail_tab_headers" },
   { id: "request", labelKey: "detail_tab_request" },
   { id: "response", labelKey: "detail_tab_response" },
+  // 006: al final, como Timing en Network.
+  { id: "hooks", labelKey: "detail_tab_hooks" },
 ];
 
 /**
@@ -19,10 +21,12 @@ export function detailTabsFor(
   exchange: CapturedExchange,
   paused: PausedItemView | null,
   hasRelated: boolean,
+  hasHooks = false,
 ): DetailTabId[] {
   const cors = Boolean(exchange.cors?.diagnosis || exchange.cors?.relaxed || hasRelated);
   return DETAIL_TABS.map((tab) => tab.id).filter(
-    (id) => (id !== "cors" || cors) && (id !== "edit" || paused !== null),
+    (id) =>
+      (id !== "cors" || cors) && (id !== "edit" || paused !== null) && (id !== "hooks" || hasHooks),
   );
 }
 

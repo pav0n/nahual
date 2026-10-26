@@ -30,13 +30,18 @@ Se envía cuando `selectChain` devuelve una cadena de hooks para un intercambio 
   runId: string;
   final:
     | { kind: "unchanged" }
-    | { kind: "edit"; request?: { method; url; headers; body? }; response?: { status; headers; body? } }
-    | { kind: "respond"; status: number; headers: Header[]; body: string };
+    | { kind: "edit"; request?: { method; url; headers: Record<string, string>; body? };
+        response?: { status; headers: Record<string, string>; body? } }
+    | { kind: "respond"; status: number; headers: Record<string, string>; body: string };
   executions: { ruleId: string; result: "hooked" | "hook_unchanged" | "hook_failed"
                 | "hook_responded" | "hook_skipped_suspended"; durationMs: number;
                 errorType?: string }[];
 }
 ```
+
+Los headers viajan como objeto (los del contexto del hook); el SW los vuelve a convertir en lista
+con `toHeaderList(record, originales)` de `hook-runtime`, que conserva orden, mayúsculas y
+entradas separadas de los que no cambiaron.
 
 El SW, antes de aplicar:
 

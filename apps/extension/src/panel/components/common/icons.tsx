@@ -25,7 +25,10 @@ export type IconName =
   | "warning"
   | "plus"
   | "edit"
-  | "copy";
+  | "copy"
+  | "error"
+  | "download"
+  | "export";
 
 const PATHS: Record<IconName, ReactNode> = {
   pause: <path d="M7.5 5v10M12.5 5v10" />,
@@ -78,6 +81,14 @@ const PATHS: Record<IconName, ReactNode> = {
   warning: <path d="M10 4l6.5 11.5h-13zM10 9v3M10 14v.5" />,
   plus: <path d="M10 4.5v11M4.5 10h11" />,
   edit: <path d="M4.5 15.5l.8-3.3 7.4-7.4 2.5 2.5-7.4 7.4zM11.2 6.3l2.5 2.5" />,
+  download: <path d="M10 4v8.5M6.5 9l3.5 3.5L13.5 9M5 15.5h10" />,
+  export: <path d="M10 13V4.5M6.5 8L10 4.5 13.5 8M5 15.5h10" />,
+  error: (
+    <>
+      <circle cx="10" cy="10" r="6.5" />
+      <path d="M7.75 7.75l4.5 4.5M12.25 7.75l-4.5 4.5" />
+    </>
+  ),
   copy: (
     <>
       <rect x="7.5" y="7.5" width="8" height="8" rx="1.5" />

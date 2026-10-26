@@ -22,6 +22,7 @@ export type GlobalShortcutHandlers = Record<
     | "repeaterSend"
     | "nextChange"
     | "prevChange"
+    | "saveRule"
   >,
   () => void
 >;

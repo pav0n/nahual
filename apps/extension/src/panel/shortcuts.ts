@@ -28,7 +28,8 @@ export type ShortcutId =
   | "moveRuleDown"
   | "repeaterSend"
   | "nextChange"
-  | "prevChange";
+  | "prevChange"
+  | "saveRule";
 
 export interface Shortcut {
   id: ShortcutId;
@@ -114,6 +115,13 @@ export const SHORTCUTS: readonly Shortcut[] = [
     keys: { code: "KeyK" },
     descriptionKey: "shortcut_desc_prev_change",
     scope: "diff",
+  },
+  // 006: guardar la regla desde el editor (también dentro del editor de código), como en Sources.
+  {
+    id: "saveRule",
+    keys: { code: "KeyS", mod: true },
+    descriptionKey: "shortcut_desc_save_rule",
+    scope: "rules",
   },
 ];
 

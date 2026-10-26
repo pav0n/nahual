@@ -15,7 +15,16 @@ export default defineConfig(({ mode }) => ({
     // Chrome soporta modulepreload: sin el polyfill de Vite, que usa fetch().
     modulePreload: { polyfill: false },
     rollupOptions: {
-      input: { panel: "src/panel/panel.html" },
+      // 006: la página sandbox de hooks; crxjs la copia pero no procesa su script.
+      input: { panel: "src/panel/panel.html", sandbox: "src/sandbox/hook-sandbox.html" },
+      output: {
+        // 006: lo que comparten el panel y el sandbox de hooks (Zod y los paquetes puros) va en
+        // un chunk propio; si no, el sandbox importaría el chunk de entrada del panel.
+        manualChunks: (id: string) =>
+          /node_modules\/zod\/|packages\/(domain|hook-runtime)\/|json-p3/.test(id)
+            ? "shared"
+            : undefined,
+      },
     },
   },
 }));

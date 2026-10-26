@@ -1,0 +1,24 @@
+{
+  "name": "@nahual/hook-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./hook-context.d.ts": "./src/hook-context.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@nahual/domain": "workspace:*",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.3",
+    "sucrase": "3.35.1",
+    "vitest": "5.0.3"
+  }
+}

@@ -52,7 +52,7 @@ Solo datos (clonables). Las utilidades las añade el runtime del Worker (contrac
 | `site` | string | origen de la página; solo lectura |
 | `request.method` | string | editable en etapa Request |
 | `request.url` | string | editable en etapa Request; el origen exige `changeDestination` |
-| `request.headers` | `{ name, value }[]` | sensibles con `MASK` sin `readSensitive` |
+| `request.headers` | `Record<string, string>` en minúsculas (repetidos con `", "`, `set-cookie` con `"\n"`) | sensibles con `MASK` sin `readSensitive`; el SW vuelve a la lista con `toHeaderList` y sus originales |
 | `request.body` | `HookBody` | editable en etapa Request |
 | `request.graphql` | `{ operationName: string \| null } \| null` | solo lectura |
 | `response` | `{ status, headers, body: HookBody } \| null` | en etapa Response; editable |

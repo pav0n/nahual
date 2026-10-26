@@ -1,6 +1,7 @@
 import type { Rule } from "@nahual/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RULES_KEY, createRuleStore, type RuleStore } from "../../src/background/rule-store.ts";
+import { hashSource } from "@nahual/hook-runtime";
 import { FakeStorage } from "../fakes/fake-storage.ts";
 import { RULE_ID, RULE_ID2, SITE, draft, rule } from "../fakes/rules.ts";
 
@@ -224,5 +225,124 @@ describe("RuleStore: prioridad (FR-016)", () => {
         .map((r) => r.order)
         .sort(),
     ).toEqual([0, 1, 2]);
+  });
+});
+
+describe("RuleStore: hooks (006, FR-016, FR-034, research R10)", () => {
+  const hookDraft = (source: string, ok = true, enabled = true) =>
+    draft({
+      enabled,
+      stage: "request",
+      conditions: [],
+      action: {
+        kind: "hook",
+        source,
+        imported: false,
+        permissions: { changeDestination: false, readSensitive: false },
+        check: { hash: hashSource(source), ok },
+      },
+    }) as unknown as Record<string, unknown>;
+
+  it("guarda un hook comprobado y activo", async () => {
+    const store = await open();
+    expect(await store.save(hookDraft("export default (c) => c;"), SITE)).toEqual({ ok: true });
+    expect(store.all()[0]?.action).toMatchObject({ kind: "hook", imported: false });
+  });
+
+  it("activo sin check válido o con el hash de otro código ⇒ hook_error_not_checked; desactivado se guarda", async () => {
+    const store = await open();
+    expect(await store.save(hookDraft("x", false), SITE)).toMatchObject({
+      ok: false,
+      code: "rule_invalid",
+      issues: [{ path: "enabled", messageKey: "hook_error_not_checked" }],
+    });
+    const stale = hookDraft("y");
+    (stale.action as { check: { hash: string } }).check.hash = hashSource("otro");
+    expect(await store.save(stale, SITE)).toMatchObject({ ok: false, code: "rule_invalid" });
+    expect(await store.save(hookDraft("x", false, false), SITE)).toEqual({ ok: true });
+    const id = store.all()[0]?.id ?? "";
+    expect(await store.setEnabled(id, true)).toMatchObject({
+      ok: false,
+      issues: [{ messageKey: "hook_error_not_checked" }],
+    });
+    expect(store.all()[0]?.enabled).toBe(false);
+  });
+
+  it("más de 5 MB entre todos los hooks ⇒ hook_error_total_size sin cambiar lo guardado", async () => {
+    const store = await open();
+    const big = "x".repeat(100 * 1024);
+    for (let i = 0; i < 51; i++) {
+      expect(await store.save(hookDraft(`// ${i}\n${big}`.slice(0, 100 * 1024)), SITE)).toEqual({
+        ok: true,
+      });
+    }
+    const before = stored().length;
+    expect(await store.save(hookDraft(big), SITE)).toMatchObject({
+      ok: false,
+      code: "rule_invalid",
+      issues: [{ path: "action.source", messageKey: "hook_error_total_size" }],
+    });
+    expect(stored()).toHaveLength(before);
+  }, 20_000);
+});
+
+describe("RuleStore: importar un hook (006, FR-036, FR-037)", () => {
+  const config = {
+    name: "Importado",
+    stage: "response",
+    prefilter: { kind: "glob", pattern: "*/api/*" },
+    resourceTypes: ["Fetch"],
+    conditions: [],
+  };
+
+  it("crea siempre una regla nueva, desactivada, importada, sin permisos y sin comprobar", async () => {
+    const store = await open();
+    expect(
+      await store.importHook({ config, source: "export default (c) => c;" }, SITE, "Hook"),
+    ).toEqual({ ok: true });
+    const [rule] = store.all();
+    expect(rule).toMatchObject({
+      name: "Importado",
+      site: SITE,
+      enabled: false,
+      stage: "response",
+      prefilter: { kind: "glob", pattern: "*/api/*" },
+      action: {
+        kind: "hook",
+        imported: true,
+        permissions: { changeDestination: false, readSensitive: false },
+        check: { ok: false },
+      },
+    });
+  });
+
+  it("sin configuración: nombre por defecto y prefiltro de todo el sitio, para configurarla", async () => {
+    const store = await open();
+    expect(await store.importHook({ config: null, source: "x" }, SITE, "Hook importado")).toEqual({
+      ok: true,
+    });
+    expect(store.all()[0]).toMatchObject({
+      name: "Hook importado",
+      enabled: false,
+      stage: "request",
+    });
+  });
+
+  it("configuración inválida, código de más de 100 KB o sin sitio ⇒ error sin escribir nada", async () => {
+    const store = await open();
+    expect(
+      await store.importHook({ config: { ...config, stage: "otra" }, source: "x" }, SITE, "H"),
+    ).toMatchObject({
+      ok: false,
+      code: "rule_invalid",
+    });
+    expect(
+      await store.importHook({ config, source: "x".repeat(102_401) }, SITE, "H"),
+    ).toMatchObject({ ok: false, code: "rule_invalid" });
+    expect(await store.importHook({ config, source: "x" }, null, "H")).toMatchObject({
+      ok: false,
+      code: "no_site",
+    });
+    expect(stored()).toEqual([]);
   });
 });

@@ -36,7 +36,16 @@ export type ExecResult =
 
 export interface ActionExecutor {
   continueUnchanged(tabId: number, target: PausedTarget): Promise<ExecResult>;
-  continueEdited(tabId: number, target: PausedTarget, edit: PausedEdit): Promise<ExecResult>;
+  /**
+   * `fromHook` (006, FR-013): el cambio viene de un hook; con la relajación CORS activa, sus
+   * `Access-Control-*` prevalecen sobre los que el hook fijó o quitó.
+   */
+  continueEdited(
+    tabId: number,
+    target: PausedTarget,
+    edit: PausedEdit,
+    options?: { fromHook?: boolean },
+  ): Promise<ExecResult>;
   mock(tabId: number, target: PausedTarget, mock: MockAction): Promise<ExecResult>;
   fail(tabId: number, target: PausedTarget, reason: FailReason): Promise<ExecResult>;
   /** Respuesta local con estos headers (preflight 204 de la relajación CORS). */

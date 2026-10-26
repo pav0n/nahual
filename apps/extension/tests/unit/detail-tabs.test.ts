@@ -20,13 +20,23 @@ const relaxed = exchange({
 });
 
 describe("pestañas del detalle (004, FR-018, research R10)", () => {
-  it("el catálogo es CORS, Editar, Headers, Request, Response", () => {
+  it("el catálogo es CORS, Editar, Headers, Request, Response y Hooks (006)", () => {
     expect(DETAIL_TABS.map((tab) => tab.id)).toEqual([
       "cors",
       "edit",
       "headers",
       "request",
       "response",
+      "hooks",
+    ]);
+  });
+
+  it("Hooks solo si el intercambio tiene ejecuciones de hooks (006, FR-014)", () => {
+    expect(detailTabsFor(exchange(), null, false, true)).toEqual([
+      "headers",
+      "request",
+      "response",
+      "hooks",
     ]);
   });
 

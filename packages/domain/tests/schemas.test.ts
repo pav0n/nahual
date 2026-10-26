@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ActionSchema, QueueMockActionSchema } from "../src/schemas/action.ts";
 import { ConditionSchema } from "../src/schemas/condition.ts";
-import { ExchangeUpdateSchema, RULE_RESULTS } from "../src/schemas/exchange.ts";
+import { ExchangeUpdateSchema, RULE_RESULTS, RuleEffectSchema } from "../src/schemas/exchange.ts";
 import { LIMITS } from "../src/schemas/limits.ts";
 import { PausedEditSchema, PausedItemViewSchema } from "../src/schemas/paused.ts";
 import { RuleSchema } from "../src/schemas/rule.ts";
@@ -159,6 +159,54 @@ describe("ActionSchema", () => {
     expect(act({ kind: "pause" })).toBe(true);
     expect(act({ kind: "log" })).toBe(true);
   });
+
+  describe("hook (006, data-model)", () => {
+    const hook = {
+      kind: "hook",
+      source: "export default (ctx) => ctx;",
+      imported: false,
+      permissions: { changeDestination: false, readSensitive: false },
+      check: { hash: "a1b2c3d4e5f60718", ok: true },
+    };
+
+    it("acepta el código, los permisos y el último análisis", () => {
+      expect(act(hook)).toBe(true);
+      expect(act({ ...hook, imported: true, check: { hash: "00", ok: false } })).toBe(true);
+    });
+
+    it("código ≤ 100 KB contados en bytes UTF-8", () => {
+      expect(act({ ...hook, source: "x".repeat(LIMITS.hookSourceBytesMax) })).toBe(true);
+      expect(act({ ...hook, source: "x".repeat(LIMITS.hookSourceBytesMax + 1) })).toBe(false);
+      const ene = "ñ".repeat(LIMITS.hookSourceBytesMax / 2 + 1);
+      const result = ActionSchema.safeParse({ ...hook, source: ene });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toBe("hook_error_too_large");
+    });
+
+    it("exige permisos y check completos, con hash hexadecimal", () => {
+      expect(act({ ...hook, permissions: { changeDestination: false } })).toBe(false);
+      expect(act({ ...hook, check: { hash: "xyz", ok: true } })).toBe(false);
+      expect(act({ ...hook, extra: 1 })).toBe(false);
+      const missing = Object.fromEntries(Object.entries(hook).filter(([k]) => k !== "imported"));
+      expect(act(missing)).toBe(false);
+    });
+  });
+});
+
+describe("límites de hooks (006, data-model)", () => {
+  it("son los de data-model.md", () => {
+    expect(LIMITS).toMatchObject({
+      hookSourceBytesMax: 102_400,
+      hookTotalBytesMax: 5_242_880,
+      hookTimeoutMs: 2_000,
+      hookStateBytesMax: 1_048_576,
+      hookStateAttempts: 3,
+      hookSuspendAfterErrors: 5,
+      hookConsoleEntriesMax: 1_000,
+      hookLogEntryChars: 10_240,
+      hookWorkerIdleMs: 60_000,
+    });
+  });
 });
 
 describe("Settings", () => {
@@ -198,6 +246,38 @@ describe("Settings", () => {
       invalidFields: [],
       productionOriginsInvalid: false,
     });
+  });
+});
+
+describe("RuleEffect de hooks (006)", () => {
+  const effect = {
+    stage: "request",
+    ruleId: "3f1c2b4a-8d9e-4f60-a1b2-c3d4e5f60718",
+    ruleName: "Hook",
+    result: "hooked",
+  };
+
+  it("acepta los resultados de hooks, duración y destino", () => {
+    for (const result of [
+      "hooked",
+      "hook_unchanged",
+      "hook_failed",
+      "hook_responded",
+      "hook_skipped_suspended",
+    ]) {
+      expect(RuleEffectSchema.safeParse({ ...effect, result }).success).toBe(true);
+    }
+    expect(
+      RuleEffectSchema.safeParse({
+        ...effect,
+        durationMs: 3.5,
+        destination: { from: "https://a.test/x", to: "http://127.0.0.1:4312/x" },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rechaza una duración negativa", () => {
+    expect(RuleEffectSchema.safeParse({ ...effect, durationMs: -1 }).success).toBe(false);
   });
 });
 

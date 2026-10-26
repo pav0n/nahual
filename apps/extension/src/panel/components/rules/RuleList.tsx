@@ -2,6 +2,8 @@ import type { Rule } from "@nahual/domain";
 import type { ReactNode } from "react";
 import { t } from "../../../shared/i18n.ts";
 import { command } from "../../commands.ts";
+import { resumeHook } from "../../hooks/runtime.ts";
+import { ImportHookButton } from "../hooks/ImportHookDialog.tsx";
 import { setRuleEnabled } from "../../settings-commands.ts";
 import { usePanelStore } from "../../store/index.ts";
 import { EmptyState } from "../common/EmptyState.tsx";
@@ -28,10 +30,14 @@ function summary(rule: Rule) {
  * Lista de reglas (FR-014a, FR-015): las del sitio actual primero y, aparte, las de otros sitios
  * con su sitio visible. Eliminar se puede deshacer.
  */
+/** 006 (FR-016): una regla con un hook con errores no se puede activar. */
+const isBlocked = (rule: Rule) => rule.action.kind === "hook" && !rule.action.check.ok;
+
 export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderControls }: Props) {
   const rules = usePanelStore((s) => s.rules);
   const site = usePanelStore((s) => s.session?.site ?? null);
   const pushToast = usePanelStore((s) => s.pushToast);
+  const suspended = usePanelStore((s) => s.hookSuspended);
 
   const current = rules.filter((r) => r.site === site).sort((a, b) => a.order - b.order);
   const others = rules.filter((r) => r.site !== site);
@@ -65,15 +71,30 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
       <div className="row">
         <span className="grow">
           <strong>{rule.name}</strong>
+          {rule.action.kind === "hook" && rule.action.imported ? (
+            <span className="tag">{t("hook_imported")}</span>
+          ) : null}
           <span className="muted"> · {summary(rule)}</span>
           {showSite ? <span className="muted"> · {t("site_label", rule.site)}</span> : null}
         </span>
         <Switch
           label={t("rule_enabled", rule.name)}
           checked={rule.enabled}
+          // 006 (FR-016): un hook con errores no se puede activar; el motivo va debajo.
+          disabled={isBlocked(rule) && !rule.enabled}
           onChange={(enabled) => void setRuleEnabled(rule.id, enabled)}
         />
       </div>
+      {isBlocked(rule) ? <p className="field-warning">{t("hook_error_not_checked")}</p> : null}
+      {suspended.includes(rule.id) ? (
+        <p className="field-warning row">
+          <span className="tag">{t("hook_suspended")}</span>
+          <span className="grow">{t("hook_suspended_reason")}</span>
+          <button type="button" onClick={() => resumeHook(rule.id)}>
+            {t("hook_resume")}
+          </button>
+        </p>
+      ) : null}
       <div className="row">
         {reorderControls && !showSite ? reorderControls(rule, index, siteRules) : null}
         <button
@@ -112,6 +133,7 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
                 {t("action_create_first_rule")}
               </button>
               {templates}
+              <ImportHookButton disabled={site === null} />
             </>
           }
         >
@@ -121,6 +143,7 @@ export function RuleList({ onEdit, onDuplicate, onCreate, templates, reorderCont
         <>
           <div className="row">
             <h2 className="grow">{site ? t("rules_for_site", site) : t("tab_rules")}</h2>
+            <ImportHookButton />
             <button type="button" className="primary" onClick={onCreate}>
               {t("action_new_rule")}
             </button>

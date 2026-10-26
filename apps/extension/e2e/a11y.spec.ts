@@ -1,4 +1,3 @@
-import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import {
   addProductionOrigin,
@@ -32,20 +31,8 @@ import {
 } from "./fixtures/panel.ts";
 import { expect, test } from "./fixtures/extension.ts";
 
-const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
-
-export async function expectNoSeriousViolations(panel: Page, label: string) {
-  const { violations } = await new AxeBuilder({ page: panel }).withTags(WCAG).analyze();
-  const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  expect(serious.map((v) => `${label}: ${v.id} (${v.nodes.length})`)).toEqual([]);
-}
-
-export async function expectNoHorizontalScroll(panel: Page) {
-  const overflow = await panel.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
-}
+export { expectNoHorizontalScroll, expectNoSeriousViolations } from "./fixtures/axe.ts";
+import { expectNoHorizontalScroll, expectNoSeriousViolations } from "./fixtures/axe.ts";
 
 for (const colorScheme of ["light", "dark"] as const) {
   test(`axe sin violaciones serias en tema ${colorScheme}, a 320 px`, async ({
@@ -567,7 +554,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expectNoSeriousViolations(panel, "editor con errores");
 
     // Envío en curso, resultado con error e historial.
-    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/slow?ms=4000`);
+    await r.getByLabel("URL", { exact: true }).fill(`${servers.apiOrigin}/slow?ms=20000`);
     await r.getByRole("button", { name: "Send", exact: true }).click();
     await expect(r.getByText("Sending…").first()).toBeVisible();
     await expectNoSeriousViolations(panel, "envío en curso");

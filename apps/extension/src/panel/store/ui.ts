@@ -36,6 +36,9 @@ export interface UiSlice {
   /** Cambia cuando el gancho de pruebas llena los lugares reservados: se vuelve a montar todo. */
   slotsVersion: number;
   bumpSlots(): void;
+  /** Cajón inferior desplegado (004 FR-026); 006 lo abre desde el contador de errores. */
+  drawerExpanded: boolean;
+  setDrawerExpanded(expanded: boolean): void;
   setHelpOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setSection(section: PanelSection): void;
@@ -53,6 +56,12 @@ let toastSeq = 0;
 
 export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
   section: "traffic",
+  // Plegado, como la consola de DevTools: se despliega a petición (006).
+  drawerExpanded: false,
+  setDrawerExpanded: (expanded) =>
+    set((s) => {
+      s.drawerExpanded = expanded;
+    }),
   toasts: [],
   helpOpen: false,
   settingsOpen: false,
