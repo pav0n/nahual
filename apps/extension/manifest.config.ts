@@ -16,6 +16,13 @@ export default defineManifest((env) => ({
   default_locale: "es",
   version: pkg.version,
   minimum_chrome_version: "120",
+  // 007: generados desde docs/brand/nahual.svg (contracts/manifest.md).
+  icons: {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png",
+  },
   permissions: ["debugger", "storage"],
   // 005: contexto limpio del repeater. Ningún host se concede al instalar; el panel pide un
   // origen exacto al enviar (specs/005-repeater-diff/contracts/manifest.md).

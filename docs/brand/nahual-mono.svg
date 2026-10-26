@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Nahual">
+  <!-- Monocromo, sin fondo: icono del panel de DevTools. Ojos, orejas y flujo son huecos. -->
+  <path fill="#9AA0A6" fill-rule="evenodd" d="M46 40 L22 8 L14 58 L34 90 L64 122 L94 90 L114 58 L106 8 L82 40 Z
+    M24 20 L41 40 L27 48 Z M104 20 L87 40 L101 48 Z
+    M26 60 L56 69 L36 77 Z M102 60 L72 69 L92 77 Z
+    M60 48 H68 V86 H60 Z M60 92 H68 V108 H60 Z"/>
+</svg>

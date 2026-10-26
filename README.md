@@ -114,6 +114,7 @@ los listan desde ahí.
 
 - Node.js 24 LTS y pnpm 10 (`corepack enable`).
 - Chrome 120 o superior.
+- Solo si cambia el logo: regenerar los iconos (`docs/brand/README.md`).
 
 ## Construir y probar
 
@@ -135,7 +136,9 @@ ignora `--lang`: ejecútalas con `LANG=en_US.UTF-8 pnpm e2e`.
 ## Cargar la extensión
 
 1. `chrome://extensions` → Modo desarrollador → **Cargar descomprimida** → `apps/extension/dist`.
-2. Abre la página que quieras inspeccionar, abre DevTools y elige el panel **Nahual**.
+2. Abre la página que quieras inspeccionar, abre DevTools y elige el panel **Nahual**. La
+   extensión aparece con el icono del coyote (`docs/brand/nahual.svg`) en `chrome://extensions` y
+   en el menú de extensiones.
 
 Para probar con una app de ejemplo (SPA en `http://127.0.0.1:4310`, API en `:4311` y un tercer
 origen en `:4312`, con rutas `/cors/*` que provocan cada causa de bloqueo):
