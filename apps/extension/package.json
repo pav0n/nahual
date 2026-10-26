@@ -13,6 +13,7 @@
     "verify:dist": "vitest run --config vitest.dist.config.ts",
     "e2e": "playwright test --project=chromium --project=perf",
     "e2e:visual": "playwright test --project=visual",
+    "e2e:store": "playwright test --project=store",
     "fixture:serve": "node e2e/fixtures/serve.ts"
   },
   "dependencies": {

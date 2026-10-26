@@ -127,6 +127,7 @@ pnpm --filter @nahual/extension exec playwright install chromium
 pnpm e2e                                   # Playwright con la extensión cargada (workers: la mitad de los núcleos)
 E2E_WORKERS=1 pnpm e2e                     # en serie (depurar); otro número fija los workers
 pnpm --filter @nahual/extension e2e:visual  # capturas de regresión visual (claro/oscuro, 320/800/1280 px)
+pnpm --filter @nahual/extension e2e:store   # capturas y video del listing en docs/store/assets
 EXPERIMENTS=1 pnpm --filter @nahual/extension e2e   # experimentos de research.md
 ```
 

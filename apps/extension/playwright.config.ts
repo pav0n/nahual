@@ -20,14 +20,14 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: experiments ? [] : ["experiments/**", "visual/**"],
+      testIgnore: experiments ? [] : ["experiments/**", "visual/**", "store/**"],
       ...(experiments ? {} : { grepInvert: /@perf/ }),
     },
     // Las pruebas que miden tiempos (`@perf`) corren solas, después de las demás: con otros
     // Chromium en paralelo, la carga de CPU falsea la medición.
     {
       name: "perf",
-      testIgnore: ["experiments/**", "visual/**"],
+      testIgnore: ["experiments/**", "visual/**", "store/**"],
       grep: /@perf/,
       workers: 1,
       dependencies: ["chromium"],
@@ -35,5 +35,8 @@ export default defineConfig({
     // `pnpm --filter @nahual/extension e2e:visual`: regresión visual, fuera de la suite normal.
     // Puertos fijos (las URLs salen en las capturas): sus pruebas van en serie.
     { name: "visual", testDir: "e2e/visual", fullyParallel: false },
+    // 007 T038: `pnpm --filter @nahual/extension e2e:store` genera las capturas y el video del
+    // listing en docs/store/assets/. Puertos fijos: en serie.
+    { name: "store", testDir: "e2e/store", fullyParallel: false, workers: 1 },
   ],
 });
