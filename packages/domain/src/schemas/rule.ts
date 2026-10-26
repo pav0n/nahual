@@ -46,7 +46,7 @@ export const PrefilterSchema = z.discriminatedUnion("kind", [
 export type Prefilter = z.infer<typeof PrefilterSchema>;
 
 /** Cada condición debe ser válida para la etapa de la regla (data-model.md). */
-function checkStage(
+export function checkStage(
   rule: { stage: keyof typeof CONDITIONS_BY_STAGE; conditions: { kind: string }[] },
   ctx: z.RefinementCtx,
 ) {
@@ -62,7 +62,7 @@ function checkStage(
   });
 }
 
-const DRAFT_SHAPE = {
+export const DRAFT_SHAPE = {
   name: z
     .string()
     .trim()
