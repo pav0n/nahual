@@ -9,21 +9,23 @@ LANG=en_US.UTF-8 pnpm --filter @nahual/extension e2e:store
 ```
 
 Interfaz en inglés. La Chrome Web Store admite hasta 5 capturas de 1280×800 por idioma; hay un
-juego en tema claro (`light/`) y otro en oscuro (`dark/`): se sube uno de los dos, o se mezclan.
+juego con el panel en tema claro (`light/`) y otro en oscuro (`dark/`): se sube uno de los dos, o
+se mezclan.
 
-| Archivo | Muestra |
-|---|---|
-| `1-traffic-debugging.png` | Tráfico con el detalle de un request, dentro de DevTools, y la barra de Chrome "“Nahual” started debugging this browser" con su botón Cancel |
-| `2-rules.png` | Reglas: una pausa condicional (status ≥ 500) y un hook en TypeScript |
-| `3-repeater-diff.png` | Repeater: el request reenviado a otra URL y el diff JSON contra la respuesta original |
-| `4-export-curl.png` | "Export as…" en cURL, con los 2 valores sensibles redactados |
-| `5-profiles.png` | Selector de perfil de la pestaña ("All rules", "QA staging", "Bug 1234") y las reglas con sus perfiles |
+Cada captura es un cartel: la marca, un titular con algo que DevTools no hace (o no hace fácil) y
+el panel real dentro de una ventana de DevTools.
 
-**Composición en la captura 1.** Chrome sin interfaz no dibuja la ventana, la barra de depuración
-ni DevTools. La captura 1 los reproduce alrededor del panel real: la pestaña, la barra de
-direcciones, la barra de depuración con su texto real, una página de ejemplo ("Demo store") y las
-pestañas de DevTools. El panel de Nahual es la captura real. Las capturas 2 a 5 son el panel tal
-cual.
+| Archivo | Titular | Muestra |
+|---|---|---|
+| `1-pause-edit.png` | Pause and edit responses in flight | Un `500` pausado por una regla con condición (status ≥ 500), con status, headers y body editables; encima, la barra de Chrome "“Nahual” started debugging this browser" |
+| `2-cors.png` | Know why CORS blocked it | La causa de un bloqueo (`*` con credenciales) explicada, y el formulario de relajación acotada |
+| `3-hooks.png` | Rewrite traffic with TypeScript hooks | El editor de un hook con un error de tipos detectado al escribir |
+| `4-repeater-diff.png` | Replay any request and diff the result | Un request reenviado a otra URL y el diff JSON contra la respuesta original |
+| `5-export.png` | Turn real traffic into tests and mocks | "Export as…" a un test de Vitest, con 3 valores sensibles redactados |
+
+**Composición.** Chrome sin interfaz no dibuja DevTools ni la barra de depuración. Los carteles
+reproducen las pestañas de DevTools y, en la captura 1, la barra con su texto real; el panel de
+Nahual es la captura real.
 
 ## Video
 

@@ -1,19 +1,18 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { chromium, type BrowserContext, type Page } from "@playwright/test";
 import { NAHUAL_DIST, expect, test as base } from "../fixtures/extension.ts";
 import {
   attachAndReload,
   callApi,
-  closeSettings,
+  corsCall,
   createRule,
   detach,
-  installHook,
   openApp,
+  openCorsDetail,
   openPanel,
   openQueue,
   openSection,
-  openSettings,
   pausedEditor,
   pausedOption,
   requestRow,
@@ -25,10 +24,15 @@ import { startServers, type TestServers } from "../fixtures/servers.ts";
 
 // 007 T038: capturas (1280×800, claro y oscuro) y video del listing de la Chrome Web Store, en
 // docs/store/assets/. `pnpm --filter @nahual/extension e2e:store` tras `pnpm build:test`.
-// Qué muestra cada archivo y el guion del video: docs/store/assets/README.md.
+// Cada captura es un cartel: un titular con lo que DevTools no hace (o no hace fácil) y el panel
+// real debajo. Qué muestra cada archivo y el guion del video: docs/store/assets/README.md.
 
-const ASSETS = path.resolve(import.meta.dirname, "../../../../docs/store/assets");
+const ROOT = path.resolve(import.meta.dirname, "../../../..");
+const ASSETS = path.join(ROOT, "docs/store/assets");
+const LOGO = readFileSync(path.join(ROOT, "docs/brand/nahual.svg"), "utf8");
 const SIZE = { width: 1280, height: 800 };
+/** El panel se captura a 1280 px y el cartel lo muestra a 1120 (×0,875). */
+const PANEL = { width: 1280, height: 660 };
 
 /** Puertos fijos y con aspecto de desarrollo local: las URLs salen en las capturas. */
 const test = base.extend<{ servers: TestServers }>({
@@ -59,76 +63,78 @@ async function settle(panel: Page) {
   await panel.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 }
 
-async function shot(panel: Page, dir: string, name: string) {
-  await settle(panel);
-  await panel.screenshot({ path: path.join(dir, name), animations: "disabled", caret: "hide" });
+interface Poster {
+  file: string;
+  /** Titular; lo que va entre `*` se resalta. */
+  title: string;
+  subtitle: string;
+  /** Muestra la barra de depuración de Chrome sobre DevTools (el listing la explica). */
+  debugBar?: boolean;
 }
 
 /**
- * Composición de la primera captura: la barra de Chrome con su aviso de depuración y DevTools
- * acoplado con el panel real. Chrome sin interfaz no dibuja ni la ventana ni la barra; las dos se
- * reproducen aquí con su texto real y se dice en docs/store/assets/README.md.
+ * Cartel de 1280×800: marca, titular y el panel real dentro de una ventana de DevTools. Chrome sin
+ * interfaz no dibuja ni DevTools ni la barra de depuración: se reproducen con su texto real y se
+ * dice en docs/store/assets/README.md.
  */
-function frame(theme: "light" | "dark", origin: string, panelPng: Buffer) {
-  const dark = theme === "dark";
-  const c = dark
-    ? {
-        win: "#202124",
-        bar: "#35363a",
-        text: "#e8eaed",
-        muted: "#9aa0a6",
-        omni: "#202124",
-        page: "#121418",
-        card: "#1f2329",
-        info: "#3c3a2a",
-        infoBorder: "#5c5530",
-        line: "#3c4043",
-      }
-    : {
-        win: "#dee1e6",
-        bar: "#ffffff",
-        text: "#202124",
-        muted: "#5f6368",
-        omni: "#f1f3f4",
-        page: "#f6f7f9",
-        card: "#ffffff",
-        info: "#fef7e0",
-        infoBorder: "#f9e2a6",
-        line: "#dadce0",
-      };
+function posterHtml(poster: Poster, origin: string, panelPng: Buffer) {
+  const title = poster.title.replace(/\*(.+?)\*/g, "<em>$1</em>");
   const host = origin.replace(/^https?:\/\//, "");
-  const product = (name: string, price: string) =>
-    `<div class="card"><div class="ph"></div><b>${name}</b><span>${price}</span></div>`;
   return `<!doctype html><meta charset="utf-8"><style>
-  *{box-sizing:border-box}body{margin:0;width:1280px;height:800px;overflow:hidden;font:13px system-ui,"Segoe UI",Roboto,"Liberation Sans",sans-serif;color:${c.text};background:${c.win}}
-  .tabs{height:34px;display:flex;align-items:flex-end;padding:0 8px}
-  .tab{height:28px;width:230px;background:${c.bar};border-radius:8px 8px 0 0;display:flex;align-items:center;gap:8px;padding:0 12px}
-  .dot{width:14px;height:14px;border-radius:4px;background:#2be4a0}
-  .omni{height:38px;background:${c.bar};display:flex;align-items:center;gap:14px;padding:0 12px;color:${c.muted}}
-  .url{flex:1;height:28px;border-radius:14px;background:${c.omni};display:flex;align-items:center;padding:0 14px;color:${c.text}}
-  .info{height:36px;background:${c.info};border-top:1px solid ${c.infoBorder};border-bottom:1px solid ${c.infoBorder};display:flex;align-items:center;gap:10px;padding:0 14px}
-  .info i{width:16px;height:16px;border-radius:50%;border:2px solid ${c.muted};font:bold 10px/12px sans-serif;text-align:center;font-style:normal;color:${c.muted}}
-  .info .grow{flex:1}.info button{font:inherit;padding:3px 14px;border-radius:14px;border:1px solid ${c.line};background:${c.bar};color:#0b57d0}
-  .page{height:180px;background:${c.page};padding:16px 32px;overflow:hidden}
-  .page h1{margin:0 0 12px;font-size:20px}.grid{display:flex;gap:16px}
-  .card{width:180px;background:${c.card};border:1px solid ${c.line};border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px}
-  .ph{height:56px;border-radius:6px;background:linear-gradient(135deg,#1eb8e0,#2be4a0);opacity:.35}
-  .card span{color:${c.muted}}
-  .dt{border-top:1px solid ${c.line};background:${c.bar}}
-  .dtabs{height:28px;display:flex;align-items:center;gap:18px;padding:0 12px;color:${c.muted};border-bottom:1px solid ${c.line}}
-  .dtabs b{color:${c.text};border-bottom:2px solid #0b57d0;height:28px;line-height:28px}
-  img{display:block}
+  *{box-sizing:border-box}
+  body{margin:0;width:1280px;height:800px;overflow:hidden;color:#e8eaed;font-family:system-ui,"Segoe UI",Roboto,"Liberation Sans",sans-serif;
+    background:radial-gradient(circle at 88% -10%,rgba(30,184,224,.32),transparent 45%),radial-gradient(circle at -5% 105%,rgba(43,228,160,.22),transparent 40%),#0d1117}
+  .brand{position:absolute;left:80px;top:40px;display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:5px;font-size:15px}
+  .brand svg{width:30px;height:30px}
+  .brand small{letter-spacing:2px;font-size:11px;color:#2be4a0;font-weight:700;margin-left:6px}
+  h1{position:absolute;left:80px;top:78px;margin:0;font-size:42px;line-height:1.15;font-weight:800;letter-spacing:-.5px;max-width:1120px}
+  h1 em{font-style:normal;background:linear-gradient(90deg,#1eb8e0,#2be4a0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  p{position:absolute;left:80px;top:136px;margin:0;font-size:19px;color:#a8b3c1;max-width:1120px}
+  .win{position:absolute;left:80px;top:196px;width:1120px;border-radius:12px;overflow:hidden;background:#292a2d;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.1)}
+  .info{height:30px;background:#fef7e0;color:#202124;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:13px}
+  .info i{width:15px;height:15px;border-radius:50%;border:2px solid #5f6368;font:bold 9px/11px sans-serif;text-align:center;font-style:normal;color:#5f6368}
+  .info .grow{flex:1}.info button{font:inherit;font-size:12px;padding:2px 12px;border-radius:12px;border:1px solid #dadce0;background:#fff;color:#0b57d0}
+  .info .url{color:#5f6368;margin-left:auto;margin-right:12px}
+  .tabs{height:26px;display:flex;align-items:center;gap:16px;padding:0 12px;font-size:12px;color:#9aa0a6;border-bottom:1px solid #3c4043}
+  .tabs b{color:#e8eaed;border-bottom:2px solid #7cacf8;line-height:24px}
+  img{display:block;width:1120px}
   </style>
-  <div class="tabs"><div class="tab"><span class="dot"></span>Demo store</div></div>
-  <div class="omni">←&nbsp;→&nbsp;⟳<div class="url">${host}</div></div>
-  <div class="info"><i>i</i><span class="grow">“Nahual” started debugging this browser</span><button>Cancel</button></div>
-  <div class="page"><h1>Demo store</h1><div class="grid">${product("Desk lamp", "$39")}${product("Notebook", "$12")}${product("Headphones", "$89")}${product("Backpack", "$54")}</div></div>
-  <div class="dt"><div class="dtabs"><span>Elements</span><span>Console</span><span>Sources</span><span>Network</span><span>Application</span><b>Nahual</b></div>
-  <img src="data:image/png;base64,${panelPng.toString("base64")}" width="1280"></div>`;
+  <div class="brand">${LOGO}NAHUAL<small>DEVTOOLS TRAFFIC TOOLKIT</small></div>
+  <h1>${title}</h1>
+  <p>${poster.subtitle}</p>
+  <div class="win">
+    ${poster.debugBar ? `<div class="info"><i>i</i><span>“Nahual” started debugging this browser</span><span class="url">${host}</span><button>Cancel</button></div>` : ""}
+    <div class="tabs"><span>Elements</span><span>Console</span><span>Sources</span><span>Network</span><span>Application</span><b>Nahual</b></div>
+    <img src="data:image/png;base64,${panelPng.toString("base64")}">
+  </div>`;
 }
 
-/** Alto del panel dentro de la composición: 800 menos la ventana, la barra y la página. */
-const DOCKED_PANEL_HEIGHT = 800 - 34 - 38 - 36 - 180 - 1 - 29;
+async function poster(
+  context: BrowserContext,
+  panel: Page,
+  dir: string,
+  origin: string,
+  p: Poster,
+) {
+  await settle(panel);
+  const png = await panel.screenshot({ animations: "disabled", caret: "hide" });
+  const page = await context.newPage();
+  await page.setViewportSize(SIZE);
+  await page.setContent(posterHtml(p, origin, png));
+  // Sin esperar a decodificar la imagen, la captura sale con el panel a medio pintar.
+  await page.locator("img").evaluate((img: HTMLImageElement) => img.decode());
+  await page.screenshot({ path: path.join(dir, p.file) });
+  await page.close();
+}
+
+const HOOK_WITH_TYPE_ERROR = `// Simulate a stale cache for the checkout flow
+export default (ctx: HookContext) => {
+  const cart = ctx.json<{ total: number; currency: string }>();
+  cart.total = "free";
+  ctx.response!.body = JSON.stringify(cart);
+  return ctx;
+};`;
 
 for (const theme of ["light", "dark"] as const) {
   test(`capturas del listing, tema ${theme}`, async ({
@@ -142,44 +148,65 @@ for (const theme of ["light", "dark"] as const) {
     mkdirSync(dir, { recursive: true });
     const { app, panel } = await setup(context, nahualWorker, extensionId, servers);
     await panel.emulateMedia({ colorScheme: theme });
+    await panel.setViewportSize(PANEL);
     await attachAndReload(panel, app);
-    for (const id of ["items", "export-items", "export-items-2", "empty", "echo"])
-      await callApi(app, id);
+    for (const id of ["items", "export-items", "empty"]) await callApi(app, id);
+    const shoot = (p: Poster) => poster(context, panel, dir, servers.appOrigin, p);
 
-    // 1. Tráfico con detalle, dentro de DevTools y con la barra de depuración de Chrome.
-    await panel.setViewportSize({ width: 1280, height: DOCKED_PANEL_HEIGHT });
-    await trafficRow(panel, "/api/items").click();
-    await panel.locator(".detail").getByRole("tab", { name: "Response" }).click();
-    await expect(panel.locator(".detail").getByLabel("Response body")).toBeVisible();
-    await settle(panel);
-    const docked = await panel.screenshot({ animations: "disabled", caret: "hide" });
-    const composed = await context.newPage();
-    await composed.setViewportSize(SIZE);
-    await composed.setContent(frame(theme, servers.appOrigin, docked));
-    // Sin esperar a decodificar la imagen, la captura sale con el panel a medio pintar.
-    await composed.locator("img").evaluate((img: HTMLImageElement) => img.decode());
-    await composed.screenshot({ path: path.join(dir, "1-traffic-debugging.png") });
-    await composed.close();
-    await panel.setViewportSize(SIZE);
-
-    // 2. Reglas: una pausa condicional y un hook en TypeScript.
+    // 1. Pausa condicional y edición de la respuesta antes de que llegue a la página.
     await createRule(panel, {
-      name: "Pause failing orders",
-      pattern: "*/api/orders*",
+      name: "Catch server errors",
+      pattern: "*/api/*",
       stage: "response",
       conditions: [{ kind: "Status", op: "≥", fields: { Value: "500" } }],
     });
-    await installHook(panel, {
-      name: "Flag beta users",
-      stage: "response",
-      prefilter: "*/api/me",
-      source: `export default (ctx: HookContext) => {\n  const user = ctx.json<{ flags: string[] }>();\n  user.flags.push("beta-checkout");\n  ctx.response!.body = JSON.stringify(user);\n  return ctx;\n};\n`,
+    const pending = callApi(app, "error");
+    await openQueue(panel);
+    await expect(pausedOption(panel, "/api/error")).toBeVisible();
+    await shoot({
+      file: "1-pause-edit.png",
+      title: "Pause and edit responses *in flight*",
+      subtitle: "Only when they match your conditions: URL, method, status, headers or JSON body.",
+      debugBar: true,
     });
-    await openSection(panel, "Rules");
-    await expect(panel.locator(".rule-item")).toHaveCount(2);
-    await shot(panel, dir, "2-rules.png");
+    await pausedEditor(panel).getByRole("button", { name: "Continue unchanged" }).click();
+    await pending;
 
-    // 3. Repeater con el diff JSON contra el original.
+    // 2. CORS: la causa explicada y la relajación acotada para desarrollo.
+    await corsCall(app, "cors-wildcard-credentials");
+    await openSection(panel, "Traffic");
+    const cors = await openCorsDetail(panel, "/cors/wildcard-credentials");
+    await cors.getByRole("button", { name: "Allow CORS for development" }).click();
+    await expect(cors.locator(".relax-form")).toBeVisible();
+    await shoot({
+      file: "2-cors.png",
+      title: "Know *why* CORS blocked it",
+      subtitle:
+        "A plain explanation of the cause, and a scoped, temporary fix for development only.",
+    });
+    await cors.locator(".relax-form").getByRole("button", { name: "Cancel" }).click();
+
+    // 3. Hook en TypeScript con el error de tipos en vivo.
+    await openSection(panel, "Rules");
+    await panel.getByRole("button", { name: "New rule" }).click();
+    await panel.getByLabel("Name").fill("Stale checkout cache");
+    await panel.getByLabel("Action", { exact: true }).selectOption("hook");
+    await expect(panel.locator(".cm-editor")).toBeVisible({ timeout: 15_000 });
+    await panel.locator(".cm-content").click();
+    await panel.keyboard.press("Control+A");
+    await panel.keyboard.insertText(HOOK_WITH_TYPE_ERROR);
+    const typeError = panel.getByText(/Line 4: Type 'string' is not assignable/);
+    await expect(typeError).toBeVisible();
+    // El editor queda al final del formulario: se desplaza para que se vean el código y el error.
+    await typeError.evaluate((el) => el.scrollIntoView({ block: "end" }));
+    await shoot({
+      file: "3-hooks.png",
+      title: "Rewrite traffic with *TypeScript* hooks",
+      subtitle: "Type-checked as you type, run in a sandbox, with timing for every execution.",
+    });
+    await panel.getByRole("button", { name: "Cancel" }).click();
+
+    // 4. Repeater con el diff JSON contra el original.
     await app.evaluate(async (u) => {
       await (await fetch(u, { credentials: "include" })).text();
     }, `${servers.apiOrigin}/diff/a`);
@@ -192,50 +219,25 @@ for (const theme of ["light", "dark"] as const) {
     await expect(repeater.locator(".send-result").getByText("Sending…")).toHaveCount(0);
     await repeater.getByRole("button", { name: "Compare with original" }).click();
     await expect(panel.locator(".diff-view").getByRole("status")).toBeVisible();
-    await shot(panel, dir, "3-repeater-diff.png");
+    await shoot({
+      file: "4-repeater-diff.png",
+      title: "Replay any request and *diff* the result",
+      subtitle: "Edit and resend from the page or a clean context, then compare field by field.",
+    });
 
-    // 4. "Exportar como…" cURL, con los valores sensibles redactados.
+    // 5. Del tráfico real a un test de Vitest, con los secretos redactados.
     await openSection(panel, "Traffic");
     await requestRow(panel, "/export/items").last().click({ button: "right" });
     await panel.getByRole("menuitem", { name: "Export as…" }).click();
     const exportDialog = panel.getByRole("dialog", { name: /^Export/ });
-    await exportDialog.getByRole("tab", { name: "cURL", exact: true }).click();
-    await expect(exportDialog.locator(".cm-content")).toContainText("redacted");
-    await shot(panel, dir, "4-export-curl.png");
-    await panel.keyboard.press("Escape");
-
-    // 5. Selector de perfil de la pestaña, con dos perfiles.
-    const profiles = await openSettings(panel, "Profiles");
-    for (const name of ["QA staging", "Bug 1234"]) {
-      await profiles.getByLabel("New profile").fill(name);
-      await profiles.getByRole("button", { name: "Create profile" }).click();
-      await expect(panel.getByRole("button", { name: `Delete profile: ${name}` })).toBeVisible();
-    }
-    await closeSettings(panel);
-    await openSection(panel, "Rules");
-    for (const [rule, profile] of [
-      ["Pause failing orders", "QA staging"],
-      ["Flag beta users", "QA staging"],
-      ["Flag beta users", "Bug 1234"],
-    ] as const) {
-      await panel.getByRole("button", { name: `Assign profiles: ${rule}` }).click();
-      await panel.getByRole("menuitemcheckbox", { name: profile }).click();
-      await panel.keyboard.press("Escape");
-    }
-    await expect(panel.locator(".profile-tag")).toHaveCount(3);
-    await panel.getByRole("button", { name: /^This tab's rule profile:/ }).click();
-    await expect(panel.getByRole("menu", { name: "Rule profile" })).toBeVisible();
-    await settle(panel);
-    await panel
-      .getByRole("menu", { name: "Rule profile" })
-      .getByRole("menuitemcheckbox")
-      .first()
-      .focus();
-    await panel.screenshot({
-      path: path.join(dir, "5-profiles.png"),
-      animations: "disabled",
-      caret: "hide",
+    await exportDialog.getByRole("tab", { name: "Vitest test", exact: true }).click();
+    await expect(exportDialog.locator(".cm-content")).toContainText("expect");
+    await shoot({
+      file: "5-export.png",
+      title: "Turn real traffic into *tests and mocks*",
+      subtitle: "cURL, fetch, Vitest, MSW, Zod or Postman, with secrets redacted by default.",
     });
+    await panel.keyboard.press("Escape");
   });
 }
 
