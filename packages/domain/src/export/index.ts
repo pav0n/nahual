@@ -121,6 +121,12 @@ export function fileNameFor(format: ExportFormat, sources: readonly ExportSource
   }
 }
 
+/** Copia de `source` sin los caracteres del marcador de `env()` (U+E000 y U+E001). */
+const withoutEnvMarkers = (source: ExportSource): ExportSource =>
+  JSON.parse(JSON.stringify(source), (_key, value: unknown) =>
+    typeof value === "string" ? value.replace(/[\uE000\uE001]/g, "\uFFFD") : value,
+  ) as ExportSource;
+
 /** Marcador de lo redactado según el formato (research R3). */
 const markerFor = (format: ExportFormat) => (site: RedactedSite) => {
   if (format === "vitest") return envMarker(site.envVar);
@@ -140,7 +146,10 @@ export function exportAs(
 ): ExportResult {
   const available = formatAvailability(format, sources);
   if (!available.ok) throw new Error(available.reasonKey);
-  const prepared = sources.map((source) =>
+  // Un valor capturado con el marcador de `env()` lo convertiría en una lectura de variable de
+  // entorno en el test exportado (T071): se neutraliza antes de redactar.
+  const clean = format === "vitest" ? sources.map(withoutEnvMarkers) : sources;
+  const prepared = clean.map((source) =>
     options.includeSensitive
       ? { source, redacted: [] as RedactedSite[] }
       : redactExportSource(source, markerFor(format)),

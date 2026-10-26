@@ -6,7 +6,11 @@ import { sourceToMatch } from "./source.ts";
 // valor que viene del archivo entra con `JSON.stringify`, nunca concatenado, así que no puede
 // inyectar código (contracts/requestly-import.md).
 
-const q = JSON.stringify;
+/** `JSON.stringify` deja U+2028 y U+2029 tal cual; en la línea `//` del origen terminarían el comentario. */
+const q = (value: string) =>
+  JSON.stringify(value)
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 const origin = (kind: string, name: string, source: RequestlySource, stage?: Stage) =>
   `// Imported from Requestly · ${kind} ${q(name)}${stage ? ` (${stage})` : ""} · ${source.key} ${source.operator} ${q(source.value)}`;
 

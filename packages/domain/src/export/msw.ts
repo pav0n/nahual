@@ -1,5 +1,6 @@
 import { REDACTED } from "../sensitive.ts";
 import {
+  commentText,
   endpointOf,
   isJsonType,
   mediaType,
@@ -118,8 +119,8 @@ export function msw(
     const fn = METHODS.has(method) ? `http.${method}` : "http.all";
     handlers.push(
       [
-        `  // ${comment}`,
-        ...notes.map((n) => `  // ${n}`),
+        `  // ${commentText(comment)}`,
+        ...notes.map((n) => `  // ${commentText(n)}`),
         `  ${fn}(${jsString(withoutQuery(source.request.url))}, () =>`,
         `    ${expr},`,
         "  ),",

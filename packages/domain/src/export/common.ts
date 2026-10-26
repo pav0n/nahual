@@ -14,6 +14,13 @@ export function sizeLabel(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * Texto capturado dentro de un comentario del código exportado (`//` o `#`): sin saltos de línea
+ * ni U+2028/U+2029, que en JS también terminan la línea. Si no, un valor de la página saldría del
+ * comentario como código (T071).
+ */
+export const commentText = (text: string) => text.replace(/[\r\n\u2028\u2029]/g, " ");
+
 /** Comentario de un body que no se incrusta (Edge Cases). */
 export const omittedNote = (body: Extract<ExportBody, { kind: "omitted" }>) =>
   `body omitted: ${body.reason} (${sizeLabel(body.size)})`;

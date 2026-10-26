@@ -1,4 +1,4 @@
-import { omittedNote, type ExportOptions } from "./common.ts";
+import { commentText, omittedNote, type ExportOptions } from "./common.ts";
 import type { ExportSource } from "./source.ts";
 
 /** Comillas simples de shell: `'` se escribe `'\''`. */
@@ -27,7 +27,7 @@ export function curl(source: ExportSource, options: ExportOptions): string {
       for (const part of request.body.parts) {
         if (part.kind === "field")
           body.push(`--form-string ${quote(`${part.name}=${part.value}`)}`);
-        else notes.push(`# omitted file part: ${part.name} (${part.filename})`);
+        else notes.push(commentText(`# omitted file part: ${part.name} (${part.filename})`));
       }
       break;
     case "omitted":

@@ -1,4 +1,11 @@
-import { isJsonType, mediaType, omittedNote, parseJson, type ExportOptions } from "./common.ts";
+import {
+  commentText,
+  isJsonType,
+  mediaType,
+  omittedNote,
+  parseJson,
+  type ExportOptions,
+} from "./common.ts";
 import { jsString, jsValue } from "./js.ts";
 import type { ExportHeader, ExportSource } from "./source.ts";
 
@@ -42,7 +49,7 @@ export function fetchCall(source: ExportSource, indent: number, before: string[]
       before.push(
         part.kind === "field"
           ? `${pad}form.append(${jsString(part.name)}, ${jsString(part.value)});`
-          : `${pad}// omitted file part: ${part.name} (${part.filename})`,
+          : `${pad}// ${commentText(`omitted file part: ${part.name} (${part.filename})`)}`,
       );
     body = "form";
   } else if (b.kind === "omitted") {
@@ -70,7 +77,7 @@ export function fetchCode(source: ExportSource, options: ExportOptions): string 
   const reader =
     response?.body.kind === "text" && parseJson(response.body.text).ok ? "json" : "text";
   const captured = response
-    ? ` // captured: ${response.status}${response.mimeType ? ` ${response.mimeType}` : ""}`
+    ? ` // ${commentText(`captured: ${response.status}${response.mimeType ? ` ${response.mimeType}` : ""}`)}`
     : " // no response captured";
   return [
     ...before,
