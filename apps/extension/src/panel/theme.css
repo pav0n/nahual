@@ -801,8 +801,10 @@ button.link {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 120px;
-  min-width: 110px;
+  /* Base pequeña: la búsqueda crece hasta llenar la fila, pero no fuerza el salto de línea. Con
+     120 px, a 800 px la barra se partía con fuentes anchas como DejaVu Sans (FR-009). */
+  flex: 1 1 80px;
+  min-width: 80px;
   max-width: 320px;
 }
 
