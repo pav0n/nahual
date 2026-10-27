@@ -23,13 +23,13 @@ modify the HTTP traffic of the tab you are debugging, without leaving the browse
 **What it does**
 
 - Shows the tab's traffic with the look of the Network panel.
-- Per-site rules that pause, mock, fail or delay only the requests that match a condition (status,
-  header, query, JSONPath, GraphQL).
+- Per-site rules that pause, mock, fail or delay only the requests that match your conditions,
+  such as the response status or a field of the JSON body.
 - Development CORS: explains why a request was blocked and, if you ask, relaxes it for that tab
   only, for your origins only, with an expiry. Generates a report for the backend team.
 - Repeater and diff: resend an edited request and compare responses.
 - TypeScript hooks: change requests and responses with your own code, isolated and time-limited.
-- Export to code: cURL, fetch, Vitest test, MSW handler, Zod schema and Postman collection, with
+- Export to code: turn a captured request into a command, a test or a mock for your project, with
   sensitive values redacted by default.
 - Per-tab rule profiles and a portable JSON configuration.
 
