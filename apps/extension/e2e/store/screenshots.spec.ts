@@ -197,7 +197,7 @@ for (const theme of ["light", "dark"] as const) {
     await shoot({
       file: "5-export.png",
       title: "Turn real traffic into *tests and mocks*",
-      subtitle: "cURL, fetch, Vitest, MSW, Zod or Postman, with secrets redacted by default.",
+      subtitle: "Commands, tests and mocks from a real request, with secrets redacted by default.",
     });
     await panel.keyboard.press("Escape");
   });

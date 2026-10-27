@@ -24,15 +24,15 @@ navegador.
 **Qué hace**
 
 - Muestra el tráfico de la pestaña con el aspecto del panel Network.
-- Reglas por sitio que pausan, simulan, fallan o retrasan solo los requests que cumplen una
-  condición (status, header, query, JSONPath, GraphQL).
+- Reglas por sitio que pausan, simulan, fallan o retrasan solo los requests que cumplen tus
+  condiciones, como el status de la respuesta o un campo del body JSON.
 - CORS de desarrollo: explica por qué se bloqueó un request y, si lo pides, lo relaja solo en esa
   pestaña, solo para tus orígenes y con caducidad. Genera un reporte para el equipo de backend.
 - Repeater y diff: reenvía un request editado y compara respuestas.
 - Hooks en TypeScript: modifica requests y respuestas con tu código, aislado y con límite de
   tiempo.
-- Exportar a código: cURL, fetch, test Vitest, handler MSW, schema Zod y colección de Postman, con
-  los valores sensibles redactados por defecto.
+- Exportar a código: convierte un request capturado en un comando, un test o un mock para tu
+  proyecto, con los valores sensibles redactados por defecto.
 - Perfiles de reglas por pestaña y configuración portable en JSON.
 
 **Por qué pide cada permiso**
