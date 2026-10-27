@@ -102,6 +102,13 @@ describe("ProfileStore: crear, renombrar, duplicar, eliminar y deshacer", () => 
     expect(await profiles.save({ name: "x" }, null)).toEqual({ ok: false, code: "no_site" });
   });
 
+  it("un cambio que llega antes que la lectura inicial no se pisa con el valor viejo", async () => {
+    const pending = open();
+    storage.externalWrite(PROFILES_KEY, { version: 1, profiles: [profile()], lastActive: {} });
+    await pending;
+    expect(profiles.all()).toHaveLength(1);
+  });
+
   it("renombra por id; un id desconocido es profile_not_found", async () => {
     storage.data.set(PROFILES_KEY, { version: 1, profiles: [profile()], lastActive: {} });
     await open();

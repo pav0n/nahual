@@ -143,11 +143,16 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
     rules = renumber(rules);
   };
 
-  const ready = storage.get(RULES_KEY).then((items) => load(items[RULES_KEY]));
+  // Un cambio que llega antes que la lectura inicial es más nuevo que ella: no se pisa.
+  let changedBeforeRead = false;
+  const ready = storage.get(RULES_KEY).then((items) => {
+    if (!changedBeforeRead) load(items[RULES_KEY]);
+  });
 
   storage.onChanged((changes) => {
     const change = changes[RULES_KEY];
     if (!change) return;
+    changedBeforeRead = true;
     load(change.newValue);
     options.onChange(rules);
   });

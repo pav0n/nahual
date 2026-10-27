@@ -30,6 +30,20 @@ describe("SettingsStore (contracts/storage.md)", () => {
     expect(notices).toEqual([]);
   });
 
+  it("un cambio que llega antes que la lectura inicial no se pisa con el valor viejo", async () => {
+    const store = createSettingsStore({
+      storage,
+      onChange: (s) => void changes.push(s),
+      onNotice: (key) => void notices.push(key),
+    });
+    storage.externalWrite(SETTINGS_KEY, {
+      version: 1,
+      settings: { ...DEFAULT_SETTINGS, onboardingSeen: true },
+    });
+    await store.ready;
+    expect(store.get().onboardingSeen).toBe(true);
+  });
+
   it("aplica valores por defecto campo a campo y avisa", async () => {
     storage.data.set(SETTINGS_KEY, {
       version: 1,

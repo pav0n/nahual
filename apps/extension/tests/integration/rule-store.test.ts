@@ -33,6 +33,17 @@ afterEach(() => {
 });
 
 describe("RuleStore: lectura (contracts/storage.md)", () => {
+  it("un cambio que llega antes que la lectura inicial no se pisa con el valor viejo", async () => {
+    const store = createRuleStore({
+      storage,
+      onChange: () => void changes++,
+      onNotice: (key) => void notices.push(key),
+    });
+    storage.externalWrite(RULES_KEY, { version: 1, rules: [rule()] });
+    await store.ready;
+    expect(store.all()).toHaveLength(1);
+  });
+
   it("sin datos no hay reglas ni avisos", async () => {
     const store = await open();
     expect(store.all()).toEqual([]);

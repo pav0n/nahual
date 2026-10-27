@@ -88,10 +88,15 @@ export function createProfileStore(options: ProfileStoreOptions): ProfileStore {
 
   const view = (): ProfilesView => ({ profiles, lastActive });
 
-  const ready = storage.get(PROFILES_KEY).then((items) => load(items[PROFILES_KEY]));
+  // Un cambio que llega antes que la lectura inicial es más nuevo que ella: no se pisa.
+  let changedBeforeRead = false;
+  const ready = storage.get(PROFILES_KEY).then((items) => {
+    if (!changedBeforeRead) load(items[PROFILES_KEY]);
+  });
   storage.onChanged((changes) => {
     const change = changes[PROFILES_KEY];
     if (!change) return;
+    changedBeforeRead = true;
     load(change.newValue);
     options.onChange(view());
   });
