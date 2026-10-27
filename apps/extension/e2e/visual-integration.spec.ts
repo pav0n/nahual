@@ -166,7 +166,7 @@ test("FR-009, SC-002: filtros en 1 fila a 800 px y en ≤ 2 a 320 px, sin scroll
     content: `:root { --nh-font: "DejaVu Sans", sans-serif !important; }`,
   });
   await expect.poll(() => visualRows(filters)).toBe(1);
-  await wideFont.evaluate((style) => style.remove());
+  await wideFont.evaluate((style) => (style as Element).remove());
   await panel.setViewportSize({ width: 320, height: 800 });
   await expect.poll(() => visualRows(filters)).toBeLessThanOrEqual(2);
   await noHorizontalScroll(panel);
