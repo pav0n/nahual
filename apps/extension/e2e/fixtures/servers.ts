@@ -48,7 +48,19 @@ const CALLS = [
   ["graphql-user", "POST", "/graphql"],
   ["graphql-user-errors", "POST", "/graphql?errors=1"],
   ["graphql-list", "POST", "/graphql"],
+  // 007: API de los exportadores (con Authorization, cookie y ?token=).
+  ["export-items", "GET", "/export/items?page=1"],
+  ["export-items-2", "GET", "/export/items?page=2"],
+  ["export-items-3", "GET", "/export/items?page=3"],
+  ["export-item", "GET", "/export/items/4"],
+  ["export-post", "POST", "/export/items?token=secret-query-token&lang=es"],
 ] as const;
+
+/** 007: headers de las llamadas de exportación (la API acepta `authorization` por CORS). */
+const CALL_HEADERS: Record<string, Record<string, string>> = {
+  "export-items": { accept: "application/json", authorization: "Bearer secret-export-token" },
+  "export-post": { authorization: "Bearer secret-export-token" },
+};
 
 /**
  * Llamadas CORS de 003 (quickstart): `[id, origen, método, ruta, credenciales, headers, body]`.
@@ -107,7 +119,12 @@ ${buttons}
 <script>
   const API = ${JSON.stringify(apiOrigin)};
   const CALLS = ${JSON.stringify(CALLS)};
-  const BODIES = ${JSON.stringify({ ...GRAPHQL_BODIES, echo: JSON.stringify({ hello: "nahual" }) })};
+  const BODIES = ${JSON.stringify({
+    ...GRAPHQL_BODIES,
+    echo: JSON.stringify({ hello: "nahual" }),
+    "export-post": JSON.stringify({ name: "x", password: "secret-body-password" }),
+  })};
+  const HEADERS = ${JSON.stringify(CALL_HEADERS)};
   window.call = async (id) => {
     const [, method, path] = CALLS.find((c) => c[0] === id);
     const init = { method, credentials: "include" };
@@ -115,6 +132,7 @@ ${buttons}
       init.body = BODIES[id];
       init.headers = { "content-type": "application/json" };
     }
+    if (HEADERS[id]) init.headers = { ...init.headers, ...HEADERS[id] };
     try {
       const res = await fetch(API + path, init);
       const text = await res.text();
@@ -238,6 +256,14 @@ function diffBig(seed: number) {
   });
 }
 
+/** 007: token que la API de `/export/*` acepta en `authorization`. */
+export const EXPORT_TOKEN = "Bearer secret-export-token";
+
+/** Elemento de `/export/items`: los pares tienen `deletedAt` nulo; los impares, una fecha. */
+function exportItem(id: number) {
+  return { id, name: `item-${id}`, deletedAt: id % 2 === 0 ? null : "2026-10-25T20:00:00.000Z" };
+}
+
 let bigBody: string | null = null;
 /** ~6 MB de JSON: por encima del límite de 5 MB de body evaluable. */
 function big() {
@@ -329,6 +355,7 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
           return;
         }
       }
+      if (url.pathname.startsWith("/export/")) return exportRoute(url, req, res, body);
       switch (url.pathname) {
         case "/echo-headers":
           return json(res, 200, { headers: req.headers });
@@ -430,6 +457,60 @@ export async function startServers(ports: ServerPorts = {}): Promise<TestServers
       }
     })();
   });
+
+  /**
+   * 007: API de los exportadores (quickstart, `tooling/export-smoke`). Cada respuesta lleva
+   * `set-cookie` y `x-request-id`; un `authorization` distinto del token de prueba recibe 401,
+   * para comprobar que el test exportado usa la variable de entorno y no el marcador.
+   */
+  function exportRoute(url: URL, req: IncomingMessage, res: ServerResponse, body: string) {
+    const auth = req.headers.authorization;
+    const headers = {
+      "content-type": "application/json",
+      "set-cookie": "export_session=secret-export-cookie; Path=/",
+      "x-request-id": `req-${url.pathname.length}-${url.search.length}`,
+    };
+    const send = (status: number, value: unknown) => {
+      res.writeHead(status, headers);
+      res.end(JSON.stringify(value));
+    };
+    if (auth !== undefined && auth !== EXPORT_TOKEN) return send(401, { error: "unauthorized" });
+    const item = /^\/export\/items\/(\d+)$/.exec(url.pathname);
+    if (item && req.method === "GET") return send(200, exportItem(Number(item[1])));
+    switch (`${req.method} ${url.pathname}`) {
+      case "GET /export/items": {
+        const page = Number(url.searchParams.get("page") ?? 1);
+        const items = [1, 2].map((n) => exportItem((page - 1) * 2 + n));
+        // La última página no trae `next` y la segunda trae `deletedAt` nulo: inferencia Zod.
+        return send(200, page < 3 ? { items, next: `/export/items?page=${page + 1}` } : { items });
+      }
+      // T069: ~1 MB de JSON con tipos mezclados (rendimiento de los exportadores).
+      case "GET /export/large":
+        return send(200, {
+          items: Array.from({ length: 7_200 }, (_, i) => ({
+            ...exportItem(i + 1),
+            note: `item-${i}-${"x".repeat(64)}`,
+          })),
+        });
+      case "POST /export/items": {
+        try {
+          return send(201, { created: true, received: JSON.parse(body) as unknown });
+        } catch {
+          return send(400, { error: "invalid json" });
+        }
+      }
+      case "POST /export/form":
+        return send(200, { fields: Object.fromEntries(new URLSearchParams(body)) });
+      case "POST /export/upload":
+        return send(200, { parts: [...body.matchAll(/; name="([^"]+)"/g)].map((m) => m[1]) });
+      case "GET /export/binary":
+        res.writeHead(200, { "content-type": "image/png", "content-length": String(PNG.length) });
+        res.end(PNG);
+        return;
+      default:
+        res.writeHead(404).end();
+    }
+  }
 
   /**
    * Rutas CORS de 003 (quickstart). Cada una provoca una causa de bloqueo concreta; `/cors/ok`

@@ -37,7 +37,7 @@ ignoran. Un archivo que no es un array, está vacío o no tiene ningún registro
 | `path` | `Matches` / `Wildcard_Matches` | `regex` `^[a-z][a-z0-9+.-]*://[^/]+(<regex o wildcard convertido>)` |
 
 `filters.requestMethod` ⇒ `methods`; `filters.resourceType` ⇒ `resourceTypes` con la tabla
-`xmlhttprequest → xhr`, `script`, `stylesheet`, `image`, `font`, `main_frame → document`,
+`xmlhttprequest → XHR y Fetch` (en Chrome, Requestly incluye `fetch()` en ese tipo), `script`, `stylesheet`, `image`, `font`, `main_frame → document`,
 `sub_frame → document`, `media`, `websocket` ⇒ no soportado; cualquier otro filtro
 (`requestPayload`, `pageUrl`…) ⇒ `requestly_unsupported_filter`. Una regla con varias parejas
 produce una regla de Nahual por pareja, numeradas "(1)", "(2)"… Si cualquier pareja no es
@@ -63,21 +63,27 @@ Grupos: cada `group` ⇒ perfil del sitio con su `name`; las reglas con `groupId
 export default (ctx: HookContext) => {
   const pattern = /^(.*?):\/\/api\.example\.com\/(.*)$/;
   ctx.request.url = ctx.request.url.replace(pattern, "https://staging.example.com/$2");
+  return ctx;
 };
 ```
 
 - `Equals`/`Contains` ⇒ `ctx.request.url = "<destination>";` (sin `replace`).
-- `Wildcard_Matches` ⇒ el comodín se convierte a regex con grupos (`*` ⇒ `(.*?)`, `?` ⇒ `(.)`)
+- `Wildcard_Matches` ⇒ el comodín se convierte a regex con grupos (`*` ⇒ `(.*?)`)
   para que `$1…$n` del destino funcionen como en Requestly; `Matches` usa la regex tal cual.
 
 ```ts
 // Imported from Requestly · Headers "CORS dev" (response) · Url Contains "/api/"
 export default (ctx: HookContext) => {
   if (!ctx.response) return;
-  ctx.response.headers["access-control-allow-origin"] = "*";
-  delete ctx.response.headers["x-frame-options"];
+  ctx.setHeader("access-control-allow-origin", "*");
+  ctx.removeHeader("x-frame-options");
+  return ctx;
 };
 ```
+
+Los headers usan `ctx.setHeader` / `ctx.removeHeader` de la API de hooks (006), con el nombre en
+minúsculas. Una regla cuyo registro o pareja no tiene la forma esperada, o cuyo resultado no pasa
+el schema de la regla, va a `unsupported` con `requestly_unsupported_invalid`.
 
 Los hooks generados se validan con el Worker de tipos de 006 en la vista previa; el `check`
 viaja en `importConfig`. Activar un hook de redirección a otro origen exige marcar el permiso de

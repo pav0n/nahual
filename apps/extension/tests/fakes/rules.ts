@@ -14,6 +14,7 @@ export function draft(overrides: Partial<RuleDraft> = {}): RuleDraft {
     stage: "response",
     conditions: [{ kind: "status", op: "gte", value: 500 }],
     action: { kind: "pause" },
+    profileIds: [],
     ...overrides,
   };
 }

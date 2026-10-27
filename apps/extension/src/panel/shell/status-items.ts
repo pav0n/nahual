@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { ProfileStatus } from "../components/profiles/ProfileStatus.tsx";
 import { SessionStatus } from "./SessionStatus.tsx";
 
 export interface StatusItemEntry {
@@ -11,4 +12,8 @@ export interface StatusItemEntry {
  * Indicadores de estado de la barra superior (004, contracts/panel-shell.md): hoy la sesión; 006
  * añade la consola de hooks y 007 el perfil activo.
  */
-export const STATUS_ITEMS: StatusItemEntry[] = [{ id: "session", render: SessionStatus }];
+export const STATUS_ITEMS: StatusItemEntry[] = [
+  // 007: el perfil activo, antes de la sesión (contracts/panel-ui.md).
+  { id: "profile", render: ProfileStatus },
+  { id: "session", render: SessionStatus },
+];

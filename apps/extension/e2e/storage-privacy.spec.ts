@@ -129,7 +129,8 @@ test("las preferencias de interfaz no guardan datos de tráfico", async ({
   );
   expect(Object.keys(prefs)).toEqual(["nahual.ui.v1"]);
   const parsed = JSON.parse(prefs["nahual.ui.v1"] ?? "{}") as Record<string, unknown>;
-  expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "split", "version"]);
+  // 007: `exportFormat` es el último formato elegido, nunca el código (FR-018).
+  expect(Object.keys(parsed).sort()).toEqual(["drawerHeight", "exportFormat", "split", "version"]);
   expect(Object.keys(parsed.split as object).sort()).toEqual([
     "paused",
     "repeater",
@@ -318,6 +319,83 @@ test("los hooks no guardan registros, state ni valores sensibles en ningún alma
       "secret-hook-query",
       "secret-session-value",
       servers.apiOrigin,
+    ])
+      expect(text, secret).not.toContain(secret);
+  }
+});
+
+// 007 T061 (contracts/storage.md): exportar al código, perfiles y la configuración portable no
+// dejan valores sensibles en ningún almacenamiento; solo se recuerda el formato elegido.
+test("exportar, perfiles e importar no guardan valores sensibles en ningún almacenamiento", async ({
+  context,
+  nahualWorker,
+  extensionId,
+  servers,
+}) => {
+  const app = await openApp(context, servers.appOrigin);
+  const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+  const panel = await openPanel(context, extensionId, tabId);
+  await panel.setViewportSize({ width: 1100, height: 800 });
+  await attachAndReload(panel, app);
+  await callApi(app, "export-post");
+
+  // Exportar el POST con y sin valores sensibles.
+  const post = trafficRow(panel, "/export/items").filter({
+    has: panel.getByRole("gridcell", { name: "POST", exact: true }),
+  });
+  await post.first().click({ button: "right" });
+  await panel.getByRole("menuitem", { name: "Export as…" }).click();
+  const dialog = panel.getByRole("dialog", { name: /^Export/ });
+  await dialog.getByRole("tab", { name: "Postman" }).click();
+  await dialog.getByRole("switch", { name: "Include sensitive values" }).click();
+  await panel
+    .getByRole("dialog", { name: "Include sensitive values?" })
+    .getByRole("button", { name: "Include" })
+    .click();
+  await expect(dialog.locator(".cm-content")).toContainText("secret-export-token");
+  await panel.keyboard.press("Escape");
+
+  // Un perfil y la configuración exportada e importada.
+  await panel.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = panel.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("tab", { name: "Profiles" }).click();
+  await settings.getByLabel("New profile").fill("Privado");
+  await settings.getByRole("button", { name: "Create profile" }).click();
+  await expect(settings.getByRole("button", { name: "Delete profile: Privado" })).toBeVisible();
+  await settings.getByRole("tab", { name: "Import and export" }).click();
+  const download = panel.waitForEvent("download");
+  await settings.getByRole("button", { name: "Download" }).click();
+  await download;
+  await panel.waitForTimeout(400);
+
+  const local = await nahualWorker.evaluate(() => chrome.storage.local.get(null));
+  const session = await nahualWorker.evaluate(() => chrome.storage.session.get(null));
+  expect(Object.keys(local).sort()).toEqual(["nahual.profiles.v1", "nahual.settings.v1"]);
+  const stored = local["nahual.profiles.v1"] as {
+    profiles: Record<string, unknown>[];
+    lastActive: object;
+  };
+  expect(stored.profiles.map((p) => Object.keys(p).sort())).toEqual([
+    ["createdAt", "id", "name", "site", "updatedAt"],
+  ]);
+  const page = await panel.evaluate(async () => ({
+    local: Object.fromEntries(Object.keys(localStorage).map((k) => [k, localStorage.getItem(k)])),
+    session: Object.fromEntries(
+      Object.keys(sessionStorage).map((k) => [k, sessionStorage.getItem(k)]),
+    ),
+    databases: (await indexedDB.databases()).map((d) => d.name),
+  }));
+  expect(Object.keys(page.local)).toEqual(["nahual.ui.v1"]);
+  expect(JSON.parse(page.local["nahual.ui.v1"] ?? "{}")).toMatchObject({ exportFormat: "postman" });
+  expect(page.databases).toEqual([]);
+  for (const value of [local, session, page.local, page.session]) {
+    const text = JSON.stringify(value);
+    for (const secret of [
+      "secret-export-token",
+      "secret-export-cookie",
+      "secret-query-token",
+      "secret-body-password",
+      "/export/items",
     ])
       expect(text, secret).not.toContain(secret);
   }

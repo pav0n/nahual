@@ -63,14 +63,19 @@ test("FR-020/022: cabecera y menú muestran las mismas acciones según el reques
   await corsCall(app, "cors-preflight-401");
 
   const normal = await actionsOf(panel, trafficRow(panel, "/api/items"));
-  // 005 añade "Send to repeater" al catálogo (FR-001).
-  expect(normal.header).toEqual(["Create rule from this request", "Send to repeater"]);
+  // 005 añade "Send to repeater" al catálogo (FR-001) y 007 "Export as…" (FR-008).
+  expect(normal.header).toEqual([
+    "Create rule from this request",
+    "Send to repeater",
+    "Export as…",
+  ]);
   expect(normal.items).toEqual(normal.header);
 
   const blocked = await actionsOf(panel, requestRow(panel, "/cors/preflight-401").last());
   expect(blocked.header).toEqual([
     "Create rule from this request",
     "Send to repeater",
+    "Export as…",
     "Allow CORS for development",
   ]);
   expect(blocked.items).toEqual(blocked.header);

@@ -69,6 +69,11 @@ describe("SwMessageSchema (eventos de 002)", () => {
       "no_site",
       "relaxation_invalid",
       "ignores_invalid",
+      "profile_invalid",
+      "profile_not_found",
+      "config_invalid",
+      "config_limit",
+      "undo_expired",
     ]);
     for (const code of ERROR_CODES) ok("error", { code, messageKey: `error_${code}` });
     ok("error", {
@@ -298,5 +303,45 @@ describe("hookRun (006, contracts/panel-protocol.md)", () => {
       chain: [item],
       context: { ...context, stage: "otra" },
     });
+  });
+});
+
+describe("SwMessageSchema v6 (007)", () => {
+  const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+  const profile = { id: P, site: "http://localhost:3000", name: "QA", createdAt: 1, updatedAt: 1 };
+
+  it("profiles: lista y último activo por sitio", () => {
+    expect(
+      SwMessageSchema.safeParse(
+        envelope("profiles", { profiles: [profile], lastActive: { "http://localhost:3000": P } }),
+      ).success,
+    ).toBe(true);
+    expect(
+      SwMessageSchema.safeParse(
+        envelope("profiles", { profiles: [{ ...profile, id: "x" }], lastActive: {} }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("state lleva el perfil activo de la pestaña (uuid o null)", () => {
+    const state = {
+      status: "attached",
+      cause: null,
+      attachedAt: 1,
+      site: "http://localhost:3000",
+      activeRuleCount: 0,
+      queueSize: 0,
+      globalPaused: false,
+      relaxationCount: 0,
+    };
+    expect(
+      SwMessageSchema.safeParse(envelope("state", { ...state, activeProfileId: P })).success,
+    ).toBe(true);
+    expect(
+      SwMessageSchema.safeParse(envelope("state", { ...state, activeProfileId: null })).success,
+    ).toBe(true);
+    expect(
+      SwMessageSchema.safeParse(envelope("state", { ...state, activeProfileId: "x" })).success,
+    ).toBe(false);
   });
 });

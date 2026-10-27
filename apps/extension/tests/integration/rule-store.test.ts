@@ -33,6 +33,17 @@ afterEach(() => {
 });
 
 describe("RuleStore: lectura (contracts/storage.md)", () => {
+  it("un cambio que llega antes que la lectura inicial no se pisa con el valor viejo", async () => {
+    const store = createRuleStore({
+      storage,
+      onChange: () => void changes++,
+      onNotice: (key) => void notices.push(key),
+    });
+    storage.externalWrite(RULES_KEY, { version: 1, rules: [rule()] });
+    await store.ready;
+    expect(store.all()).toHaveLength(1);
+  });
+
   it("sin datos no hay reglas ni avisos", async () => {
     const store = await open();
     expect(store.all()).toEqual([]);
@@ -344,5 +355,91 @@ describe("RuleStore: importar un hook (006, FR-036, FR-037)", () => {
       code: "no_site",
     });
     expect(stored()).toEqual([]);
+  });
+});
+
+describe("RuleStore: perfiles (007, FR-019, research R13)", () => {
+  const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+  const OTHER = "1c9f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+
+  async function openWithProfiles() {
+    const store = createRuleStore({
+      storage,
+      onChange: () => void changes++,
+      onNotice: (key) => void notices.push(key),
+      profileIdsOf: (site) => new Set(site === SITE ? [P] : [OTHER]),
+    });
+    await store.ready;
+    return store;
+  }
+
+  it("editar una regla sin mandar profileIds conserva sus perfiles e importedFrom", async () => {
+    storage.data.set(RULES_KEY, {
+      version: 1,
+      rules: [rule({ profileIds: [P], importedFrom: "requestly" })],
+    });
+    const store = await openWithProfiles();
+    const withoutProfiles = Object.fromEntries(
+      Object.entries(draft({ name: "Editada" })).filter(([key]) => key !== "profileIds"),
+    );
+    expect(await store.save({ id: RULE_ID, ...withoutProfiles }, SITE)).toEqual({ ok: true });
+    expect(store.all()[0]).toMatchObject({
+      name: "Editada",
+      profileIds: [P],
+      importedFrom: "requestly",
+    });
+  });
+
+  it("rechaza perfiles que no son del sitio de la regla", async () => {
+    const store = await openWithProfiles();
+    expect(await store.save(draft({ profileIds: [OTHER] }), SITE)).toEqual({
+      ok: false,
+      code: "rule_invalid",
+      issues: [{ path: "profileIds", messageKey: "profile_not_found" }],
+    });
+    expect(await store.save(draft({ profileIds: [P] }), SITE)).toEqual({ ok: true });
+  });
+
+  it("setProfiles cambia solo la pertenencia y valida sitio y límite", async () => {
+    storage.data.set(RULES_KEY, { version: 1, rules: [rule()] });
+    const store = await openWithProfiles();
+    expect(await store.setProfiles(RULE_ID, [P])).toEqual({ ok: true });
+    expect(store.all()[0]?.profileIds).toEqual([P]);
+    expect((await store.setProfiles(RULE_ID, [OTHER])).ok).toBe(false);
+    expect(await store.setProfiles(RULE_ID2, [P])).toEqual({ ok: false, code: "unknown_rule" });
+  });
+
+  it("transaction escribe reglas y otras claves en una sola llamada; sin reglas nuevas no las reescribe", async () => {
+    storage.data.set(RULES_KEY, { version: 1, rules: [rule({ profileIds: [P] })] });
+    const store = await openWithProfiles();
+    const set = vi.spyOn(storage, "set");
+    const result = await store.transaction((current) => ({
+      rules: current.map((r) => ({ ...r, profileIds: [] })),
+      extra: { "nahual.profiles.v1": { version: 1, profiles: [], lastActive: {} } },
+    }));
+    expect(result).toEqual({ ok: true });
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(Object.keys(set.mock.calls[0]?.[0] ?? {}).sort()).toEqual([
+      "nahual.profiles.v1",
+      RULES_KEY,
+    ]);
+    expect(store.all()[0]?.profileIds).toEqual([]);
+    const before = changes;
+    await store.transaction(() => ({ extra: { other: 1 } }));
+    expect(Object.keys(set.mock.calls[1]?.[0] ?? {})).toEqual(["other"]);
+    expect(changes).toBe(before);
+  });
+
+  it("si la escritura falla por cuota, ni las reglas ni lo demás cambian", async () => {
+    storage.data.set(RULES_KEY, { version: 1, rules: [rule({ profileIds: [P] })] });
+    const store = await openWithProfiles();
+    storage.failWritesWithQuota();
+    const after = vi.fn();
+    expect(await store.transaction(() => ({ rules: [], extra: { x: 1 }, after }))).toEqual({
+      ok: false,
+      code: "storage_quota",
+    });
+    expect(store.all()).toHaveLength(1);
+    expect(after).not.toHaveBeenCalled();
   });
 });

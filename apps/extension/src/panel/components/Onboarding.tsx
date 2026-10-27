@@ -7,6 +7,8 @@ import { usePanelStore } from "../store/index.ts";
 import { Dialog } from "./common/Dialog.tsx";
 
 const STEPS = ["bar", "data", "local"] as const;
+/** Secciones de Ayuda: 005, 006 y 007 (exportar, perfiles, importar y exportar). */
+const HELP_TOPICS = ["repeater", "hooks", "export", "profiles", "data"] as const;
 
 /**
  * Primer uso (FR-027) y Ayuda (004 FR-019): tres pasos en el `Dialog` común (atrapa el foco,
@@ -53,18 +55,14 @@ export function Onboarding() {
         <p>{t(`onboarding_${current}_body`)}</p>
         {current === "data" ? <p>{t("onboarding_data_mask")}</p> : null}
       </div>
-      {helpOpen ? (
-        <section aria-labelledby={`${bodyId}-repeater`}>
-          <h3 id={`${bodyId}-repeater`}>{t("help_repeater_title")}</h3>
-          <p>{t("help_repeater_body")}</p>
-        </section>
-      ) : null}
-      {helpOpen ? (
-        <section aria-labelledby={`${bodyId}-hooks`}>
-          <h3 id={`${bodyId}-hooks`}>{t("help_hooks_title")}</h3>
-          <p>{t("help_hooks_body")}</p>
-        </section>
-      ) : null}
+      {helpOpen
+        ? HELP_TOPICS.map((topic) => (
+            <section key={topic} aria-labelledby={`${bodyId}-${topic}`}>
+              <h3 id={`${bodyId}-${topic}`}>{t(`help_${topic}_title`)}</h3>
+              <p>{t(`help_${topic}_body`)}</p>
+            </section>
+          ))
+        : null}
       {helpOpen ? (
         <section aria-labelledby={`${bodyId}-shortcuts`}>
           <h3 id={`${bodyId}-shortcuts`}>{t("settings_section_shortcuts")}</h3>

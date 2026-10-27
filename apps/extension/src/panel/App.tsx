@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { t } from "../shared/i18n.ts";
 import { toggleAttach } from "./attach-control.ts";
 import { command } from "./commands.ts";
@@ -6,6 +6,7 @@ import { TabPanel } from "./components/common/Tabs.tsx";
 import { ToastRegion } from "./components/common/Toast.tsx";
 import { CorsReportDialog } from "./components/cors/CorsReport.tsx";
 import { Onboarding } from "./components/Onboarding.tsx";
+import { PROFILE_TRIGGER_ID } from "./components/profiles/ProfileStatus.tsx";
 import { useContinueAll } from "./components/queue/PauseQueue.tsx";
 import { QueueView } from "./components/queue/QueueView.tsx";
 import { RulesView } from "./components/rules/RulesView.tsx";
@@ -22,6 +23,18 @@ import "./theme.css";
 import { applyTheme } from "./theme.ts";
 import { useShortcuts } from "./use-shortcuts.ts";
 import { useSwConnection } from "./use-sw-connection.ts";
+
+// 007: el diálogo y los exportadores, en un chunk aparte que se carga al exportar la primera vez.
+const ExportDialog = lazy(() => import("./components/export/ExportDialog.tsx"));
+
+function ExportDialogSlot() {
+  const opened = usePanelStore((s) => s.exportSeq > 0);
+  return opened ? (
+    <Suspense fallback={null}>
+      <ExportDialog />
+    </Suspense>
+  ) : null;
+}
 
 export function App({ tabId }: { tabId: number | null }) {
   useSwConnection(tabId);
@@ -52,6 +65,15 @@ export function App({ tabId }: { tabId: number | null }) {
       // La sección se monta en el mismo ciclo: se enfoca en el siguiente.
       requestAnimationFrame(() => document.getElementById(SEARCH_INPUT_ID)?.focus());
     },
+    // 007: exporta el request seleccionado en Tráfico (FR-008).
+    exportRequest: () => {
+      const { selectedExchangeId, exchanges, openExport } = usePanelStore.getState();
+      const selected = exchanges.find((e) => e.id === selectedExchangeId);
+      if (selected && !selected.isPreflight)
+        openExport({ kind: "traffic", exchangeIds: [selected.id] });
+    },
+    // 007 (FR-021): abre el menú del perfil activo, como un clic en la barra.
+    openProfileMenu: () => document.getElementById(PROFILE_TRIGGER_ID)?.click(),
   });
 
   if (tabId === null) {
@@ -72,6 +94,7 @@ export function App({ tabId }: { tabId: number | null }) {
           {continueAll.dialog}
           <SettingsDialog />
           <CorsReportDialog />
+          <ExportDialogSlot />
           <Onboarding />
           <ToastRegion />
         </>

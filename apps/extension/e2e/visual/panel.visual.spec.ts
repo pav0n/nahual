@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
@@ -238,5 +238,82 @@ for (const theme of THEMES) {
     await expect(panel.getByRole("dialog", { name: "Import hook" })).toBeVisible();
     await shoot(panel, `${theme}-hook-import`);
     await panel.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  });
+}
+
+// 007: "Exportar como…" (cURL y MSW), barra con perfil activo, menú de perfil, Ajustes ⇒ Perfiles
+// e Importar y exportar, y vista previa de importación (con no soportadas). Se comparan lado a
+// lado con la vista previa de importar un hook (006) y el estado de sesión (004).
+for (const theme of THEMES) {
+  test(`007: exportar, perfiles e importar, tema ${theme}`, async ({
+    context,
+    nahualWorker,
+    extensionId,
+    servers,
+  }) => {
+    test.setTimeout(120_000);
+    const app = await context.newPage();
+    await app.goto(`${servers.appOrigin}/`);
+    const tabId = await tabIdOf(nahualWorker, `${servers.appOrigin}/`);
+    const panel = await openPanel(context, extensionId, tabId);
+    await panel.emulateMedia({ colorScheme: theme });
+    await attachAndReload(panel, app);
+    await callApi(app, "export-items");
+
+    const exportDialog = panel.getByRole("dialog", { name: /^Export/ });
+    await requestRow(panel, "/export/items").last().click({ button: "right" });
+    await panel.getByRole("menuitem", { name: "Export as…" }).click();
+    await expect(exportDialog.locator(".cm-content")).toBeVisible();
+    for (const [format, name] of [
+      ["cURL", "curl"],
+      ["MSW handler", "msw"],
+    ] as const) {
+      await exportDialog.getByRole("tab", { name: format, exact: true }).click();
+      await expect(exportDialog.locator(".cm-content")).toBeVisible();
+      await shoot(panel, `${theme}-export-${name}`);
+    }
+    await panel.keyboard.press("Escape");
+
+    await createRule(panel, { name: "Pausar items", pattern: "*/api/items", stage: "response" });
+    const profiles = await openSettings(panel, "Profiles" as SettingsSection);
+    await profiles.getByLabel("New profile").fill("QA staging");
+    await profiles.getByRole("button", { name: "Create profile" }).click();
+    await expect(panel.getByRole("button", { name: "Delete profile: QA staging" })).toBeVisible();
+    await shoot(panel, `${theme}-settings-profiles`);
+    const data = await openSettings(panel, "Import and export" as SettingsSection);
+    // La sección se carga al abrirla (T069): la captura espera a que esté.
+    await expect(data.getByRole("button", { name: "Download" })).toBeVisible();
+    await shoot(panel, `${theme}-settings-data`);
+
+    const raw = readFileSync(
+      path.join(import.meta.dirname, "../fixtures/requestly-export.json"),
+      "utf8",
+    );
+    await data.locator('input[type="file"][aria-label="Import from Requestly"]').setInputFiles({
+      name: "requestly.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(
+        raw.replaceAll("__API__", servers.apiOrigin).replaceAll("__THIRD__", servers.thirdOrigin),
+      ),
+    });
+    const preview = panel.getByRole("dialog", { name: "Import from Requestly" });
+    await expect(preview.getByRole("button", { name: "Import (turned off)" })).toBeEnabled({
+      timeout: 15_000,
+    });
+    await shoot(panel, `${theme}-import-preview`);
+    await preview.getByRole("button", { name: "Cancel" }).click();
+    await closeSettings(panel);
+
+    const profileButton = panel.getByRole("button", { name: /^This tab's rule profile:/ });
+    await profileButton.click();
+    await expect(panel.getByRole("menu", { name: "Rule profile" })).toBeVisible();
+    await shoot(panel, `${theme}-profile-menu`);
+    await panel
+      .getByRole("menu", { name: "Rule profile" })
+      .getByRole("menuitemcheckbox", { name: /^QA staging/ })
+      .click();
+    await openSection(panel, "Rules");
+    await expect(panel.locator(".rule-item")).toContainText("Not active with QA staging");
+    await shoot(panel, `${theme}-rules-profile`);
   });
 }

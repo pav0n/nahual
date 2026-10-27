@@ -29,7 +29,9 @@ export type ShortcutId =
   | "repeaterSend"
   | "nextChange"
   | "prevChange"
-  | "saveRule";
+  | "saveRule"
+  | "exportRequest"
+  | "openProfileMenu";
 
 export interface Shortcut {
   id: ShortcutId;
@@ -122,6 +124,19 @@ export const SHORTCUTS: readonly Shortcut[] = [
     keys: { code: "KeyS", mod: true },
     descriptionKey: "shortcut_desc_save_rule",
     scope: "rules",
+  },
+  // 007 (research R18): E de Exportar; O de perfil activO (P ya es "Pausar Nahual").
+  {
+    id: "exportRequest",
+    keys: { code: "KeyE", alt: true, shift: true },
+    descriptionKey: "shortcut_desc_export_request",
+    scope: "global",
+  },
+  {
+    id: "openProfileMenu",
+    keys: { code: "KeyO", alt: true, shift: true },
+    descriptionKey: "shortcut_desc_open_profile_menu",
+    scope: "global",
   },
 ];
 

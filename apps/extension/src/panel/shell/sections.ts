@@ -1,3 +1,4 @@
+import { rulesThatApply } from "../profiles/select.ts";
 import type { ComponentType } from "react";
 import { RepeaterView } from "../components/repeater/RepeaterView.tsx";
 import type { PanelStore } from "../store/index.ts";
@@ -24,7 +25,9 @@ export const SECTIONS: SectionEntry[] = [
   {
     id: "rules",
     labelKey: "tab_rules",
-    count: (s) => s.rules.filter((r) => r.enabled && r.site === s.session?.site).length,
+    // 007 (FR-024): con un perfil activo, solo las reglas que actúan.
+    count: (s) =>
+      rulesThatApply(s.rules, s.session?.site ?? null, s.session?.activeProfileId ?? null).length,
     countTone: "neutral",
   },
   { id: "paused", labelKey: "tab_paused", count: (s) => s.paused.length, countTone: "attention" },

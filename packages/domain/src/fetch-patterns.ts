@@ -32,7 +32,13 @@ const interceptedTypes = (type: string) => (type === "Fetch" ? ["Fetch", "XHR"] 
  */
 export function computeFetchPatterns(
   rules: Rule[],
-  context: { site: string | null; globalPaused: boolean; relaxedApiOrigins?: RelaxedOrigin[] },
+  context: {
+    site: string | null;
+    globalPaused: boolean;
+    relaxedApiOrigins?: RelaxedOrigin[];
+    /** 007 (FR-020): con un perfil activo, solo sus reglas piden interceptar. */
+    activeProfileId?: string | null;
+  },
 ): FetchPattern[] {
   if (context.globalPaused) return [];
   const relaxed = context.relaxedApiOrigins ?? [];
@@ -42,7 +48,13 @@ export function computeFetchPatterns(
     const active =
       context.site === null
         ? []
-        : rules.filter((r) => r.enabled && r.site === context.site && r.stage === stage);
+        : rules.filter(
+            (r) =>
+              r.enabled &&
+              r.site === context.site &&
+              r.stage === stage &&
+              (context.activeProfileId == null || r.profileIds.includes(context.activeProfileId)),
+          );
     const patterns: FetchPattern[] = [];
     for (const rule of active) {
       const urlPattern = rule.prefilter.kind === "glob" ? rule.prefilter.pattern : "*";

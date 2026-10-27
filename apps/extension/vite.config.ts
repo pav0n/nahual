@@ -20,10 +20,14 @@ export default defineConfig(({ mode }) => ({
       output: {
         // 006: lo que comparten el panel y el sandbox de hooks (Zod y los paquetes puros) va en
         // un chunk propio; si no, el sandbox importaría el chunk de entrada del panel.
+        // 007: exportadores, formato portable y Requestly viajan con el diálogo que los usa, que
+        // se carga aparte; en `shared` entrarían en la carga inicial (T069).
         manualChunks: (id: string) =>
-          /node_modules\/zod\/|packages\/(domain|hook-runtime)\/|json-p3/.test(id)
-            ? "shared"
-            : undefined,
+          /packages\/domain\/src\/(export|portable|requestly)\/(?!formats\.ts)/.test(id)
+            ? undefined
+            : /node_modules\/zod\/|packages\/(domain|hook-runtime)\/|json-p3/.test(id)
+              ? "shared"
+              : undefined,
       },
     },
   },

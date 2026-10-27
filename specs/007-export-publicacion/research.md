@@ -393,3 +393,93 @@ resueltas a favor de lo decidido en la spec y sus clarificaciones:
 ## Modelo de amenazas (cambios de 007)
 
 Ver la tabla en [plan.md](./plan.md#constitution-check).
+
+## Resultados
+
+### Accesibilidad (T067, SC-012)
+
+`e2e/export-a11y.spec.ts` y `e2e/profiles-a11y.spec.ts`: axe (WCAG 2.2 AA, serios y críticos) y
+sin scroll horizontal en claro y oscuro a 320, 800 y 1280 px, en "Exportar como…" (los seis
+formatos y la confirmación de incluir valores sensibles), Ajustes ⇒ Perfiles e Importar y
+exportar, la vista previa de importación con no soportadas, el menú de perfil y la lista de reglas
+con un perfil activo. Recorridos solo con teclado: `Alt+Shift+E`, flechas entre formatos, copiar
+con Enter; `Alt+Shift+O`, flechas, Enter y Esc devuelve el foco al disparador.
+
+- Encontrado y corregido: el visor de solo lectura con scroll (código largo) fallaba
+  `scrollable-region-focusable`, porque axe no cuenta `contenteditable` como enfocable. El contenido
+  del visor lleva `tabindex="0"`; ya era enfocable y no añade otra parada de Tab.
+- El visor no atrapa Tab (no tiene `indentWithTab`, a diferencia del editor de hooks), así que Tab
+  sale del código y Esc cierra el diálogo, como en el resto del panel.
+
+### Regresión visual (T068)
+
+Bloque nuevo en `e2e/visual/panel.visual.spec.ts`: exportar (cURL y MSW), Ajustes ⇒ Perfiles e
+Importar y exportar, vista previa de importación, menú de perfil y reglas con perfil activo, en
+ambos temas y los tres anchos (36 capturas). Comparación lado a lado con la vista previa de
+importar un hook (006) y el menú de sesión (004): mismo diálogo, mismo visor, mismos tokens y
+densidad, y el selector de perfil usa el mismo disparador y el mismo menú que el estado de sesión.
+
+Cambios aceptados en las capturas de 004–006:
+
+- Barra: "All rules" (selector de perfil) antes del estado de sesión; a 320 px solo el icono.
+- Ajustes: secciones Perfiles e Importar y exportar; Atajos lista `Alt+Shift+E` y `Alt+Shift+O`.
+- Reglas: botón "Assign profiles" (en el panel izquierdo de 1280 px, "Delete" pasa a una segunda
+  fila) y, en el editor, el grupo "Profiles".
+- Detalle del tráfico: botón "Export as…"; a 800 px las tres acciones ocupan dos filas.
+- Desvío corregido de 004: `Menu` calculaba su posición solo al abrirse. Si el panel cambiaba de
+  tamaño con el menú abierto, el menú quedaba fuera de la vista; las capturas de 320 y 800 px del
+  menú de sesión y del menú contextual salían sin menú. Ahora se recoloca con `resize`, junto al
+  disparador.
+- Desvío corregido de 004: los `display: flex` de los paneles de pestañas pisaban el `display: none`
+  de `[hidden]`, así que los paneles ocultos (vacíos) ocupaban sitio. En Ajustes, Atajos caía
+  debajo de la navegación. Regla general `.tabpanel[role="tabpanel"][hidden] { display: none }`.
+- Importar y exportar usa el mismo espaciado vertical que las demás secciones de Ajustes.
+- La tolerancia de `toHaveScreenshot` (`maxDiffPixelRatio: 0.01`) deja pasar cambios pequeños, como
+  "All rules" en la barra, sin actualizar la referencia. Se regeneraron todas con
+  `--update-snapshots=all`.
+- Las capturas de referencia de 006 ya no coincidían con la interfaz de 006 (faltaban "Import
+  hook…" y los botones de exportar e importar del editor). Se regeneraron todas y se revisaron a
+  mano.
+
+### Rendimiento (T069)
+
+- Carga inicial del panel (imports estáticos de `panel.html`, build de producción): 006 = 651 817
+  bytes (medido en `main`), 007 = 665 306 bytes (+2,1 %; límite +10 %). Los exportadores, la
+  colección de Postman, la configuración portable y el conversor de Requestly van en chunks
+  diferidos (`ExportDialog-*`, `portable-*`, `requestly-*`); `tests/dist/bundles.test.ts` lo
+  comprueba con una cadena propia de cada módulo.
+- `e2e/export-perf.spec.ts` (`@perf`), body de ~1 MB (por debajo de `exportInlineBodyBytes`), del
+  clic al código en el visor: cURL 90 ms, fetch 118 ms, Vitest 140 ms, MSW 180 ms, Zod 99 ms,
+  Postman 115 ms (límite 300 ms). Lote de 50 requests a MSW: 217 ms (límite 3 s).
+- `e2e/hooks-perf.spec.ts` (`@perf`), 300 fetch secuenciales con una regla "Solo registrar": p95
+  con todas las reglas (como 006) 2,2 ms; con un perfil activo 1,9 ms (Δ −0,3 ms).
+
+### Estabilidad (T073)
+
+Tres corridas seguidas, sin caché de turbo (`--force`), de `lint`, `typecheck`, `test`, `build`,
+`verify:dist`, `export-smoke`, `e2e` y `e2e:visual`, con `LANG=en_US.UTF-8`: las tres en verde
+(297 s, 304 s y 299 s). Por corrida: domain 571, extension 486, protocol 82, hook-runtime 73,
+export-smoke 5, verify:dist 73, E2E 231 y visual 4. `hooks-failsafe` (SC-012 de 006), que había
+fallado una vez con carga en paralelo, pasó en las tres.
+
+En GitHub (`pav0n/nahual`), CI falló de forma intermitente en `hooks-escape` y FR-019: el
+onboarding tapaba el panel. Causa: los stores de ajustes, reglas y perfiles adoptaban la lectura
+inicial aunque `onChanged` ya hubiera entregado un valor más nuevo, y así se perdía el
+`onboardingSeen` que siembra el fixture. Corregido en los tres stores con una prueba de
+integración por store; CI en verde después.
+
+### Ensayo del release (T040)
+
+2026-10-27, tag `v1.0.0-rc.1` sobre `13661df` en `007-export-publicacion-impl`
+(run 40444905909):
+- Job `build` en verde: comprobaciones, export-smoke, dos builds con el mismo SHA-256, SBOM,
+  atestaciones de procedencia y del SBOM, release marcado como prerelease con `nahual.zip` y
+  `nahual.sbom.cdx.json`.
+- Job `publish` omitido (tag de ensayo), como define contracts/release.md.
+- El mantenedor descargó el zip y verificó el SHA-256 de las notas y la atestación; después se
+  borraron el release y el tag de ensayo.
+
+Prerrequisitos pendientes para `v1.0.0` (`docs/store/release-checklist.md`): environment
+`chrome-web-store` con revisores; primer envío manual en el Developer Dashboard; proyecto de
+Google Cloud con la Chrome Web Store API y cliente OAuth; secretos `CWS_*` con el id del
+elemento; video en YouTube.

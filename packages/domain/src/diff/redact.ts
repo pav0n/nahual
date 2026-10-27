@@ -1,5 +1,11 @@
 import type { DiffResult, HeaderChange, JsonChange } from "../schemas/diff.ts";
-import { MASK, isSensitiveHeader, isSensitiveName } from "../sensitive.ts";
+import {
+  MASK,
+  isSensitiveHeader,
+  isSensitiveName,
+  redactUrlQuery,
+  redactValue,
+} from "../sensitive.ts";
 
 /** Valores reales de lo redactado, para "Mostrar valores sensibles" en ese diff (FR-030). */
 export interface RevealedValues {
@@ -9,8 +15,6 @@ export interface RevealedValues {
   lines: Record<string, string>;
 }
 
-/** Parámetros de query sensibles dentro de un texto (`?token=…`, `&api_key=…`). */
-const QUERY = /([?&])([^=&#\s"']+)=([^&#\s"']*)/g;
 /** Pares `"clave": valor` de JSON dentro de una línea. */
 const PAIR = /("((?:[^"\\]|\\.)*)"\s*:\s*)("(?:[^"\\]|\\.)*"|[^,}\]\s]+)/g;
 /** Línea con forma de header (`Authorization: Bearer …`). */
@@ -26,9 +30,7 @@ export function redactLogText(text: string): string {
 }
 
 function redactText(text: string): string {
-  let out = text.replace(QUERY, (all, sep: string, name: string) =>
-    isSensitiveName(decodeName(name)) ? `${sep}${name}=${MASK}` : all,
-  );
+  let out = redactUrlQuery(text, () => MASK);
   out = out.replace(PAIR, (all, head: string, key: string) =>
     isSensitiveName(key) ? `${head}"${MASK}"` : all,
   );
@@ -36,47 +38,6 @@ function redactText(text: string): string {
   if (header && (isSensitiveHeader(header[2] ?? "") || isSensitiveName(header[2] ?? "")))
     out = `${header[1]}${header[2]}${header[3]}${MASK}`;
   return out;
-}
-
-function decodeName(name: string) {
-  try {
-    return decodeURIComponent(name);
-  } catch {
-    return name;
-  }
-}
-
-/** Copia del valor con lo que cuelga de claves sensibles (o URLs con query sensible) redactado. */
-function redactValue(value: unknown): { value: unknown; changed: boolean } {
-  if (typeof value === "string") {
-    const text = value.replace(QUERY, (all, sep: string, name: string) =>
-      isSensitiveName(decodeName(name)) ? `${sep}${name}=${MASK}` : all,
-    );
-    return { value: text, changed: text !== value };
-  }
-  if (Array.isArray(value)) {
-    let changed = false;
-    const items = value.map((item) => {
-      const r = redactValue(item);
-      changed ||= r.changed;
-      return r.value;
-    });
-    return { value: items, changed };
-  }
-  if (value !== null && typeof value === "object") {
-    let changed = false;
-    const entries = Object.entries(value).map(([key, item]) => {
-      if (isSensitiveName(key)) {
-        changed = true;
-        return [key, MASK];
-      }
-      const r = redactValue(item);
-      changed ||= r.changed;
-      return [key, r.value];
-    });
-    return { value: Object.fromEntries(entries), changed };
-  }
-  return { value, changed: false };
 }
 
 function redactHeader(change: HeaderChange): { change: HeaderChange; sensitive: boolean } {

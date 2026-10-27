@@ -87,3 +87,36 @@ describe("selectChain", () => {
     expect(selectChain([], view(), ctx())).toEqual({ kind: "none" });
   });
 });
+
+describe("perfil activo (007, FR-020)", () => {
+  const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+  const Q = "1c9f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+
+  it("sin perfil activo (null o ausente) se comporta como en 006", () => {
+    const rules = [make(0, { profileIds: [Q] }), make(1)];
+    expect(selectChain(rules, view(), ctx({ activeProfileId: null }))).toMatchObject({
+      kind: "match",
+      rule: { order: 0 },
+    });
+    expect(selectChain(rules, view(), ctx())).toMatchObject({ kind: "match", rule: { order: 0 } });
+  });
+
+  it("con un perfil activo solo participan las reglas de ese perfil", () => {
+    const rules = [make(0, { profileIds: [Q] }), make(1), make(2, { profileIds: [P, Q] })];
+    expect(selectChain(rules, view(), ctx({ activeProfileId: P }))).toMatchObject({
+      kind: "match",
+      rule: { order: 2 },
+    });
+  });
+
+  it("la cadena de hooks también se filtra por perfil", () => {
+    const rules = [hook(0, { profileIds: [P] }), hook(1), hook(2, { profileIds: [P] })];
+    const selection = selectChain(rules, view(), ctx({ activeProfileId: P }));
+    expect(selection.kind).toBe("chain");
+    if (selection.kind === "chain") expect(ids(selection.rules)).toEqual([0, 2]);
+  });
+
+  it("un perfil sin reglas no aplica nada", () => {
+    expect(selectChain([make(0)], view(), ctx({ activeProfileId: P }))).toEqual({ kind: "none" });
+  });
+});

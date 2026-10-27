@@ -1,8 +1,10 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { DIST, DIST_TEST, filesContaining, readJson } from "./helpers.ts";
 
-// Contrato: specs/001-spike-cdp/contracts/manifest.md (+ 005: host opcional; 006: sandbox)
+// Contrato: specs/001-spike-cdp/contracts/manifest.md (+ 005: host opcional; 006: sandbox;
+// 007: versión 1.0.0 e iconos)
 const manifest = readJson(path.join(DIST, "manifest.json")) as Record<string, unknown>;
 
 describe("manifest.json de producción", () => {
@@ -41,9 +43,26 @@ describe("manifest.json de producción", () => {
     expect(manifest.optional_host_permissions).toEqual(["http://*/*", "https://*/*"]);
   });
 
-  it("tiene la versión 0.6.0", () => {
-    expect(manifest.version).toBe("0.6.0");
+  it("tiene la versión 1.0.0 (007)", () => {
+    expect(manifest.version).toBe("1.0.0");
   });
+
+  it("declara los cuatro iconos y están en dist (007)", () => {
+    const icons = { 16: "icon-16.png", 32: "icon-32.png", 48: "icon-48.png", 128: "icon-128.png" };
+    expect(manifest.icons).toEqual(
+      Object.fromEntries(Object.entries(icons).map(([size, file]) => [size, `icons/${file}`])),
+    );
+    for (const file of [...Object.values(icons), "panel-16.png"])
+      expect(existsSync(path.join(DIST, "icons", file))).toBe(true);
+  });
+
+  it.each(["clipboardWrite", "downloads", "unlimitedStorage", "alarms", "declarativeNetRequest"])(
+    "no pide el permiso %s (007, research R15)",
+    (permission) => {
+      const permissions = manifest.permissions as string[];
+      expect(permissions.filter((p) => p.startsWith(permission))).toEqual([]);
+    },
+  );
 
   it.each([
     "host_permissions",

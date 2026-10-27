@@ -26,6 +26,11 @@ export interface SettingsStore {
    * que el dev la guarde de nuevo (falla cerrada, research R12).
    */
   productionListReadable(): boolean;
+  /**
+   * 007 (research R10): valor de `nahual.settings.v1` con otra lista de producción, para escribirlo
+   * en la misma llamada que reglas y perfiles. Lo adopta `onChanged`.
+   */
+  stageProductionOrigins(origins: readonly string[]): unknown;
 }
 
 export type SettingsUpdate = Omit<SettingsPatch, "productionOrigins"> & {
@@ -69,11 +74,16 @@ export function createSettingsStore(options: SettingsStoreOptions): SettingsStor
     }
   };
 
-  const ready = storage.get(SETTINGS_KEY).then((items) => load(items[SETTINGS_KEY]));
+  // Un cambio que llega antes que la lectura inicial es más nuevo que ella: no se pisa.
+  let changedBeforeRead = false;
+  const ready = storage.get(SETTINGS_KEY).then((items) => {
+    if (!changedBeforeRead) load(items[SETTINGS_KEY]);
+  });
 
   storage.onChanged((changes) => {
     const change = changes[SETTINGS_KEY];
     if (!change) return;
+    changedBeforeRead = true;
     load(change.newValue);
     options.onChange(current);
   });
@@ -82,6 +92,10 @@ export function createSettingsStore(options: SettingsStoreOptions): SettingsStor
     ready,
     get: () => current,
     productionListReadable: () => productionReadable,
+    stageProductionOrigins: (origins) => ({
+      version: VERSION,
+      settings: { ...current, productionOrigins: [...origins] },
+    }),
     update(patch) {
       const result = writes.then(async (): Promise<CommandResult> => {
         const candidate: Record<string, unknown> = { ...current, ...patch };

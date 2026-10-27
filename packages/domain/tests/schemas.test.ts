@@ -4,7 +4,7 @@ import { ConditionSchema } from "../src/schemas/condition.ts";
 import { ExchangeUpdateSchema, RULE_RESULTS, RuleEffectSchema } from "../src/schemas/exchange.ts";
 import { LIMITS } from "../src/schemas/limits.ts";
 import { PausedEditSchema, PausedItemViewSchema } from "../src/schemas/paused.ts";
-import { RuleSchema } from "../src/schemas/rule.ts";
+import { RuleDraftSchema, RuleSchema, type Rule } from "../src/schemas/rule.ts";
 import { DEFAULT_SETTINGS, SettingsSchema, parseSettings } from "../src/schemas/settings.ts";
 import {
   CorsDiagnosisSchema,
@@ -522,3 +522,46 @@ describe("schemas CORS (data-model)", () => {
     ).toBe(true);
   });
 });
+
+describe("007: límites, perfiles en la regla e importadas (data-model)", () => {
+  const P1 = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+
+  it("LIMITS trae los límites de exportar, perfiles e importar", () => {
+    expect(LIMITS).toMatchObject({
+      exportBatchMax: 50,
+      exportInlineBodyBytes: 1_048_576,
+      zodDepthMax: 10,
+      profilesPerSiteMax: 50,
+      profileNameMax: 60,
+      profilesPerRuleMax: 20,
+      importFileBytesMax: 10_485_760,
+      importUndoMs: 10_000,
+    });
+  });
+
+  it("una regla guardada por 006 sin los campos nuevos sigue siendo válida, con profileIds []", () => {
+    const parsed = RuleSchema.parse(rule());
+    expect(parsed.profileIds).toEqual([]);
+    expect(parsed.importedFrom).toBeUndefined();
+  });
+
+  it("acepta profileIds (uuid, hasta 20, sin repetir) e importedFrom config|requestly", () => {
+    expect(
+      RuleSchema.parse(rule({ profileIds: [P1], importedFrom: "requestly" })).profileIds,
+    ).toEqual([P1]);
+    expect(RuleDraftSchema.safeParse({ ...draftOf(rule()), profileIds: [P1] }).success).toBe(true);
+    expect(RuleSchema.safeParse(rule({ profileIds: ["x"] })).success).toBe(false);
+    expect(RuleSchema.safeParse(rule({ profileIds: [P1, P1] })).success).toBe(false);
+    const many = Array.from(
+      { length: 21 },
+      (_, i) => `0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a${String(i).padStart(2, "0")}`,
+    );
+    expect(RuleSchema.safeParse(rule({ profileIds: many })).success).toBe(false);
+    expect(RuleSchema.safeParse({ ...rule(), importedFrom: "otro" }).success).toBe(false);
+  });
+});
+
+function draftOf(r: Rule) {
+  const skip = new Set(["id", "site", "order", "createdAt", "updatedAt"]);
+  return Object.fromEntries(Object.entries(r).filter(([key]) => !skip.has(key)));
+}

@@ -34,6 +34,7 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
       version: 1,
       split: { traffic: 0.5, rules: 0.34, paused: 0.34, repeater: 0.5 },
       drawerHeight: 180,
+      exportFormat: "curl",
     });
   });
 
@@ -42,6 +43,7 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
       version: 1,
       split: { traffic: 0.6, rules: 0.3, paused: 0.4, repeater: 0.7 },
       drawerHeight: 300,
+      exportFormat: "msw",
     };
     expect(readUiPrefs(stored(prefs))).toEqual(prefs);
   });
@@ -82,6 +84,7 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
       version: 1,
       split: { traffic: 0.5, rules: 0.34, paused: 0.4, repeater: 0.5 },
       drawerHeight: 300,
+      exportFormat: "curl",
     });
   });
 
@@ -124,6 +127,28 @@ describe("preferencias de interfaz (004, contracts/storage.md, FR-034)", () => {
       expect(setItem).toHaveBeenCalledTimes(1);
       expect(readUiPrefs(storage).split.traffic).toBe(0.6);
       expect(writer.get().split.traffic).toBe(0.6);
+    });
+  });
+});
+
+describe("formato de exportación recordado (007, FR-018)", () => {
+  const base = { version: 1, split: DEFAULT_UI_PREFS.split, drawerHeight: 180 };
+
+  it("las preferencias de 006 sin exportFormat toman curl", () => {
+    expect(readUiPrefs(stored(base)).exportFormat).toBe("curl");
+  });
+
+  it("un formato desconocido vuelve a curl sin perder el resto", () => {
+    const prefs = readUiPrefs(stored({ ...base, drawerHeight: 300, exportFormat: "har" }));
+    expect(prefs.exportFormat).toBe("curl");
+    expect(prefs.drawerHeight).toBe(300);
+  });
+
+  it("se escribe con el resto de campos", () => {
+    const storage = memoryStorage();
+    writeUiPrefs({ ...DEFAULT_UI_PREFS, exportFormat: "postman" }, storage);
+    expect(JSON.parse(storage.data.get(UI_PREFS_KEY) ?? "{}")).toMatchObject({
+      exportFormat: "postman",
     });
   });
 });

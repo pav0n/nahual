@@ -38,6 +38,8 @@ export interface RuleForm {
   stage: Stage;
   conditions: ConditionForm[];
   action: Action;
+  /** 007 (FR-019, FR-023): perfiles del sitio a los que pertenece. */
+  profileIds: string[];
 }
 
 const DEFAULT_OPS: Record<ConditionKind, string> = {
@@ -76,6 +78,7 @@ export function emptyRuleForm(): RuleForm {
     stage: "response",
     conditions: [],
     action: { kind: "pause" },
+    profileIds: [],
   };
 }
 
@@ -123,6 +126,7 @@ export function toRulePayload(form: RuleForm): Record<string, unknown> {
     stage: form.stage,
     conditions: form.conditions.map(toCondition),
     action: form.action,
+    profileIds: form.profileIds,
   };
   // 006 (FR-016): un hook con errores se guarda desactivado hasta corregirlos.
   if (form.action.kind === "hook" && !form.action.check.ok) draft.enabled = false;
@@ -168,6 +172,7 @@ export function toRuleForm(source: RuleDraft | Rule, keepId: boolean): RuleForm 
     stage: source.stage,
     conditions: source.conditions.map(fromCondition),
     action: source.action,
+    profileIds: [...source.profileIds],
   };
 }
 

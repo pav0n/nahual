@@ -49,8 +49,25 @@ describe("inventario de atajos (004, research R12, FR-030)", () => {
         "Ctrl/Cmd+S",
         "J",
         "K",
+        // 007 (research R18): exportar y selector de perfil.
+        "Alt+Shift+E",
+        "Alt+Shift+O",
       ].sort(),
     );
+  });
+
+  it("007: exportar y abrir el selector de perfil son globales", () => {
+    const byId = Object.fromEntries(SHORTCUTS.map((s) => [s.id, s]));
+    expect(byId.exportRequest).toMatchObject({
+      keys: { code: "KeyE", alt: true, shift: true },
+      scope: "global",
+      descriptionKey: "shortcut_desc_export_request",
+    });
+    expect(byId.openProfileMenu).toMatchObject({
+      keys: { code: "KeyO", alt: true, shift: true },
+      scope: "global",
+      descriptionKey: "shortcut_desc_open_profile_menu",
+    });
   });
 
   it("no repite combinaciones ni ids", () => {

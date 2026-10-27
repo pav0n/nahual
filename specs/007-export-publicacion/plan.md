@@ -277,3 +277,30 @@ extensión, slices del store, componentes por área.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
 | Workspace `tooling/export-smoke` con `msw` como devDependency | SC-001..003 exigen ejecutar de verdad el test Vitest, los handlers MSW y el schema Zod exportados con las versiones objetivo | Probar MSW dentro de `packages/domain` mezcla una dependencia de terceros con el dominio y la haría entrar en su cobertura y auditoría; no ejecutarlo deja los criterios sin verificar |
+
+## Revisión de implementación
+
+Revisión de seguridad del diff de 007 contra el modelo de amenazas (T071, 2026-10-26).
+
+| Amenaza | Resultado | Evidencia |
+|---|---|---|
+| Fuga de credenciales en las 6 salidas | **Pasa** | Redacción compartida (`sensitive.ts`) en cURL, fetch, Vitest, MSW, Zod y Postman; `e2e/export.spec.ts` busca los cuatro secretos del fixture en las seis salidas; incluir valores pide confirmación y vale para una exportación |
+| Fuga en la configuración portable | **Pasa, con un residuo** | Condiciones de header y query, headers y body JSON de los mocks salen como `<nahual:redacted>`; relajaciones nunca (`e2e/import-config.spec.ts`, `storage-privacy`). Residuo: el código de un hook viaja tal cual; si el dev escribió un secreto literal en un hook, sale en el archivo. Es código del dev, no un valor capturado; lo dice la ayuda ("con los valores sensibles redactados" se refiere a lo capturado) |
+| **Encontrado y corregido:** inyección en comentarios del código exportado | **Corregido** | El `name` y el `filename` de una parte multipart (los controla la página) iban dentro de comentarios `#` de cURL y `//` de fetch. Un salto de línea, o U+2028/U+2029 en JS, sacaba el resto del valor del comentario como código que el dev copia y ejecuta. `commentText()` convierte los terminadores en espacios en todo comentario con datos capturados (cURL, fetch, MSW, Zod). `tests/export/injection.test.ts` |
+| **Encontrado y corregido:** lectura de variables de entorno inyectada en el test Vitest | **Corregido** | `jsString` convierte `env:NOMBRE` en `env("NOMBRE")`. Un header capturado con ese texto hacía que el test exportado leyera una variable del dev y la enviara a la API. `exportAs` cambia U+E000 y U+E001 de lo capturado por U+FFFD antes de redactar para Vitest. Misma prueba |
+| Hook o configuración importados con código malicioso | **Pasa** | El SW vuelve a validar con `parseConfigObject` (no confía en el panel); `applyImport` deja cada regla `enabled: false` y cada hook `imported: true` sin permisos; el `check` del panel vale solo si el hash coincide; vista previa como texto en CodeMirror; límites sumados; deshacer 10 s |
+| Requestly inyecta código en un hook generado | **Corregido (residuo de 1ª versión)** | Valores con `JSON.stringify`. `JSON.stringify` no escapa U+2028/U+2029, que terminaban la línea `// Imported from Requestly…` del origen; ahora se escapan. Pruebas de inyección con `*/`, comillas, `${}`, saltos de línea, U+2028 y U+2029 |
+| Importación que relaja protecciones del navegador de destino | **Pasa** | Solo reglas, hooks, perfiles y orígenes de producción (que solo se añaden); sin relajaciones, tiempos ni adjuntar automático; los hooks llegan sin "puede cambiar el destino" |
+| Perfil que activa reglas sin que el dev lo note | **Pasa** | Perfil activo siempre en la barra con texto (icono solo a ≤ 480 px, con nombre accesible); solo cambia por acción del dev; importar no cambia el perfil activo; "Pausar Nahual" corta antes que cualquier perfil (`evaluate.ts`) |
+| Paquete publicado distinto del código | **Pendiente de ensayo** | Workflow con build reproducible, SBOM CycloneDX 1.6 y atestación, acciones por SHA y `actionlint`. No se ha ensayado en GitHub (T040): `origin` es un repositorio local |
+| Dependencia comprometida | **Pasa** | Cero dependencias nuevas en el producto (`git diff main` de los `package.json`: solo subpaths de `exports`); `msw` solo en `tooling/export-smoke` |
+| XSS en el panel | **Pasa** | Sin `innerHTML` ni `dangerouslySetInnerHTML` en `src/panel`; código exportado e importado como texto en CodeMirror; nombres de reglas y motivos como texto de React |
+| Residuo aceptado: variables de Postman | **Documentado** | Postman sustituye `{{nombre}}` en cualquier valor. Un valor capturado con `{{api_key}}` se enviaría con la variable del entorno del dev si existe. Postman no tiene forma de escapar `{{`, y cambiar el valor capturado rompería la reproducción. Se acepta: hay que ejecutar la colección con un entorno elegido a propósito, como cualquier colección importada |
+
+**Chunks reales** (build de producción; bytes / gzip): carga inicial 665 306 bytes (+2,1 % sobre
+006); `ExportDialog` (los seis exportadores) 26 040 / 9 384; `CodeView` 664 / 441; `portable`
+6 139 / 2 353; `requestly` 7 344 / 2 962; `DataSettings` (con la vista previa de importación)
+9 710 / 3 243; `ProfilesSettings` 2 716 / 1 150.
+
+**Cobertura de `packages/domain`:** 95,19 % de sentencias, 87,26 % de ramas, 97,2 % de funciones y
+97,14 % de líneas (571 pruebas).

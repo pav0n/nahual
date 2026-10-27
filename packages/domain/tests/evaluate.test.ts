@@ -180,3 +180,26 @@ describe("selectRule: prioridad (FR-016)", () => {
     expect(pick([needsBody, cheap])).toMatchObject({ kind: "match", rule: { id: RULE_ID2 } });
   });
 });
+
+describe("selectRule con perfil activo (007, FR-020)", () => {
+  it("descarta las reglas que no pertenecen al perfil activo", () => {
+    const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+    const view = {
+      method: "GET",
+      url: "https://api.test/api/items",
+      resourceType: "Fetch",
+      requestHeaders: [],
+      requestBody: { kind: "none" as const },
+      status: 200,
+      responseHeaders: [],
+      responseBody: { kind: "none" as const },
+    };
+    const context = { site: SITE, stage: "response" as const, globalPaused: false };
+    expect(selectRule([rule()], view, { ...context, activeProfileId: P })).toEqual({
+      kind: "none",
+    });
+    expect(
+      selectRule([rule({ profileIds: [P] })], view, { ...context, activeProfileId: P }).kind,
+    ).toBe("match");
+  });
+});

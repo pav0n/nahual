@@ -7,6 +7,8 @@ const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 export async function expectNoSeriousViolations(panel: Page, label: string) {
   const { violations } = await new AxeBuilder({ page: panel }).withTags(WCAG).analyze();
   const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  if (process.env.AXE_DEBUG)
+    for (const v of serious) console.log(label, v.id, JSON.stringify(v.nodes.map((n) => n.target)));
   expect(serious.map((v) => `${label}: ${v.id} (${v.nodes.length})`)).toEqual([]);
 }
 

@@ -35,7 +35,16 @@ export interface SelectContext {
   site: string | null;
   stage: Stage;
   globalPaused: boolean;
+  /** 007 (FR-020): perfil activo de la pestaña; `null` o ausente = "Todas las reglas". */
+  activeProfileId?: string | null;
 }
+
+/** Reglas que pueden actuar: activas, del sitio y la etapa, y del perfil activo si lo hay. */
+const candidate = (context: SelectContext) => (r: Rule) =>
+  r.enabled &&
+  r.site === context.site &&
+  r.stage === context.stage &&
+  (context.activeProfileId == null || r.profileIds.includes(context.activeProfileId));
 
 /** 006 (research R8): la regla de 002 o la cadena de reglas con hook. */
 export type ChainSelection =
@@ -188,9 +197,7 @@ function evaluateRule(rule: Rule, view: ExchangeView, stage: Stage): Outcome {
  */
 export function selectRule(rules: Rule[], view: ExchangeView, context: SelectContext): Selection {
   if (context.globalPaused || context.site === null) return { kind: "none" };
-  const candidates = rules
-    .filter((r) => r.enabled && r.site === context.site && r.stage === context.stage)
-    .sort((a, b) => a.order - b.order);
+  const candidates = rules.filter(candidate(context)).sort((a, b) => a.order - b.order);
   let unevaluable: { rule: Rule; reason: UnevaluableReason } | undefined;
   for (const rule of candidates) {
     const outcome = evaluateRule(rule, view, context.stage);
@@ -212,9 +219,7 @@ export function selectChain(
   context: SelectContext,
 ): ChainSelection {
   if (context.globalPaused || context.site === null) return { kind: "none" };
-  const candidates = rules
-    .filter((r) => r.enabled && r.site === context.site && r.stage === context.stage)
-    .sort((a, b) => a.order - b.order);
+  const candidates = rules.filter(candidate(context)).sort((a, b) => a.order - b.order);
   let unevaluable: { rule: Rule; reason: UnevaluableReason } | undefined;
   let chain: Rule[] | null = null;
   for (const rule of candidates) {

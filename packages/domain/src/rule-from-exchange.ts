@@ -75,5 +75,6 @@ export function ruleDraftFromExchange(exchange: CapturedExchange): RuleDraft {
     stage: stageFor(exchange),
     conditions: [],
     action: { kind: "pause" },
+    profileIds: [],
   };
 }

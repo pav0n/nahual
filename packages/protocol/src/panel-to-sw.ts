@@ -106,7 +106,35 @@ export const HOOK_RESULTS = [
   "hook_skipped_suspended",
 ] as const;
 
+const ProfileName = z.string().max(LIMITS.profileNameMax * 2);
+const ProfileIds = z
+  .array(z.uuid())
+  .max(LIMITS.profilesPerRuleMax)
+  .refine((ids) => new Set(ids).size === ids.length);
+
 export const PanelMessageSchema = z.discriminatedUnion("type", [
+  // 007: perfiles (contracts/panel-protocol.md). El nombre se valida en el SW con ProfileSchema.
+  message("saveProfile", z.strictObject({ id: z.uuid().optional(), name: ProfileName })),
+  message("duplicateProfile", z.strictObject({ id: z.uuid(), name: ProfileName })),
+  message("deleteProfile", z.strictObject({ id: z.uuid() })),
+  message("restoreProfile", z.strictObject({ id: z.uuid() })),
+  message("setActiveProfile", z.strictObject({ profileId: z.uuid().nullable() })),
+  message("setRuleProfiles", z.strictObject({ ruleId: RuleId, profileIds: ProfileIds })),
+  // 007: la configuración llega sin validar aquí; el SW repite parseConfig y los límites (R10).
+  message(
+    "importConfig",
+    z.strictObject({
+      /** Lo genera el panel: identifica la importación para deshacerla (10 s). */
+      importId: z.uuid(),
+      config: Unvalidated,
+      source: z.enum(["config", "requestly"]),
+      hookChecks: z.record(
+        z.uuid(),
+        z.strictObject({ hash: z.string().regex(/^[0-9a-f]{1,32}$/), ok: z.boolean() }),
+      ),
+    }),
+  ),
+  message("undoImport", z.strictObject({ importId: z.uuid() })),
   // 006: el panel ejecutó la cadena; el SW vuelve a validar antes de aplicar.
   message(
     "hookResult",

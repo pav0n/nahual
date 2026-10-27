@@ -41,6 +41,8 @@ export interface RuleEngineOptions {
   rules(): Rule[];
   settings(): Settings;
   siteOf(tabId: number): string | null;
+  /** 007 (FR-020): perfil activo de la pestaña; sin él, "Todas las reglas". */
+  activeProfileOf?(tabId: number): string | null;
   capture: {
     exchangeIdOf(tabId: number, networkId: string): string | null;
     resourceTypeOf(tabId: number, networkId: string): string | null;
@@ -337,6 +339,7 @@ export function createRuleEngine(options: RuleEngineOptions): RuleEngine {
       site: options.siteOf(tabId),
       stage,
       globalPaused: options.settings().globalPaused,
+      activeProfileId: options.activeProfileOf?.(tabId) ?? null,
     };
     let selection = selectChain(options.rules(), view(), context);
     if (selection.kind === "needsBody") {

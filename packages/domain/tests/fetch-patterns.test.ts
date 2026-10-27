@@ -145,3 +145,19 @@ describe("computeFetchPatterns con relajaciones CORS (003, research R11)", () =>
     ).toEqual([{ urlPattern: `${api}/*`, requestStage: "Response" }]);
   });
 });
+
+describe("computeFetchPatterns con perfil activo (007, FR-020, principio VI)", () => {
+  const P = "0b8f8a52-4a0c-4d0e-9f3a-6c1d2e3f4a5b";
+  it("solo intercepta lo que piden las reglas del perfil activo", () => {
+    const out = rule({ prefilter: { kind: "glob", pattern: "*/fuera/*" } });
+    const inside = rule({
+      id: RULE_ID2,
+      profileIds: [P],
+      prefilter: { kind: "glob", pattern: "*/dentro/*" },
+    });
+    expect(
+      computeFetchPatterns([out, inside], { ...ctx, activeProfileId: P }).map((p) => p.urlPattern),
+    ).toEqual(["*/dentro/*"]);
+    expect(computeFetchPatterns([out, inside], { ...ctx, activeProfileId: null })).toHaveLength(2);
+  });
+});

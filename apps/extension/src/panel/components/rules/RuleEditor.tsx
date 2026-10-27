@@ -8,6 +8,8 @@ import { Field, issueAt } from "../common/Field.tsx";
 import { ConditionEditor } from "./ConditionEditor.tsx";
 import { RULE_EDITOR_SLOTS } from "./editor-slots.ts";
 import { conditionKindsFor, emptyCondition, toRulePayload, type RuleForm } from "./rule-form.ts";
+import { ProfilePicker } from "../profiles/ProfilePicker.tsx";
+import { usePanelStore } from "../../store/index.ts";
 
 const TYPES: ResourceType[] = [
   "Fetch",
@@ -67,6 +69,10 @@ export function RuleEditor({
   }, [form, initial, onDirtyChange]);
 
   const set = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
+  // 007: los perfiles son del sitio de la regla (la de otro sitio conserva el suyo).
+  const ruleSite = usePanelStore(
+    (s) => s.rules.find((r) => r.id === form.id)?.site ?? s.session?.site ?? null,
+  );
 
   const save = async () => {
     setSaving(true);
@@ -175,6 +181,12 @@ export function RuleEditor({
             </label>
           ))}
         </fieldset>
+
+        <ProfilePicker
+          site={ruleSite}
+          selected={form.profileIds}
+          onChange={(profileIds) => set({ profileIds })}
+        />
 
         <Field label={t("rule_stage")} hint={t(`rule_stage_${form.stage}_hint`)}>
           {(props) => (

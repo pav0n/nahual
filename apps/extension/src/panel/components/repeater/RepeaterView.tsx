@@ -8,6 +8,7 @@ import { EmptyState } from "../common/EmptyState.tsx";
 import { SplitPane } from "../common/SplitPane.tsx";
 import { TabPanel } from "../common/Tabs.tsx";
 import type { SideRef } from "../../repeater/compare.ts";
+import { IconButton } from "../common/IconButton.tsx";
 import { Toolbar } from "../common/Toolbar.tsx";
 import { ModeSwitch } from "./ModeSwitch.tsx";
 import { RepeaterOutput, type OutputTabId } from "./RepeaterOutput.tsx";
@@ -97,6 +98,13 @@ export function RepeaterView() {
             onChange={(mode) => store().setRepeaterMode(tab.id, mode)}
           />
           <span className="toolbar-spacer" />
+          <IconButton
+            icon="export"
+            label={t("action_export_as")}
+            onClick={() =>
+              store().openExport({ kind: "repeater", tabId: tab.id, sendId: shown?.sendId ?? null })
+            }
+          />
           {pending && latest ? (
             <button type="button" onClick={() => cancelRepeaterSend(latest.sendId)}>
               {t("action_cancel")}

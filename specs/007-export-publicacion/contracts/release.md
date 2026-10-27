@@ -11,7 +11,8 @@ comentario). `permissions` mínimos por job.
 
 1. `actions/checkout`, `actions/setup-node` con `.nvmrc`, `corepack enable`,
    `pnpm install --frozen-lockfile`.
-2. Comprobar que `apps/extension/package.json` `version` == tag sin `v`; si no, fallar.
+2. Comprobar que `apps/extension/package.json` `version` == tag sin `v` ni sufijo de ensayo
+   (`v1.0.0-rc.1` ⇒ `1.0.0`: el manifest solo admite números); si no, fallar.
 3. `pnpm lint && pnpm typecheck && pnpm test && pnpm audit --prod --audit-level high &&
    node scripts/check-licenses.mjs && pnpm verify:dist && pnpm --filter @nahual/export-smoke test`.
 4. Build reproducible: dos `pnpm build --force` + `scripts/build-zip.mjs`, mismo SHA-256 o fallo
@@ -23,18 +24,20 @@ comentario). `permissions` mínimos por job.
    `actions/attest-sbom` con el SBOM, fijada por SHA de su última mayor estable comprobada al
    implementar; respaldo: `actions/attest` con `predicate-type` `https://cyclonedx.org/bom`.
 7. `gh release create "$TAG" nahual.zip nahual.sbom.cdx.json --notes` con el SHA-256 del zip,
-   el comando de verificación y el enlace a `docs/store/`.
+   el comando de verificación y el enlace a `docs/store/`; `--prerelease` si el tag lleva `-`.
 
-### Job `publish` (`needs: build`, `environment: chrome-web-store`, `permissions: contents: read`)
+### Job `publish` (`needs: build`, `environment: chrome-web-store`, `permissions: contents: read`; se omite con tags de ensayo `v*-*`)
 
 El environment tiene **revisores obligatorios** (el mantenedor) y es el único con los secretos
 `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`, `CWS_PUBLISHER_ID`, `CWS_EXTENSION_ID`.
 
 1. Descargar `nahual.zip` del release; comprobar el SHA-256 contra el del job `build`;
-   `gh attestation verify nahual.zip --repo <owner>/nahual`.
+   `gh attestation verify nahual.zip --repo pav0n/nahual`.
 2. Token: `POST https://oauth2.googleapis.com/token` con `grant_type=refresh_token`.
 3. Subir: `POST https://chromewebstore.googleapis.com/upload/v2/publishers/$PUBLISHER/items/$ITEM:upload`
-   con `Authorization: Bearer` y el zip; esperar el estado de subida si es asíncrono.
+   con `Authorization: Bearer` y el zip; si `uploadState` es `IN_PROGRESS`, consultar
+   `GET …/v2/publishers/$PUBLISHER/items/$ITEM:fetchStatus` (`lastAsyncUploadState`) hasta
+   5 minutos; publicar solo con `SUCCEEDED`.
 4. Publicar: `POST https://chromewebstore.googleapis.com/v2/publishers/$PUBLISHER/items/$ITEM:publish`
    (visibilidad pública, la del elemento; clarificación).
 5. Registrar en el resumen del job la versión enviada y el estado (`PENDING_REVIEW`).
@@ -77,4 +80,4 @@ verificar SHA-256 y atestación, descomprimir, cargar) y "Verificar la reproduci
 - `tests/dist/sbom.test.ts`; `tests/dist/manifest.test.ts` (1.0.0, iconos).
 - El workflow se valida con `actionlint` en CI (binario descargado por SHA en el job, sin
   dependencia npm) y con un tag de prueba `v1.0.0-rc.1` en un fork o rama antes del release real
-  (el job `publish` se cancela en la aprobación).
+  (prerelease; el job `publish` no corre).

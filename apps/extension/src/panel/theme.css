@@ -157,7 +157,8 @@ button:hover:not(:disabled) {
   background: var(--nh-hover);
 }
 
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
   cursor: default;
   opacity: 0.6;
 }
@@ -273,6 +274,13 @@ ul.plain {
 .app > main > [role="tabpanel"] {
   height: 100%;
   min-width: 0;
+}
+
+/* Los `display: flex` de los paneles (Ajustes, detalle, repeater) pisaban el `display: none` de
+   `[hidden]`: los paneles ocultos, vacíos, ocupaban sitio (en Ajustes, Atajos caía debajo de la
+   navegación). Más específico que todos ellos. */
+.tabpanel[role="tabpanel"][hidden] {
+  display: none;
 }
 
 .topbar {
@@ -1297,6 +1305,18 @@ dialog.settings {
   width: min(560px, calc(100vw - 16px));
 }
 
+/* 007: Importar y exportar con el mismo ritmo que el resto de secciones (gap del panel). */
+.data-settings,
+.data-settings > section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-settings {
+  gap: 16px;
+}
+
 .settings-layout {
   display: flex;
   flex-wrap: wrap;
@@ -1977,4 +1997,76 @@ tr[data-result="hook_failed"] .hook-result {
 .import-error {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* 007: "Exportar como…" reutiliza el diálogo de importar hook y el editor de Sources. */
+.export-panel {
+  min-width: 0;
+}
+
+.export-code .cm-editor {
+  max-height: 50vh;
+}
+
+.export-code .cm-scroller {
+  overflow: auto;
+}
+
+.export-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.export-omitted ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.export-actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.export-actions button .icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+
+/* 007: perfil activo en la barra, con el patrón del estado de sesión. */
+.profile-trigger[data-active="true"] .icon {
+  color: var(--nh-accent);
+}
+
+.profile-trigger .profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .profile-trigger .profile-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* 007: reglas que no actúan con el perfil activo (texto e icono, no solo color). */
+.rule-inactive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+}
+
+.rule-inactive .icon {
+  width: 16px;
+  height: 16px;
 }

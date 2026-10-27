@@ -2266,5 +2266,380 @@
   },
   "hook_download_types": {
     "message": "Descargar tipos"
+  },
+  "shortcut_desc_export_request": {
+    "message": "Exportar el request seleccionado como código"
+  },
+  "shortcut_desc_open_profile_menu": {
+    "message": "Elegir el perfil de reglas de esta pestaña"
+  },
+  "action_export_as": {
+    "message": "Exportar como…"
+  },
+  "export_dialog_title": {
+    "message": "Exportar $1"
+  },
+  "export_dialog_title_many": {
+    "message": "Exportar $1 requests"
+  },
+  "export_formats_label": {
+    "message": "Formato"
+  },
+  "export_format_curl": {
+    "message": "cURL"
+  },
+  "export_format_fetch": {
+    "message": "fetch"
+  },
+  "export_format_vitest": {
+    "message": "Test Vitest"
+  },
+  "export_format_msw": {
+    "message": "Handler MSW"
+  },
+  "export_format_zod": {
+    "message": "Schema Zod"
+  },
+  "export_format_postman": {
+    "message": "Postman"
+  },
+  "export_copy": {
+    "message": "Copiar"
+  },
+  "export_download": {
+    "message": "Descargar"
+  },
+  "export_copied": {
+    "message": "Código copiado"
+  },
+  "export_copy_manual": {
+    "message": "No se pudo copiar: selecciona el código y cópialo a mano"
+  },
+  "export_downloaded": {
+    "message": "Descargado $1"
+  },
+  "export_redacted_count": {
+    "message": "$1 valores sensibles redactados"
+  },
+  "export_redacted_none": {
+    "message": "Sin valores sensibles"
+  },
+  "export_omitted": {
+    "message": "$1 omitidos"
+  },
+  "export_merged": {
+    "message": "$1 fusionados por endpoint"
+  },
+  "export_include_sensitive": {
+    "message": "Incluir valores sensibles"
+  },
+  "export_include_sensitive_confirm_title": {
+    "message": "¿Incluir valores sensibles?"
+  },
+  "export_include_sensitive_confirm_body": {
+    "message": "El código tendrá credenciales reales (cookies, tokens, contraseñas). Quien lo reciba podrá usarlas. Vale solo para esta exportación."
+  },
+  "export_include_sensitive_confirm_ok": {
+    "message": "Incluir"
+  },
+  "export_format_needs_response": {
+    "message": "Necesita una respuesta capturada"
+  },
+  "export_format_needs_json": {
+    "message": "Necesita una respuesta JSON"
+  },
+  "export_loading_bodies": {
+    "message": "Cargando bodies $1 de $2…"
+  },
+  "export_generating": {
+    "message": "Generando…"
+  },
+  "export_nothing": {
+    "message": "No hay nada que exportar"
+  },
+  "export_nothing_hint": {
+    "message": "Los requests marcados no tienen respuesta o son preflight."
+  },
+  "export_reason_no_response": {
+    "message": "sin respuesta"
+  },
+  "export_reason_preflight": {
+    "message": "preflight"
+  },
+  "export_reason_not_json": {
+    "message": "la respuesta no es JSON"
+  },
+  "export_reason_body_unavailable": {
+    "message": "body no disponible"
+  },
+  "export_non_json_note": {
+    "message": "Los bodies que no son JSON no se redactan."
+  },
+  "batch_export_msw": {
+    "message": "Exportar handlers MSW"
+  },
+  "batch_export_zod": {
+    "message": "Exportar schema Zod"
+  },
+  "batch_export_postman": {
+    "message": "Exportar colección de Postman"
+  },
+  "batch_export_zod_same_endpoint": {
+    "message": "Marca solo requests del mismo método y ruta"
+  },
+  "profile_status_all": {
+    "message": "Todas las reglas"
+  },
+  "profile_status_named": {
+    "message": "Perfil: $1"
+  },
+  "profile_status_label": {
+    "message": "Perfil de reglas de esta pestaña"
+  },
+  "profile_menu_label": {
+    "message": "Perfil de reglas"
+  },
+  "profile_menu_manage": {
+    "message": "Gestionar perfiles…"
+  },
+  "profile_menu_empty_suffix": {
+    "message": "$1 (sin reglas)"
+  },
+  "profile_settings_title": {
+    "message": "Perfiles"
+  },
+  "profile_settings_intro": {
+    "message": "Agrupa reglas de este sitio y activa un grupo por pestaña. \"Todas las reglas\" aplica todas, como siempre."
+  },
+  "profile_other_sites": {
+    "message": "Perfiles de otros sitios ($1)"
+  },
+  "profile_name": {
+    "message": "Nombre del perfil"
+  },
+  "profile_create": {
+    "message": "Crear perfil"
+  },
+  "profile_new_name": {
+    "message": "Perfil nuevo"
+  },
+  "profile_duplicate": {
+    "message": "Duplicar perfil"
+  },
+  "profile_copy_name": {
+    "message": "$1 (copia)"
+  },
+  "profile_delete": {
+    "message": "Eliminar perfil"
+  },
+  "profile_deleted_undo": {
+    "message": "Perfil «$1» eliminado"
+  },
+  "profile_empty_state": {
+    "message": "Sin perfiles"
+  },
+  "profile_empty_state_hint": {
+    "message": "Crea un perfil para activar un grupo de reglas con un clic."
+  },
+  "profile_active_empty": {
+    "message": "Este perfil no tiene reglas"
+  },
+  "profile_empty_add_selected": {
+    "message": "Usa \"Asignar perfiles\" en una regla para añadirla a este perfil."
+  },
+  "profile_rule_inactive": {
+    "message": "No actúa con $1"
+  },
+  "profile_rule_profiles": {
+    "message": "Perfiles"
+  },
+  "profile_rule_assign": {
+    "message": "Asignar perfiles"
+  },
+  "profile_rule_count": {
+    "message": "$1 reglas"
+  },
+  "profile_error_required": {
+    "message": "Escribe un nombre"
+  },
+  "profile_error_too_long": {
+    "message": "Máximo 60 caracteres"
+  },
+  "profile_error_duplicate": {
+    "message": "Ya hay un perfil con ese nombre en este sitio"
+  },
+  "profile_error_limit": {
+    "message": "Máximo 50 perfiles por sitio"
+  },
+  "profile_not_found": {
+    "message": "El perfil ya no existe"
+  },
+  "notice_profile_deleted_active": {
+    "message": "El perfil activo se eliminó. Esta pestaña usa todas las reglas; elige otro perfil si lo necesitas."
+  },
+  "notice_profiles_version": {
+    "message": "Los perfiles se guardaron con una versión más nueva de Nahual y no se cargaron. Actualiza Nahual."
+  },
+  "config_section_title": {
+    "message": "Importar y exportar"
+  },
+  "config_export_title": {
+    "message": "Exportar configuración"
+  },
+  "config_export_summary": {
+    "message": "$1 reglas en $2 sitios · $3 hooks · $4 perfiles · $5 orígenes de producción"
+  },
+  "config_export_cors_note": {
+    "message": "Las relajaciones CORS nunca se exportan."
+  },
+  "config_download": {
+    "message": "Descargar"
+  },
+  "config_import": {
+    "message": "Importar configuración"
+  },
+  "config_import_hint": {
+    "message": "Lo importado se añade desactivado; nada se reemplaza."
+  },
+  "config_import_preview_title": {
+    "message": "Importar configuración"
+  },
+  "config_import_confirm": {
+    "message": "Importar (desactivado)"
+  },
+  "config_imported_undo": {
+    "message": "Importadas $1 reglas y $2 perfiles"
+  },
+  "config_origin_new": {
+    "message": "nuevo"
+  },
+  "config_origin_existing": {
+    "message": "ya presente"
+  },
+  "config_profile_renamed": {
+    "message": "se renombrará a «$1»"
+  },
+  "config_rule_redacted": {
+    "message": "Tiene valores redactados: complétalos antes de activarla"
+  },
+  "config_migrated": {
+    "message": "Archivo de una versión anterior, convertido"
+  },
+  "rule_error_redacted_value": {
+    "message": "Completa los valores redactados antes de activar la regla"
+  },
+  "config_error_too_large": {
+    "message": "El archivo pasa de 10 MB. Exporta menos reglas o divide el archivo."
+  },
+  "config_error_not_json": {
+    "message": "El archivo no es JSON. Elige un archivo exportado por Nahual."
+  },
+  "config_error_not_nahual": {
+    "message": "No es una configuración de Nahual. Para reglas de Requestly, usa \"Importar de Requestly\"."
+  },
+  "config_error_newer_version": {
+    "message": "El archivo es de una versión más nueva de Nahual. Actualiza Nahual e inténtalo otra vez."
+  },
+  "config_error_invalid": {
+    "message": "El archivo no es válido en $1. Expórtalo de nuevo desde Nahual."
+  },
+  "config_error_limit": {
+    "message": "Se superaría un límite: $1 pasaría de $2 a $3 (máximo $4). Borra algo antes de importar."
+  },
+  "notice_import_undone": {
+    "message": "Se deshizo una importación desde otra pestaña."
+  },
+  "undo_expired": {
+    "message": "Ya no se puede deshacer"
+  },
+  "requestly_import": {
+    "message": "Importar de Requestly"
+  },
+  "requestly_unsupported_title": {
+    "message": "No soportadas ($1)"
+  },
+  "requestly_error_format": {
+    "message": "No es un export de reglas de Requestly (se espera un array JSON con reglas)."
+  },
+  "requestly_unsupported_rule_type": {
+    "message": "tipo de regla sin equivalente en Nahual"
+  },
+  "requestly_unsupported_response_code": {
+    "message": "respuesta generada con código"
+  },
+  "requestly_unsupported_redirect_destination": {
+    "message": "redirección a un archivo local o un mock"
+  },
+  "requestly_unsupported_regex_invalid": {
+    "message": "expresión regular inválida"
+  },
+  "requestly_unsupported_regex_too_long": {
+    "message": "expresión regular de más de 512 caracteres"
+  },
+  "requestly_unsupported_filter": {
+    "message": "filtro sin equivalente"
+  },
+  "requestly_unsupported_empty_pairs": {
+    "message": "regla sin condiciones"
+  },
+  "requestly_unsupported_source_key": {
+    "message": "condición sobre un campo no soportado"
+  },
+  "requestly_unsupported_source_operator": {
+    "message": "operador no soportado"
+  },
+  "rule_imported_requestly": {
+    "message": "importado de Requestly"
+  },
+  "error_profile_invalid": {
+    "message": "El perfil tiene errores. Revisa el nombre."
+  },
+  "error_profile_not_found": {
+    "message": "El perfil ya no existe."
+  },
+  "error_config_invalid": {
+    "message": "La configuración no es válida."
+  },
+  "error_config_limit": {
+    "message": "La importación superaría un límite."
+  },
+  "error_undo_expired": {
+    "message": "Ya no se puede deshacer."
+  },
+  "export_format_single": {
+    "message": "Solo para un request"
+  },
+  "export_reason_batch_limit": {
+    "message": "más de 50 en el lote"
+  },
+  "profile_imported_name": {
+    "message": "$1 (importado)"
+  },
+  "requestly_unsupported_invalid": {
+    "message": "formato de regla no reconocido"
+  },
+  "requestly_import_hint": {
+    "message": "Reglas exportadas de Requestly: redirect, modificar headers y respuesta estática. Lo demás se lista con el motivo."
+  },
+  "requestly_error_no_site": {
+    "message": "Conecta Nahual a una pestaña para importar sus reglas: se importan para el sitio de esa pestaña."
+  },
+  "help_export_title": {
+    "message": "Exportar al código"
+  },
+  "help_export_body": {
+    "message": "Clic derecho en un request ⇒ «Exportar como…» (o Alt+Shift+E con la fila seleccionada; en el repeater, el botón de exportar). Elige cURL, fetch, test de Vitest, handler de MSW, schema de Zod o colección de Postman, revisa el código y cópialo o descárgalo. Los valores sensibles van redactados salvo que confirmes incluirlos. Con varias filas marcadas, la barra exporta un solo archivo de MSW, un schema de Zod o una colección de Postman."
+  },
+  "help_profiles_title": {
+    "message": "Perfiles de reglas"
+  },
+  "help_profiles_body": {
+    "message": "Agrupa reglas en perfiles («QA staging», «Bug 1234») y activa uno por pestaña desde la barra o con Alt+Shift+O. Con un perfil activo solo se aplican sus reglas; las demás muestran «No actúa con…». Crea, renombra y elimina perfiles en Ajustes ⇒ Perfiles, y asigna reglas desde la lista de reglas."
+  },
+  "help_data_title": {
+    "message": "Importar y exportar"
+  },
+  "help_data_body": {
+    "message": "En Ajustes ⇒ Importar y exportar descargas toda tu configuración (reglas, hooks, perfiles y orígenes de producción) como JSON, con los valores sensibles redactados. Al importar un archivo, o un export de Requestly, ves una vista previa; todo entra desactivado y puedes deshacerlo durante 10 segundos. Las relajaciones de CORS nunca se exportan."
   }
 }

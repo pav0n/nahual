@@ -1,4 +1,4 @@
-import type { RuleDraft } from "@nahual/domain";
+import type { ExportFormat, RuleDraft } from "@nahual/domain";
 import type { SliceCreator } from "./types.ts";
 
 /** Secciones de la barra superior (004, data-model `PanelSection`); 005 añade `repeater`. */
@@ -13,7 +13,18 @@ export interface Toast {
   onAction?: () => void;
 }
 
+/** Qué exporta el diálogo "Exportar como…" (007, contracts/panel-ui.md). */
+export type ExportRequest =
+  | { kind: "traffic"; exchangeIds: string[]; format?: ExportFormat }
+  | { kind: "repeater"; tabId: string; sendId: string | null };
+
 export interface UiSlice {
+  /** 007: diálogo de exportación abierto, o `null`. */
+  exportRequest: ExportRequest | null;
+  /** Sube con cada apertura: monta el diálogo la primera vez y le da estado limpio cada vez. */
+  exportSeq: number;
+  openExport(request: ExportRequest): void;
+  closeExport(): void;
   section: PanelSection;
   toasts: Toast[];
   /** Onboarding reabierto desde "Ayuda" (FR-027). */
@@ -41,6 +52,10 @@ export interface UiSlice {
   setDrawerExpanded(expanded: boolean): void;
   setHelpOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
+  /** Sección mostrada en Ajustes; 007 lo abre en "Perfiles" desde el selector de la barra. */
+  settingsSection: string | null;
+  setSettingsSection(section: string): void;
+  openSettings(section: string): void;
   setSection(section: PanelSection): void;
   selectExchange(id: string | null, tab?: string): void;
   requestRelax(exchangeId: string | null): void;
@@ -49,12 +64,30 @@ export interface UiSlice {
   /** Lo toma Reglas al abrir el editor; devuelve `null` si no hay ninguno. */
   consumeRuleDraft(): RuleDraft | null;
   pushToast(toast: Omit<Toast, "id">, timeoutMs?: number): number;
+  /**
+   * Diálogos modales abiertos, de abajo arriba: los avisos (y su "Deshacer") se pintan dentro del
+   * de arriba, porque lo que queda fuera de un `<dialog>` modal es inerte (007).
+   */
+  openDialogs: string[];
+  dialogOpened(id: string): void;
+  dialogClosed(id: string): void;
   dismissToast(id: number): void;
 }
 
 let toastSeq = 0;
 
 export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
+  exportRequest: null,
+  exportSeq: 0,
+  openExport: (request) =>
+    set((s) => {
+      s.exportRequest = request;
+      s.exportSeq += 1;
+    }),
+  closeExport: () =>
+    set((s) => {
+      s.exportRequest = null;
+    }),
   section: "traffic",
   // Plegado, como la consola de DevTools: se despliega a petición (006).
   drawerExpanded: false,
@@ -82,6 +115,16 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
   setSettingsOpen: (open) =>
     set((s) => {
       s.settingsOpen = open;
+    }),
+  settingsSection: null,
+  setSettingsSection: (section) =>
+    set((s) => {
+      s.settingsSection = section;
+    }),
+  openSettings: (section) =>
+    set((s) => {
+      s.settingsSection = section;
+      s.settingsOpen = true;
     }),
   setSection: (section) =>
     set((s) => {
@@ -111,6 +154,15 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
       });
     return draft;
   },
+  openDialogs: [],
+  dialogOpened: (id) =>
+    set((s) => {
+      if (!s.openDialogs.includes(id)) s.openDialogs.push(id);
+    }),
+  dialogClosed: (id) =>
+    set((s) => {
+      s.openDialogs = s.openDialogs.filter((x) => x !== id);
+    }),
   pushToast: (toast, timeoutMs = 10_000) => {
     const id = ++toastSeq;
     set((s) => {

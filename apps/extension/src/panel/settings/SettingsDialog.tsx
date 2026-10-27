@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { t } from "../../shared/i18n.ts";
 import { Dialog } from "../components/common/Dialog.tsx";
 import { TabPanel, Tabs } from "../components/common/Tabs.tsx";
@@ -14,7 +13,8 @@ const PREFIX = "settings";
 export function SettingsDialog() {
   const open = usePanelStore((s) => s.settingsOpen);
   const setOpen = usePanelStore((s) => s.setSettingsOpen);
-  const [section, setSection] = useState(SETTINGS_SECTIONS[0]?.id ?? "general");
+  const section = usePanelStore((s) => s.settingsSection) ?? SETTINGS_SECTIONS[0]?.id ?? "general";
+  const setSection = usePanelStore((s) => s.setSettingsSection);
 
   return (
     <Dialog

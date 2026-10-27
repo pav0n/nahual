@@ -39,6 +39,9 @@ export function dispatchSwEvent(message: SwMessage): void {
       }
       break;
     }
+    case "profiles":
+      store.setProfiles(message.payload);
+      break;
     case "settings":
       store.setSettings(message.payload);
       autoAttach.update(message.payload, usePanelStore.getState().session);

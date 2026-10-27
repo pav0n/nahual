@@ -55,18 +55,26 @@ export const HookActionSchema = z.strictObject({
 });
 export type HookAction = z.infer<typeof HookActionSchema>;
 
+export const PauseActionSchema = z.strictObject({ kind: z.literal("pause") });
+export const FailActionSchema = z.strictObject({
+  kind: z.literal("fail"),
+  errorReason: FailReasonSchema,
+});
+export const DelayActionSchema = z.strictObject({
+  kind: z.literal("delay"),
+  ms: z
+    .int({ error: "rule_error_delay" })
+    .min(1, { error: "rule_error_delay" })
+    .max(LIMITS.delayMsMax, { error: "rule_error_delay" }),
+});
+export const LogActionSchema = z.strictObject({ kind: z.literal("log") });
+
 export const ActionSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("pause") }),
+  PauseActionSchema,
   MockActionSchema,
-  z.strictObject({ kind: z.literal("fail"), errorReason: FailReasonSchema }),
-  z.strictObject({
-    kind: z.literal("delay"),
-    ms: z
-      .int({ error: "rule_error_delay" })
-      .min(1, { error: "rule_error_delay" })
-      .max(LIMITS.delayMsMax, { error: "rule_error_delay" }),
-  }),
-  z.strictObject({ kind: z.literal("log") }),
+  FailActionSchema,
+  DelayActionSchema,
+  LogActionSchema,
   HookActionSchema,
 ]);
 export type Action = z.infer<typeof ActionSchema>;

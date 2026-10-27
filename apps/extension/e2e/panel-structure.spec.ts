@@ -211,6 +211,17 @@ test("FR-019: Ayuda abre la introducción y lista los atajos", async ({
   const help = panel.getByRole("dialog");
   await expect(help).toContainText("Alt+Shift+A");
   await expect(help).toContainText("Alt+Shift+K");
+  // 007: exportar, perfiles e importar y exportar, con sus atajos.
+  await expect(help.getByRole("heading", { level: 3 })).toContainText([
+    "Repeater",
+    "Hooks",
+    "Export to code",
+    "Rule profiles",
+    "Import and export",
+    "Shortcuts",
+  ]);
+  await expect(help).toContainText("Alt+Shift+E");
+  await expect(help).toContainText("Alt+Shift+O");
   await panel.keyboard.press("Escape");
   await expect(help).toBeHidden();
 });

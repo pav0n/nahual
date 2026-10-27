@@ -21,7 +21,10 @@ import {
 import { createIgnoresStore } from "./repeater/ignores-store.ts";
 import { createPageSender } from "./repeater/page-send.ts";
 import { createRepeaterService } from "./repeater/repeater-service.ts";
+import { createActiveProfiles } from "./active-profiles.ts";
 import { createHookRunner } from "./hook-runner.ts";
+import { createImportService } from "./import-service.ts";
+import { createProfileStore } from "./profile-store.ts";
 import { createRuleEngine } from "./rule-engine.ts";
 import { createRuleStore } from "./rule-store.ts";
 import { createSessionRegistry, type SessionStorageLike } from "./session-registry.ts";
@@ -54,6 +57,7 @@ export function createBackground(deps: BackgroundDeps) {
   const sendState = (tabId: number) => {
     const { status, cause, attachedAt } = manager.get(tabId);
     const site = manager.siteOf(tabId);
+    const profile = active.get(tabId);
     port.send(
       tabId,
       makeEvent("state", {
@@ -61,10 +65,14 @@ export function createBackground(deps: BackgroundDeps) {
         cause,
         attachedAt,
         site,
-        activeRuleCount: rules.forSite(site).filter((r) => r.enabled).length,
+        // 007 (FR-024): solo las reglas que actúan con el perfil activo de la pestaña.
+        activeRuleCount: rules
+          .forSite(site)
+          .filter((r) => r.enabled && (profile === null || r.profileIds.includes(profile))).length,
         queueSize: engine.queueSize(tabId),
         globalPaused: settings.get().globalPaused,
         relaxationCount: relaxer.count(tabId),
+        activeProfileId: profile,
       }),
     );
   };
@@ -76,6 +84,7 @@ export function createBackground(deps: BackgroundDeps) {
       site: manager.siteOf(tabId),
       globalPaused: settings.get().globalPaused,
       relaxedApiOrigins: relaxer.patterns(tabId),
+      activeProfileId: active.get(tabId),
     });
     void interceptor.applyPatterns(tabId, patterns);
   };
@@ -115,6 +124,36 @@ export function createBackground(deps: BackgroundDeps) {
       }
     },
     onNotice: notice,
+    profileIdsOf: (site) => profiles.idsOf(site),
+  });
+
+  /** 007: perfiles por sitio (contracts/storage.md) y el activo de cada pestaña (research R13). */
+  const profiles = createProfileStore({
+    storage: deps.localStorage,
+    rules,
+    onChange: (view) => {
+      for (const tabId of port.tabs()) {
+        port.send(tabId, makeEvent("profiles", view));
+        applyPatterns(tabId);
+        sendState(tabId);
+      }
+    },
+    onNotice: notice,
+  });
+
+  /** 007: configuración portable y Requestly, en una sola escritura (research R10). */
+  const imports = createImportService({
+    rules,
+    profiles,
+    settings,
+    renamed: (name) =>
+      globalThis.chrome?.i18n?.getMessage("profile_imported_name", name) || `${name} (imported)`,
+  });
+
+  const active = createActiveProfiles({
+    lastActive: () => profiles.lastActive(),
+    siteOfProfile: (id) => profiles.all().find((p) => p.id === id)?.site ?? null,
+    remember: (site, id) => void profiles.setLastActive(site, id),
   });
 
   /** Relajaciones CORS por pestaña, solo en memoria (003, research R10). */
@@ -181,6 +220,7 @@ export function createBackground(deps: BackgroundDeps) {
     rules: () => rules.all(),
     settings: () => settings.get(),
     siteOf: (tabId) => manager.siteOf(tabId),
+    activeProfileOf: (tabId) => active.get(tabId),
     capture,
     executor,
     hooks,
@@ -209,6 +249,7 @@ export function createBackground(deps: BackgroundDeps) {
       sendState(tabId);
     },
     onAttached: (tabId) => {
+      active.onNavigate(tabId, manager.siteOf(tabId));
       void frames.seed(tabId);
       applyPatterns(tabId);
       sendState(tabId);
@@ -218,6 +259,7 @@ export function createBackground(deps: BackgroundDeps) {
       repeater.contextLost(tabId);
       engine.navigated(tabId);
       relaxer.refresh(tabId);
+      active.onNavigate(tabId, site);
       port.send(tabId, makeEvent("navigated", { site, url }));
       applyPatterns(tabId);
       sendState(tabId);
@@ -291,6 +333,46 @@ export function createBackground(deps: BackgroundDeps) {
         return { ok: true };
       case "hookResult":
         return hooks.onResult(tabId, command.payload);
+      // 007: perfiles (contracts/panel-protocol.md).
+      case "saveProfile":
+        return profiles.save(command.payload, manager.siteOf(tabId));
+      case "duplicateProfile":
+        return profiles.duplicate(command.payload.id, command.payload.name);
+      case "deleteProfile": {
+        const result = await profiles.remove(command.payload.id);
+        if (result.ok) {
+          for (const affected of active.onProfileDeleted(command.payload.id)) {
+            port.send(
+              affected,
+              makeEvent("notice", { messageKey: "notice_profile_deleted_active" }),
+            );
+            applyPatterns(affected);
+            sendState(affected);
+          }
+        }
+        return result;
+      }
+      case "restoreProfile":
+        return profiles.restore(command.payload.id);
+      case "setActiveProfile": {
+        if (!active.set(tabId, manager.siteOf(tabId), command.payload.profileId))
+          return { ok: false, code: "profile_not_found" };
+        applyPatterns(tabId);
+        sendState(tabId);
+        return { ok: true };
+      }
+      case "setRuleProfiles":
+        return rules.setProfiles(command.payload.ruleId, command.payload.profileIds);
+      case "importConfig":
+        return imports.importConfig(command.payload);
+      case "undoImport": {
+        const result = await imports.undoImport(command.payload.importId);
+        if (result.ok)
+          for (const other of port.tabs())
+            if (other !== tabId)
+              port.send(other, makeEvent("notice", { messageKey: "notice_import_undone" }));
+        return result;
+      }
       case "importHook":
         return rules.importHook(
           command.payload,
@@ -318,6 +400,7 @@ export function createBackground(deps: BackgroundDeps) {
     cleanupOrphans({ debugger: cdp, registry }),
     settings.ready,
     rules.ready,
+    profiles.ready,
   ]).then(() => {});
 
   const port = createPanelPort({
@@ -325,13 +408,16 @@ export function createBackground(deps: BackgroundDeps) {
     panelPath: deps.panelPath ?? "src/panel/panel.html",
     ready,
     onHello: (tabId) => {
+      active.onHello(tabId, manager.siteOf(tabId));
       port.send(tabId, makeEvent("settings", settings.get()));
       sendRules(tabId, rules.all());
+      port.send(tabId, makeEvent("profiles", profiles.view()));
       sendRelaxations(tabId);
       sendState(tabId);
     },
     onCommand,
     onPanelClosed: (tabId) => {
+      active.forget(tabId);
       // Principio I: el debugger solo está adjunto mientras el panel está abierto (FR-004).
       void manager.detach(tabId, "panel_closed");
     },

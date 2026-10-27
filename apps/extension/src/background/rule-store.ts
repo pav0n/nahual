@@ -7,6 +7,7 @@ import {
   validateRuleDraft,
   type Rule,
 } from "@nahual/domain";
+import { hasRedactedValue } from "@nahual/domain/portable";
 import { hashSource } from "@nahual/hook-runtime";
 import type { CommandResult } from "./panel-port.ts";
 import { isQuotaError, type LocalStorageLike } from "./storage-port.ts";
@@ -39,12 +40,27 @@ export interface RuleStore {
   ): Promise<CommandResult>;
   /** Nuevo orden completo de las reglas de un sitio (FR-016). */
   reorder(site: string, ruleIds: string[]): Promise<CommandResult>;
+  /** 007 (FR-023): perfiles de una regla, del mismo sitio. */
+  setProfiles(ruleId: string, profileIds: string[]): Promise<CommandResult>;
+  /**
+   * 007 (research R10, R13): cambio atómico con otras claves en la misma escritura (perfiles,
+   * importación). `rules` ausente = sin cambios en las reglas; `after` corre solo si se escribió.
+   */
+  transaction(change: (current: Rule[]) => TransactionPlan | CommandResult): Promise<CommandResult>;
+}
+
+export interface TransactionPlan {
+  rules?: Rule[];
+  extra?: Record<string, unknown>;
+  after?: () => void;
 }
 
 export interface RuleStoreOptions {
   storage: LocalStorageLike;
   onChange(rules: Rule[]): void;
   onNotice(messageKey: string): void;
+  /** 007: ids de los perfiles de un sitio, para validar `profileIds` (FR-019). */
+  profileIdsOf?(site: string): ReadonlySet<string>;
 }
 
 /** Valida una regla leída del disco: schema y rutas JSONPath compilables. */
@@ -127,34 +143,64 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
     rules = renumber(rules);
   };
 
-  const ready = storage.get(RULES_KEY).then((items) => load(items[RULES_KEY]));
+  // Un cambio que llega antes que la lectura inicial es más nuevo que ella: no se pisa.
+  let changedBeforeRead = false;
+  const ready = storage.get(RULES_KEY).then((items) => {
+    if (!changedBeforeRead) load(items[RULES_KEY]);
+  });
 
   storage.onChanged((changes) => {
     const change = changes[RULES_KEY];
     if (!change) return;
+    changedBeforeRead = true;
     load(change.newValue);
     options.onChange(rules);
   });
 
-  /** Escritura serializada: calcula el estado nuevo, lo persiste y solo entonces lo adopta. */
-  const mutate = (change: (current: Rule[]) => Rule[] | CommandResult): Promise<CommandResult> => {
+  /**
+   * Escritura serializada: calcula el estado nuevo, lo persiste (con las claves de `extra` en la
+   * misma llamada) y solo entonces lo adopta.
+   */
+  const write = (
+    change: (current: Rule[]) => TransactionPlan | CommandResult,
+  ): Promise<CommandResult> => {
     const result = writes.then(async (): Promise<CommandResult> => {
-      const next = change(rules);
-      if (!Array.isArray(next)) return next;
-      const ordered = renumber(next);
+      const plan = change(rules);
+      if ("ok" in plan) return plan;
+      const ordered = plan.rules ? renumber(plan.rules) : null;
+      const items: Record<string, unknown> = { ...plan.extra };
+      if (ordered) items[RULES_KEY] = { version: VERSION, rules: [...ordered, ...invalidRaw] };
       try {
-        await storage.set({
-          [RULES_KEY]: { version: VERSION, rules: [...ordered, ...invalidRaw] },
-        });
+        await storage.set(items);
       } catch (error) {
         return { ok: false, code: isQuotaError(error) ? "storage_quota" : "cdp_error" };
       }
-      rules = ordered;
-      options.onChange(rules);
+      if (ordered) {
+        rules = ordered;
+        options.onChange(rules);
+      }
+      plan.after?.();
       return { ok: true };
     });
     writes = result.then(() => {});
     return result;
+  };
+  const mutate = (change: (current: Rule[]) => Rule[] | CommandResult) =>
+    write((current) => {
+      const next = change(current);
+      return Array.isArray(next) ? { rules: next } : next;
+    });
+
+  /** Perfiles que no son del sitio (FR-019): con `profileIdsOf` sin configurar, no se valida. */
+  const foreignProfiles = (site: string, ids: readonly string[]) => {
+    if (!options.profileIdsOf) return false;
+    const known = options.profileIdsOf(site);
+    return ids.some((id) => !known.has(id));
+  };
+  const profileError: CommandResult = {
+    ok: false,
+    code: "rule_invalid",
+    issues: [{ path: "profileIds", messageKey: "profile_not_found" }],
   };
 
   const find = (id: string) => rules.find((r) => r.id === id);
@@ -173,22 +219,28 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
         return Promise.resolve({ ok: false, code: "rule_invalid", issues: validation.issues });
       const draft = validation.value;
       const now = Date.now();
+      // 007: un borrador sin `profileIds` (el editor no los manda siempre) conserva los que había.
+      const sentProfiles = "profileIds" in draftInput;
       return mutate((current) => {
         if (typeof id === "string") {
           const existing = current.find((r) => r.id === id);
           if (!existing) return { ok: false, code: "unknown_rule" };
           const replaced: Rule = {
             ...draft,
+            profileIds: sentProfiles ? draft.profileIds : existing.profileIds,
+            ...(existing.importedFrom ? { importedFrom: existing.importedFrom } : {}),
             id,
             site: existing.site,
             order: existing.order,
             createdAt: existing.createdAt,
             updatedAt: now,
           };
+          if (foreignProfiles(existing.site, replaced.profileIds)) return profileError;
           const next = current.map((r) => (r.id === id ? replaced : r));
           return checkHooks(next, replaced) ?? next;
         }
         if (site === null) return { ok: false, code: "no_site" };
+        if (foreignProfiles(site, draft.profileIds)) return profileError;
         if (current.length >= LIMITS.rulesMax) {
           return {
             ok: false,
@@ -237,7 +289,11 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
     },
 
     setEnabled(ruleId, enabled) {
-      if (!find(ruleId)) return Promise.resolve({ ok: false, code: "unknown_rule" });
+      const rule = find(ruleId);
+      if (!rule) return Promise.resolve({ ok: false, code: "unknown_rule" });
+      // 007 (FR-028): una regla importada con valores redactados no se activa hasta completarlos.
+      if (enabled && hasRedactedValue(rule))
+        return Promise.resolve(invalid("enabled", "rule_error_redacted_value"));
       return mutate((current) => {
         const next = current.map((r) =>
           r.id === ruleId ? { ...r, enabled, updatedAt: Date.now() } : r,
@@ -279,6 +335,19 @@ export function createRuleStore(options: RuleStoreOptions): RuleStore {
         site,
       );
     },
+
+    setProfiles(ruleId, profileIds) {
+      const existing = find(ruleId);
+      if (!existing) return Promise.resolve({ ok: false, code: "unknown_rule" });
+      const parsed = RuleSchema.safeParse({ ...existing, profileIds });
+      if (!parsed.success || foreignProfiles(existing.site, profileIds))
+        return Promise.resolve(profileError);
+      return mutate((current) =>
+        current.map((r) => (r.id === ruleId ? { ...r, profileIds, updatedAt: Date.now() } : r)),
+      );
+    },
+
+    transaction: write,
 
     reorder(site, ruleIds) {
       return mutate((current) => {

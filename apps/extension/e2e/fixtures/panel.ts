@@ -5,6 +5,7 @@ import {
   type Page,
   type Worker,
 } from "@playwright/test";
+import { PROTOCOL_VERSION } from "@nahual/protocol";
 
 /** tabId de la pestaña con esa URL, vía chrome.debugger.getTargets (sin permiso "tabs"). */
 export async function tabIdOf(worker: Worker, url: string): Promise<number> {
@@ -181,7 +182,8 @@ export async function createRule(panel: Page, spec: RuleSpec) {
   await expect(panel.locator(".rule-item").filter({ hasText: spec.name })).toBeVisible();
 }
 
-export type SettingsSection = "General" | "Pauses" | "Development CORS" | "Shortcuts";
+export type SettingsSection =
+  "General" | "Pauses" | "Development CORS" | "Shortcuts" | "Profiles" | "Import and export";
 
 /**
  * Abre Ajustes y devuelve su contenedor: el diálogo "Settings" con la sección pedida (004) o, en la
@@ -404,7 +406,7 @@ export function relaxExtraOrigins(
   apiOrigins?: string[],
 ) {
   return panel.evaluate(
-    async ({ tab, app, n, apis }) => {
+    async ({ tab, app, n, apis, v }) => {
       const port = chrome.runtime.connect({ name: "nahual-panel" });
       const replies = new Map<string, (ok: boolean) => void>();
       port.onMessage.addListener((m: { type: string; correlationId?: string }) => {
@@ -415,7 +417,7 @@ export function relaxExtraOrigins(
         new Promise<boolean>((resolve) => {
           const id = crypto.randomUUID();
           replies.set(id, resolve);
-          port.postMessage({ v: 5, id, type, payload });
+          port.postMessage({ v, id, type, payload });
         });
       await send("hello", { tabId: tab });
       const results: boolean[] = [];
@@ -432,7 +434,7 @@ export function relaxExtraOrigins(
       }
       return results;
     },
-    { tab: tabId, app: appOrigin, n: count, apis: apiOrigins },
+    { tab: tabId, app: appOrigin, n: count, apis: apiOrigins, v: PROTOCOL_VERSION },
   );
 }
 
