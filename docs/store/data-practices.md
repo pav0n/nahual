@@ -33,5 +33,5 @@ política de la tienda define "recoger" como transmitir fuera del dispositivo de
 
 ## URL de la política de privacidad
 
-`https://github.com/<owner>/nahual/blob/main/docs/store/privacy-policy.md` (sustituir `<owner>`
-al crear el repositorio público).
+`https://github.com/pav0n/nahual/blob/main/docs/store/privacy-policy.md` (válida cuando 007 esté
+en `main`).

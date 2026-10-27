@@ -161,7 +161,7 @@ Mientras la Chrome Web Store revisa una versión, o para equipos que la prefiere
 
    ```bash
    echo "<sha256 del release>  nahual.zip" | sha256sum -c -
-   gh attestation verify nahual.zip --repo <owner>/nahual
+   gh attestation verify nahual.zip --repo pav0n/nahual
    ```
 
 3. Descomprímelo en una carpeta y cárgala en `chrome://extensions` → Modo desarrollador →

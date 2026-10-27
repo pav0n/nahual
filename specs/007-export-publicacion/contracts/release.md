@@ -32,7 +32,7 @@ El environment tiene **revisores obligatorios** (el mantenedor) y es el único c
 `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`, `CWS_PUBLISHER_ID`, `CWS_EXTENSION_ID`.
 
 1. Descargar `nahual.zip` del release; comprobar el SHA-256 contra el del job `build`;
-   `gh attestation verify nahual.zip --repo <owner>/nahual`.
+   `gh attestation verify nahual.zip --repo pav0n/nahual`.
 2. Token: `POST https://oauth2.googleapis.com/token` con `grant_type=refresh_token`.
 3. Subir: `POST https://chromewebstore.googleapis.com/upload/v2/publishers/$PUBLISHER/items/$ITEM:upload`
    con `Authorization: Bearer` y el zip; si `uploadState` es `IN_PROGRESS`, consultar

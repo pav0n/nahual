@@ -36,7 +36,7 @@ abrir la app de prueba, abrir DevTools ⇒ Nahual ⇒ adjuntar.
 | 16 | Importar un `.txt`, un JSON con `"version": 2`, uno truncado y uno con 600 reglas | Cada uno rechazado con causa y solución; la configuración no cambia | US4-6, FR-029, SC-007 |
 | 17 | Importar el export de Requestly de fixture | Vista previa: Response estática ⇒ Mock, Redirect y Headers ⇒ hooks legibles, grupos ⇒ perfiles; "No soportadas (3)" con motivo; al activar el redirect pide el permiso de destino y luego redirige | US5, FR-035–FR-038, SC-009 |
 | 18 | Repetir 1, 11, 15 y 17 en tema oscuro, a 320 px y solo con teclado | Indistinguible de las vistas vecinas; sin scroll horizontal; axe limpio | FR-006, SC-012, SC-013 |
-| 19 | Crear el tag `v1.0.0-rc.1` en una rama de prueba y ver el workflow | Job `build` verde con zip, SBOM y atestación en el release; `gh attestation verify nahual.zip --repo <owner>/nahual` pasa; el job `publish` espera aprobación | US2-1/2/3, FR-039–FR-042, SC-010 |
+| 19 | Crear el tag `v1.0.0-rc.1` en una rama de prueba y ver el workflow | Job `build` verde con zip, SBOM y atestación en el release; `gh attestation verify nahual.zip --repo pav0n/nahual` pasa; release marcado como prerelease; el job `publish` no corre | US2-1/2/3, FR-039–FR-042, SC-010 |
 | 20 | Leer `docs/store/` | Listing es/en explica permisos y barra amarilla; política y prácticas de datos coinciden; capturas y video generados | US2-4/5, FR-043–FR-045 |
 
 ## Comandos de verificación

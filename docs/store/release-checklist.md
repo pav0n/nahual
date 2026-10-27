@@ -40,7 +40,7 @@ Versión corregida de la checklist de `docs/speckit-inputs/07-export-publicacion
 - [ ] Job `build` en verde: lint, typecheck, pruebas, auditoría, licencias, `verify:dist`, build
       reproducible, SBOM y atestaciones.
 - [ ] Release de GitHub con `nahual.zip`, `nahual.sbom.cdx.json` y el SHA-256 en las notas.
-- [ ] `gh attestation verify nahual.zip --repo <owner>/nahual` pasa con el archivo descargado.
+- [ ] `gh attestation verify nahual.zip --repo pav0n/nahual` pasa con el archivo descargado.
 - [ ] Sin código remoto ni `eval` fuera del sandbox (`tests/dist/no-network.test.ts`).
 - [ ] Justificación de permisos al día si cambió el manifest.
 - [ ] Aprobación del job `publish` por un mantenedor; estado de la tienda registrado en el

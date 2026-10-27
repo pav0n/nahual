@@ -18,3 +18,5 @@ dist-test/
 # 007: archivos que genera tooling/export-smoke al ejecutar lo exportado
 tooling/export-smoke/.generated/
 apps/extension/nahual.sbom.cdx.json
+# SBOM generado por scripts/build-sbom.mjs (se publica en el release)
+*.sbom.cdx.json
