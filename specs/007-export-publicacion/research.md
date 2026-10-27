@@ -462,5 +462,24 @@ Tres corridas seguidas, sin caché de turbo (`--force`), de `lint`, `typecheck`,
 export-smoke 5, verify:dist 73, E2E 231 y visual 4. `hooks-failsafe` (SC-012 de 006), que había
 fallado una vez con carga en paralelo, pasó en las tres.
 
-Pendiente fuera del repositorio: el PR de implementación y la checklist de
-`docs/store/release-checklist.md` necesitan el repositorio en GitHub (`origin` es local).
+En GitHub (`pav0n/nahual`), CI falló de forma intermitente en `hooks-escape` y FR-019: el
+onboarding tapaba el panel. Causa: los stores de ajustes, reglas y perfiles adoptaban la lectura
+inicial aunque `onChanged` ya hubiera entregado un valor más nuevo, y así se perdía el
+`onboardingSeen` que siembra el fixture. Corregido en los tres stores con una prueba de
+integración por store; CI en verde después.
+
+### Ensayo del release (T040)
+
+2026-10-27, tag `v1.0.0-rc.1` sobre `13661df` en `007-export-publicacion-impl`
+(run 40444905909):
+- Job `build` en verde: comprobaciones, export-smoke, dos builds con el mismo SHA-256, SBOM,
+  atestaciones de procedencia y del SBOM, release marcado como prerelease con `nahual.zip` y
+  `nahual.sbom.cdx.json`.
+- Job `publish` omitido (tag de ensayo), como define contracts/release.md.
+- El mantenedor descargó el zip y verificó el SHA-256 de las notas y la atestación; después se
+  borraron el release y el tag de ensayo.
+
+Prerrequisitos pendientes para `v1.0.0` (`docs/store/release-checklist.md`): environment
+`chrome-web-store` con revisores; primer envío manual en el Developer Dashboard; proyecto de
+Google Cloud con la Chrome Web Store API y cliente OAuth; secretos `CWS_*` con el id del
+elemento; video en YouTube.
